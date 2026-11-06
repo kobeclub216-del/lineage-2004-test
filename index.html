@@ -62,7 +62,7 @@ function drawKnightSprite(px,py,now){
 function drawTestSilhouette(x,y,color){
  ctx.fillStyle='#d2b178';ctx.beginPath();ctx.ellipse(x,y+8,13,5,0,0,7);ctx.fill();
  ctx.fillStyle=color;ctx.fillRect(x-9,y-26,18,27);
- ctx.fillStyle='#e0c49d';ctx.beginPath();ctx.arc(x,y-31,8,0,0,7);ctx.fill();
+ ctx.fillStyle='#e0c49d';ctx.beginPath();ctx.arc(x,y-31,8,0,7);ctx.fill();
 }
 function drawCharacterSprite(p,now){
  if(player.job==='騎士'){drawKnightSprite(p.x,p.y,now);return}
