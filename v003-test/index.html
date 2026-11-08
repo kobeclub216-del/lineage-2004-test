@@ -136,6 +136,33 @@ html,body{overscroll-behavior:none}button{min-height:40px}#mobileBar{display:non
 #modal .creation-emblems{z-index:4}
 #modal .creation-illustrated[data-gender="女"] .figure-longhair{display:block}
 @media(max-width:700px){#modal .creation-preview::before{display:none}}
+
+/* v0.05-G: larger figure, medieval illustration silhouette and screenshot-inspired stage.
+   The original 2004 art has not been sourced or reproduced. */
+@media(min-width:701px){
+#modal .dialog{max-width:1100px;width:min(1100px,98vw);padding:10px 15px 14px}
+#modal .creation-columns{grid-template-columns:32% 34% minmax(0,34%);gap:9px}
+#modal .creation-preview{min-height:475px;padding:10px 4px 2px}
+#modal .creation-parchment{min-height:475px;padding-top:58px}
+#modal .creation-illustrated{transform:scale(1.36);margin:43px auto 54px}
+#modal .creation-emblems{inset:54px 10px 64px}
+#modal .creation-emblem{width:45px;height:45px;min-height:45px}
+}
+#modal .creation-illustrated .figure-hair-locks{display:none}
+#modal .creation-illustrated[data-gender="女"] .figure-hair-locks{display:block}
+#modal .creation-illustrated[data-job="法師"] .figure-hair-locks,#modal .creation-illustrated[data-job="黑暗妖精"] .figure-hair-locks{display:block}
+#modal .creation-illustrated[data-job="騎士"] .figure-hair-locks{display:none}
+#modal .creation-illustrated .figure-tailoring{filter:drop-shadow(1px 2px 1px #0008)}
+#modal .creation-preview{background:radial-gradient(ellipse 140px 260px at 50% 42%,#b2a57d21,transparent 90%),linear-gradient(90deg,#0c120e,#25291d 48%,#0b110e);box-shadow:inset 0 0 38px #050806;border-left:1px solid #5c5235;border-right:1px solid #5c5235}
+#modal .creation-preview:after{width:160px;height:25px;box-shadow:0 0 32px #e47c24;opacity:.85}
+#modal .creation-heading{color:#d7c49b;letter-spacing:2px;font-size:12px}
+#modal .creation-historical{font-size:10px;color:#958d79}
+#modal .creation-parchment{background:repeating-linear-gradient(0deg,transparent 0 23px,#6f60410a 24px),linear-gradient(95deg,#9b8966,#d6c49f 9%,#e5d7b5 55%,#c4b08a 92%,#8a7554);border:1px solid #85704e}
+#modal .creation-parchment h3{font-family:serif;font-size:22px;letter-spacing:4px;border-bottom:1px solid #857552;padding-bottom:10px}
+#modal .creation-parchment p{font-family:serif;font-size:16px;line-height:2}
+#modal .creation-class-tabs button{border-radius:2px;box-shadow:inset 0 1px 0 #b4a16b25}
+#modal .creation-controls input,#modal .creation-controls select{background:#13160f;color:#e6d7ae;border:1px solid #74603e}
+@media(max-width:700px){#modal .creation-illustrated{transform:scale(.72);margin:-24px auto -35px}#modal .creation-parchment p{font-size:10px;line-height:1.5}}
 </style></head><body><header><b>天與地 · 2004 歷史研究原型</b><small>v0.05-D｜騎士動畫資源檢查｜雙平台｜獨立技術原型・非官方・非原版客戶端・未使用原版圖像音效</small></header><div class="layout"><div class="game"><canvas id="c" width="960" height="620"></canvas><div id="notice">點地面移動｜點怪物攻擊｜點物品拾取｜拖曳移動畫面<div id="spriteStatus" style="color:#f3da93;margin-top:4px">騎士圖片：檢查中</div><img id="spritePreview" alt="騎士圖片預覽" style="display:none;max-height:70px;max-width:90px;image-rendering:pixelated" /></div><div id="mobileBar"><div><button id="centerCam" title="回到角色">定位</button><button id="mobileHeal">藥水</button></div><div><button id="mobileSave">儲存</button><button id="mobileInfo">資訊</button></div></div><div id="modal"><div class="dialog"><h2>創造角色</h2><div class="creation-columns"><section class="creation-parchment"><div class="scroll-top"></div><h3 id="creationLoreTitle">王族</h3><p id="creationLoreText">選擇職業後顯示職業介紹。</p><small>職業介紹為暫寫摘要，等待原版文字核對。</small><div class="scroll-bottom"></div></section><section class="creation-preview"><div class="creation-heading">角色預覽・示意</div><div id="creationEmblems" class="creation-emblems" role="group" aria-label="環繞人物的職業選擇圖示"></div><div id="creationFigure" class="creation-figure creation-illustrated" aria-label="自製職業人物插畫示意">
 <svg viewBox="0 0 160 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="角色造型預覽">
 <defs><linearGradient id="armorLight" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff" stop-opacity=".33"/><stop offset=".4" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".5"/></linearGradient><linearGradient id="steelBlade" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#4a5860"/><stop offset=".5" stop-color="#e5e9dd"/><stop offset="1" stop-color="#697985"/></linearGradient></defs>
@@ -167,6 +194,19 @@ html,body{overscroll-behavior:none}button{min-height:40px}#mobileBar{display:non
 <g class="figure-elf-detail"><path d="M56 98Q80 114 104 98" fill="none" stroke="#c4d8a4" stroke-width="3"/><path d="M73 116Q80 107 87 116L80 130Z" fill="#7ecb9e" stroke="#d2e9b7" stroke-width="1.5"/></g>
 <g class="figure-mage-detail"><path d="M52 94L80 120 108 94M60 137L80 152 100 137" fill="none" stroke="#b6a4df" stroke-width="3"/><circle cx="80" cy="127" r="7" fill="#9aa5e8" stroke="#e5d9ff" stroke-width="2"/></g>
 <g class="figure-darkelf-detail"><path d="M56 104L80 114 104 104M58 139L80 128 102 139" fill="none" stroke="#a39dbd" stroke-width="3"/><path d="M75 118L80 124 85 118" fill="#a85882"/></g>
+<g class="figure-tailoring" pointer-events="none">
+<path d="M48 88Q34 86 26 102L19 129 33 145 48 126 57 100Z" fill="var(--armor)" stroke="#292b2b" stroke-width="3"/>
+<path d="M112 88Q126 86 134 102L141 129 127 145 112 126 103 100Z" fill="var(--armor)" stroke="#292b2b" stroke-width="3"/>
+<path d="M28 108L22 127 33 135 44 115M132 108L138 127 127 135 116 115" fill="none" stroke="var(--trim)" stroke-width="3" opacity=".85"/>
+<path d="M30 140L26 160 36 167 48 145 43 132Z M130 140L134 160 124 167 112 145 117 132Z" fill="var(--armor)" stroke="#272a28" stroke-width="3"/>
+<path d="M26 160Q30 175 40 166L44 159 33 153Z M134 160Q130 175 120 166L116 159 127 153Z" fill="#b99073" stroke="#564338" stroke-width="2"/>
+<path d="M51 164L43 195 54 204 76 177 85 179 107 204 117 195 109 164" fill="var(--armor)" stroke="#34312c" stroke-width="2" opacity=".8"/>
+<path d="M51 178L47 194 56 199M109 178L113 194 104 199" fill="none" stroke="var(--trim)" stroke-width="2" opacity=".65"/>
+<path d="M69 43Q73 40 78 44M83 44Q88 40 93 43" stroke="#533b30" stroke-width="2" fill="none"/>
+<path d="M72 61L70 64M90 61L88 64" stroke="#e5b393" stroke-width="2" opacity=".7"/>
+<path d="M78 60L76 68 81 69" fill="none" stroke="#98694f" stroke-width="1.5"/>
+</g>
+<g class="figure-hair-locks" pointer-events="none"><path d="M60 32Q55 58 58 83L64 76 65 38M100 32Q105 58 102 83L96 76 95 38" fill="var(--hair)" stroke="#241e1b" stroke-width="1.5"/></g>
 <g class="figure-helmet"><path d="M54 55Q48 17 80 13Q112 17 106 55L98 49 94 31H66L62 49Z" fill="#aeb7b6" stroke="#404c53" stroke-width="3"/><path d="M78 13V49" stroke="#e8e3c7" stroke-width="5"/><path d="M53 49H107" stroke="#58656a" stroke-width="6"/></g>
 <g class="figure-crown"><path d="M58 34L55 16 68 25 80 9 92 25 105 16 102 34Z" fill="#b99b4d" stroke="#f4d998" stroke-width="2"/></g>
 <g class="figure-ears"><path d="M57 55L45 44 52 66M103 55L115 44 108 66" fill="#cfa17e" stroke="#684d39" stroke-width="2"/></g>
