@@ -561,7 +561,55 @@ html.creation-mobile-landscape #modal .creation-emblem{width:56px!important;heig
 #returnToCharacterSelect{position:fixed;right:18px;bottom:18px;z-index:100;background:#302719;color:#f1dfb9;border:1px solid #a38a55;padding:9px 15px;font:14px 'Microsoft JhengHei',sans-serif;cursor:pointer;box-shadow:0 4px 15px #0008}
 #returnToCharacterSelect:hover{background:#514027}
 body:has(#modal:not([style*="display: none"])) #returnToCharacterSelect{display:none!important}
-</style></head><body><header><b>天與地 · 2004 歷史研究原型</b><small>v0.05-D｜騎士動畫資源檢查｜雙平台｜獨立技術原型・非官方・非原版客戶端・未使用原版圖像音效</small></header><div class="layout"><div class="game"><canvas id="c" width="960" height="620"></canvas><div id="notice">點地面移動｜點怪物攻擊｜點物品拾取｜拖曳移動畫面<div id="spriteStatus" style="color:#f3da93;margin-top:4px">騎士圖片：檢查中</div><img id="spritePreview" alt="騎士圖片預覽" style="display:none;max-height:70px;max-width:90px;image-rendering:pixelated" /></div><div id="mobileBar"><div><button id="centerCam" title="回到角色">定位</button><button id="mobileHeal">藥水</button></div><div><button id="mobileSave">儲存</button><button id="mobileInfo">資訊</button></div></div><button type="button" id="returnToCharacterSelect" hidden>返回角色選擇</button><div id="desktopGameHelp" hidden role="dialog" aria-label="操作說明"><b>Windows 測試操作</b><p>滑鼠點地面：自動尋路<br>點怪物：追擊與攻擊<br>點掉落物：拾取<br>方向鍵：移動畫面<br>C：鏡頭回到角色<br>H：使用治癒藥水<br>S：儲存進度<br>Esc：取消移動／追擊<br>F1 或 ?：開關說明</p><button type="button" id="closeDesktopHelp">關閉說明</button><small>地圖、掉落與戰鬥數值仍為測試資料，非 2004 年原版數據。</small></div><div id="characterSelect" hidden role="dialog" aria-label="選擇角色"><div class="character-select-panel"><h2>選擇角色</h2><p class="select-hint">請選擇角色，再點擊「開始遊戲」</p><button type="button" id="characterSlot" class="character-slot" aria-pressed="true"><span class="slot-emblem"><img id="characterSelectPortrait" alt="角色外觀" loading="eager"></span><span><strong id="selectedCharacterName"></strong><small id="selectedCharacterInfo"></small></span><span class="slot-selected">已選擇</span></button><div class="character-select-actions"><button type="button" id="enterGame">開始遊戲</button><button type="button" id="backToCreation">返回創角</button></div><small class="select-disclaimer">此為角色選擇功能測試介面，原版背景與角色欄位美術仍待考證。</small></div></div><div id="modal"><div class="dialog"><h2>創造角色</h2><div class="creation-columns"><section class="creation-parchment"><div class="scroll-top"></div><h3 id="creationLoreTitle">王族</h3><p id="creationLoreText">選擇職業後顯示職業介紹。</p><small>職業介紹為暫寫摘要，等待原版文字核對。</small><div class="scroll-bottom"></div></section><section class="creation-preview"><div class="creation-heading">選擇職業與角色</div><div id="creationEmblems" class="creation-emblems" role="group" aria-label="環繞人物的職業選擇圖示"></div><img id="referenceCreationBg" alt="" aria-hidden="true" loading="lazy"><div id="creationFigure" class="creation-figure creation-illustrated" aria-label="職業人物預覽">
+
+/* v0.07-E: source-site character selection assets (load.png and load1.png).
+   Layout follows user's four-arch screenshot; unavailable historical fields stay unverified. */
+#characterSelect{background:#000!important;padding:0!important;overflow:hidden!important}
+#characterSelect .character-select-panel{position:absolute!important;left:50%!important;top:50%!important;width:1104px!important;height:824px!important;min-height:0!important;max-width:none!important;box-sizing:border-box!important;margin:0!important;padding:0!important;border:0!important;box-shadow:none!important;transform:translate(-50%,-50%) scale(var(--selection-stage-scale,1))!important;transform-origin:center center!important;background:#070605 url('https://shines871.github.io/idle-lineage-class/public/assets/login/load.png') center/100% 100% no-repeat!important;overflow:hidden!important}
+#characterSelect .selection-decor{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;pointer-events:none;z-index:1}
+#characterSelect .selection-arch-grid{position:absolute;left:1%;top:4%;width:98%;height:49%;display:grid;grid-template-columns:repeat(4,1fr);gap:1.8%;z-index:2}
+#characterSelect .character-slot,#characterSelect .selection-empty-slot{position:relative;min-width:0;height:100%;background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important}
+#characterSelect .character-slot{cursor:pointer;display:flex;align-items:center;justify-content:center}
+#characterSelect #characterSelectPortrait{position:absolute;left:10%;top:11%;width:80%;height:79%;object-fit:contain;filter:drop-shadow(0 0 8px #d8b26a55)!important}
+#characterSelect .slot-selected{position:absolute;bottom:0;left:15%;right:15%;color:#e7d3a2;font-size:15px;text-shadow:0 1px 5px #000}
+#characterSelect .selection-pages{position:absolute;z-index:3;left:44%;top:55%;width:12%;display:flex;justify-content:space-around;color:#a5a092;font-size:20px}
+#characterSelect .selection-pages span.active{color:#f1d89a}
+#characterSelect .selection-details{position:absolute;z-index:3;left:8%;top:66%;width:84%;height:32%;display:grid;grid-template-columns:42% 37% 17%;column-gap:2%;text-align:left}
+#characterSelect .selection-detail-column{display:grid;grid-template-rows:repeat(7,1fr);gap:2px}
+#characterSelect .selection-detail-column>div{display:grid;grid-template-columns:47% 53%;align-items:center;min-height:0;gap:4px}
+#characterSelect .selection-detail-column label{font-family:Georgia,'PMingLiU',serif;font-size:17px;color:#e7d9bb;text-shadow:0 1px 4px #000;text-align:right}
+#characterSelect .selection-detail-column output{display:flex;align-items:center;min-width:0;height:24px;box-sizing:border-box;padding:0 7px;background:#0c0a09e8;border:2px ridge #756459;color:#fff3d9;font-size:13px;overflow:hidden;white-space:nowrap}
+#characterSelect .selection-actions{display:flex;flex-direction:column;gap:8px;justify-content:flex-start;padding-top:5px}
+#characterSelect .selection-actions button{width:100%;min-height:29px;padding:3px!important;background:#100c0b!important;color:#e7d09a!important;border:1px solid #8b713b!important;font:13px 'PMingLiU',serif!important;cursor:pointer}
+#characterSelect .selection-actions button:disabled{opacity:.4;cursor:not-allowed}
+#characterSelect .selection-actions button:not(:disabled):hover{background:#48331b!important}
+</style></head><body><header><b>天與地 · 2004 歷史研究原型</b><small>v0.05-D｜騎士動畫資源檢查｜雙平台｜獨立技術原型・非官方・非原版客戶端・未使用原版圖像音效</small></header><div class="layout"><div class="game"><canvas id="c" width="960" height="620"></canvas><div id="notice">點地面移動｜點怪物攻擊｜點物品拾取｜拖曳移動畫面<div id="spriteStatus" style="color:#f3da93;margin-top:4px">騎士圖片：檢查中</div><img id="spritePreview" alt="騎士圖片預覽" style="display:none;max-height:70px;max-width:90px;image-rendering:pixelated" /></div><div id="mobileBar"><div><button id="centerCam" title="回到角色">定位</button><button id="mobileHeal">藥水</button></div><div><button id="mobileSave">儲存</button><button id="mobileInfo">資訊</button></div></div><button type="button" id="returnToCharacterSelect" hidden>返回角色選擇</button><div id="desktopGameHelp" hidden role="dialog" aria-label="操作說明"><b>Windows 測試操作</b><p>滑鼠點地面：自動尋路<br>點怪物：追擊與攻擊<br>點掉落物：拾取<br>方向鍵：移動畫面<br>C：鏡頭回到角色<br>H：使用治癒藥水<br>S：儲存進度<br>Esc：取消移動／追擊<br>F1 或 ?：開關說明</p><button type="button" id="closeDesktopHelp">關閉說明</button><small>地圖、掉落與戰鬥數值仍為測試資料，非 2004 年原版數據。</small></div><div id="characterSelect" hidden role="dialog" aria-label="選擇角色"><div class="character-select-panel">
+<div class="selection-arch-grid" aria-label="角色展示欄"><button type="button" id="characterSlot" class="character-slot" aria-pressed="true"><img id="characterSelectPortrait" alt="角色外觀" loading="eager"><span class="slot-selected">選擇角色</span></button><div class="selection-empty-slot"></div><div class="selection-empty-slot"></div><div class="selection-empty-slot"></div></div>
+<img class="selection-decor" src="https://shines871.github.io/idle-lineage-class/public/assets/login/load1.png" alt="" aria-hidden="true">
+<div class="selection-pages"><span class="active">1</span><span>2</span></div>
+<div class="selection-details">
+<div class="selection-detail-column">
+<div><label>角色名稱</label><output id="selectedCharacterName"></output></div>
+<div><label>血盟</label><output>－</output></div>
+<div><label>職業</label><output id="selectedCharacterClass"></output></div>
+<div><label>正義值</label><output>待確認</output></div>
+<div><label>體力</label><output id="selectedCharacterHp"></output></div>
+<div><label>魔力</label><output id="selectedCharacterMp"></output></div>
+<div><label>防禦力</label><output>待確認</output></div>
+</div>
+<div class="selection-detail-column">
+<div><label>等級</label><output id="selectedCharacterLevel"></output></div>
+<div><label>力量</label><output id="selectedCharacterStr"></output></div>
+<div><label>敏捷</label><output id="selectedCharacterDex"></output></div>
+<div><label>體質</label><output id="selectedCharacterCon"></output></div>
+<div><label>精神</label><output id="selectedCharacterWis"></output></div>
+<div><label>魅力</label><output id="selectedCharacterCha"></output></div>
+<div><label>智力</label><output id="selectedCharacterInt"></output></div>
+</div>
+<div class="selection-actions"><button type="button" id="enterGame">進入遊戲</button><button type="button" id="saveAndReturn">儲存進度</button><button type="button" disabled title="多角色刪除尚未實裝">刪除角色</button><button type="button" id="backToCreation">返回</button></div>
+</div>
+<div id="selectedCharacterInfo" hidden></div>
+</div></div><div id="modal"><div class="dialog"><h2>創造角色</h2><div class="creation-columns"><section class="creation-parchment"><div class="scroll-top"></div><h3 id="creationLoreTitle">王族</h3><p id="creationLoreText">選擇職業後顯示職業介紹。</p><small>職業介紹為暫寫摘要，等待原版文字核對。</small><div class="scroll-bottom"></div></section><section class="creation-preview"><div class="creation-heading">選擇職業與角色</div><div id="creationEmblems" class="creation-emblems" role="group" aria-label="環繞人物的職業選擇圖示"></div><img id="referenceCreationBg" alt="" aria-hidden="true" loading="lazy"><div id="creationFigure" class="creation-figure creation-illustrated" aria-label="職業人物預覽">
 <img id="referenceCreationAvatar" class="reference-creation-avatar" alt="參考網站角色預覽" loading="lazy"><svg viewBox="0 0 160 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="角色造型預覽">
 <defs><linearGradient id="armorLight" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff" stop-opacity=".33"/><stop offset=".4" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".5"/></linearGradient><linearGradient id="steelBlade" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#4a5860"/><stop offset=".5" stop-color="#e5e9dd"/><stop offset="1" stop-color="#697985"/></linearGradient></defs>
 <ellipse cx="80" cy="238" rx="49" ry="8" fill="#000" opacity=".45"/>
@@ -625,6 +673,12 @@ function showCharacterSelection(){
  portrait.hidden=!frame;
  if(frame){portrait.src=referenceBase+frame[0]+'/'+frame[1]+'.png';portrait.onerror=()=>{portrait.hidden=true;};}
  document.getElementById('characterSlot').setAttribute('aria-pressed','true');
+ document.getElementById('selectedCharacterClass').textContent=player.job;
+ document.getElementById('selectedCharacterLevel').textContent=String(player.lv);
+ document.getElementById('selectedCharacterHp').textContent=player.hp+' / '+player.maxHp;
+ document.getElementById('selectedCharacterMp').textContent=player.mp+' / '+player.maxMp;
+ const fields=['Str','Dex','Con','Int','Wis','Cha'];
+ fields.forEach((key,i)=>{document.getElementById('selectedCharacter'+key).textContent=String(player.stats?.[i]??'待確認')});
  document.getElementById('enterGame').disabled=false;
  document.getElementById('characterSelect').hidden=false;
 }
@@ -646,6 +700,7 @@ function returnToCharacterSelection(){
 document.getElementById('returnToCharacterSelect').onclick=returnToCharacterSelection;
 document.getElementById('characterSlot').onclick=()=>{document.getElementById('characterSlot').setAttribute('aria-pressed','true')};
 document.getElementById('enterGame').onclick=enterSelectedCharacter;
+document.getElementById('saveAndReturn').onclick=()=>save();
 document.getElementById('backToCreation').onclick=()=>{document.getElementById('characterSelect').hidden=true;document.getElementById('modal').style.display='flex';worldEntered=false;document.getElementById('returnToCharacterSelect').hidden=true;};
 function save(){if(!player)return;localStorage.setItem('lineage_2004_research_v003_preview',JSON.stringify({player,drops,monsters}));msg('已儲存到此瀏覽器。')}function load(){try{let d=JSON.parse(localStorage.getItem('lineage_2004_research_v003_preview'));if(!d||!d.player)throw Error();player=d.player;drops=d.drops||[];monsters=d.monsters||[];player.path=[];target=null;centerCamera();document.getElementById('modal').style.display='none';showCharacterSelection();msg('已載入角色，請選擇角色後開始遊戲');update()}catch(e){alert('尚無有效存檔')}}const creationStatNames=['力量 STR','敏捷 DEX','體質 CON','智力 INT','精神 WIS','魅力 CHA'];
 let creationPoints=[0,0,0,0,0,0];
@@ -919,4 +974,7 @@ window.lineageCreationArt={
  window.visualViewport?.addEventListener('resize',fitCreationScreen,{passive:true});
  fitCreationScreen();
 })();
+
+/* Fit the entire character selection stage without cropping its action buttons. */
+(function(){function fit(){const vv=window.visualViewport;const w=vv?.width||innerWidth,h=vv?.height||innerHeight;document.documentElement.style.setProperty('--selection-stage-scale',String(Math.min(w/1104,h/824)));}addEventListener('resize',fit,{passive:true});window.visualViewport?.addEventListener('resize',fit,{passive:true});fit();})();
 </script></body></html>
