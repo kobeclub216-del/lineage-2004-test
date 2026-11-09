@@ -583,6 +583,25 @@ body:has(#modal:not([style*="display: none"])) #returnToCharacterSelect{display:
 #characterSelect .selection-actions button{width:100%;min-height:29px;padding:3px!important;background:#100c0b!important;color:#e7d09a!important;border:1px solid #8b713b!important;font:13px 'PMingLiU',serif!important;cursor:pointer}
 #characterSelect .selection-actions button:disabled{opacity:.4;cursor:not-allowed}
 #characterSelect .selection-actions button:not(:disabled):hover{background:#48331b!important}
+
+/* Traditional Chinese selection typography test: isolated visual patch. */
+#characterSelect .selection-detail-column label{
+ font-family:'Noto Serif TC','Songti TC','PMingLiU',serif!important;
+ font-size:14px!important;font-weight:600!important;letter-spacing:.045em!important;
+ color:#f5dfad!important;line-height:1.2!important;
+ text-shadow:0 0 2px #ffe8b5,0 0 5px #b98235,0 1px 2px #100900!important;
+ background:linear-gradient(90deg,rgba(20,13,11,.94),rgba(20,13,11,.88))!important;
+ padding:2px 4px!important;border-radius:2px!important;
+}
+#characterSelect .selection-detail-column output{
+ font-family:'Noto Serif TC','PMingLiU',serif!important;font-size:12px!important;
+ color:#f1e4c9!important;text-shadow:0 0 3px #a87d3e!important;
+}
+#characterSelect .selection-actions button{
+ font-family:'Noto Serif TC','PMingLiU',serif!important;font-size:12px!important;
+ letter-spacing:.08em!important;text-shadow:0 0 4px #bd8e47!important;
+}
+#characterSelect .slot-selected{font-family:'Noto Serif TC','PMingLiU',serif!important;font-size:14px!important;letter-spacing:.08em!important;text-shadow:0 0 4px #f5cf81,0 0 8px #b47a2c!important;}
 </style></head><body><header><b>天與地 · 2004 歷史研究原型</b><small>v0.05-D｜騎士動畫資源檢查｜雙平台｜獨立技術原型・非官方・非原版客戶端・未使用原版圖像音效</small></header><div class="layout"><div class="game"><canvas id="c" width="960" height="620"></canvas><div id="notice">點地面移動｜點怪物攻擊｜點物品拾取｜拖曳移動畫面<div id="spriteStatus" style="color:#f3da93;margin-top:4px">騎士圖片：檢查中</div><img id="spritePreview" alt="騎士圖片預覽" style="display:none;max-height:70px;max-width:90px;image-rendering:pixelated" /></div><div id="mobileBar"><div><button id="centerCam" title="回到角色">定位</button><button id="mobileHeal">藥水</button></div><div><button id="mobileSave">儲存</button><button id="mobileInfo">資訊</button></div></div><button type="button" id="returnToCharacterSelect" hidden>返回角色選擇</button><div id="desktopGameHelp" hidden role="dialog" aria-label="操作說明"><b>Windows 測試操作</b><p>滑鼠點地面：自動尋路<br>點怪物：追擊與攻擊<br>點掉落物：拾取<br>方向鍵：移動畫面<br>C：鏡頭回到角色<br>H：使用治癒藥水<br>S：儲存進度<br>Esc：取消移動／追擊<br>F1 或 ?：開關說明</p><button type="button" id="closeDesktopHelp">關閉說明</button><small>地圖、掉落與戰鬥數值仍為測試資料，非 2004 年原版數據。</small></div><div id="characterSelect" hidden role="dialog" aria-label="選擇角色"><div class="character-select-panel">
 <div class="selection-arch-grid" aria-label="角色展示欄"><button type="button" id="characterSlot" class="character-slot" aria-pressed="true"><img id="characterSelectPortrait" alt="角色外觀" loading="eager"><span class="slot-selected">選擇角色</span></button><div class="selection-empty-slot"></div><div class="selection-empty-slot"></div><div class="selection-empty-slot"></div></div>
 <img class="selection-decor" src="https://shines871.github.io/idle-lineage-class/public/assets/login/load1.png" alt="" aria-hidden="true">
