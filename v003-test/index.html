@@ -602,6 +602,26 @@ body:has(#modal:not([style*="display: none"])) #returnToCharacterSelect{display:
  letter-spacing:.08em!important;text-shadow:0 0 4px #bd8e47!important;
 }
 #characterSelect .slot-selected{font-family:'Noto Serif TC','PMingLiU',serif!important;font-size:14px!important;letter-spacing:.08em!important;text-shadow:0 0 4px #f5cf81,0 0 8px #b47a2c!important;}
+
+/* A2: cover baked-in English stat captions with a restrained dark inset,
+   while retaining the original ornamental border and interactive elements. */
+#characterSelect .selection-details{
+ background:linear-gradient(90deg,rgba(13,9,9,.94) 0%,rgba(19,13,12,.91) 78%,rgba(14,10,10,.78) 100%)!important;
+ border-radius:3px!important;
+ padding:5px 7px 5px 3px!important;
+}
+#characterSelect .selection-detail-column label{
+ background:transparent!important;
+ padding:1px 5px!important;
+}
+#characterSelect .selection-detail-column output{
+ border:1px solid #756044!important;
+ background:rgba(6,5,5,.94)!important;
+ box-shadow:inset 0 0 4px #000!important;
+}
+#characterSelect .selection-actions button{
+ box-shadow:inset 0 0 6px #5e421c55,0 0 3px #8e6b2a33!important;
+}
 </style></head><body><header><b>天與地 · 2004 歷史研究原型</b><small>v0.05-D｜騎士動畫資源檢查｜雙平台｜獨立技術原型・非官方・非原版客戶端・未使用原版圖像音效</small></header><div class="layout"><div class="game"><canvas id="c" width="960" height="620"></canvas><div id="notice">點地面移動｜點怪物攻擊｜點物品拾取｜拖曳移動畫面<div id="spriteStatus" style="color:#f3da93;margin-top:4px">騎士圖片：檢查中</div><img id="spritePreview" alt="騎士圖片預覽" style="display:none;max-height:70px;max-width:90px;image-rendering:pixelated" /></div><div id="mobileBar"><div><button id="centerCam" title="回到角色">定位</button><button id="mobileHeal">藥水</button></div><div><button id="mobileSave">儲存</button><button id="mobileInfo">資訊</button></div></div><button type="button" id="returnToCharacterSelect" hidden>返回角色選擇</button><div id="desktopGameHelp" hidden role="dialog" aria-label="操作說明"><b>Windows 測試操作</b><p>滑鼠點地面：自動尋路<br>點怪物：追擊與攻擊<br>點掉落物：拾取<br>方向鍵：移動畫面<br>C：鏡頭回到角色<br>H：使用治癒藥水<br>S：儲存進度<br>Esc：取消移動／追擊<br>F1 或 ?：開關說明</p><button type="button" id="closeDesktopHelp">關閉說明</button><small>地圖、掉落與戰鬥數值仍為測試資料，非 2004 年原版數據。</small></div><div id="characterSelect" hidden role="dialog" aria-label="選擇角色"><div class="character-select-panel">
 <div class="selection-arch-grid" aria-label="角色展示欄"><button type="button" id="characterSlot" class="character-slot" aria-pressed="true"><img id="characterSelectPortrait" alt="角色外觀" loading="eager"><span class="slot-selected">選擇角色</span></button><div class="selection-empty-slot"></div><div class="selection-empty-slot"></div><div class="selection-empty-slot"></div></div>
 <img class="selection-decor" src="https://shines871.github.io/idle-lineage-class/public/assets/login/load1.png" alt="" aria-hidden="true">
