@@ -1309,7 +1309,7 @@ window.addEventListener('keydown',e=>{if(!worldEntered)return;if(e.key==='Tab'&&
 (function(){
  const modal=document.getElementById('modal'),select=document.getElementById('characterSelect'),home=document.getElementById('a47Home'),back=document.getElementById('a47CreationReturn');
  function showSlots(){
-  home.hidden=true;modal.style.setProperty('display','none','important');back.hidden=true;worldEntered=false;
+  home.hidden=true;modal.style.display='none';back.hidden=true;worldEntered=false;
   const index=a37Slots.findIndex(Boolean);
   if(index>=0){a37ActiveSlot=index;const record=a37Slots[index];player=structuredClone(record.player);player.path=[];drops=structuredClone(record.drops||[]);monsters=structuredClone(record.monsters||[]);target=null;centerCamera();showCharacterSelection();update();return}
   player=null;a37Page=0;a37ActiveSlot=0;select.hidden=false;
@@ -1318,10 +1318,10 @@ window.addEventListener('keydown',e=>{if(!worldEntered)return;if(e.key==='Tab'&&
   a37RenderSlots();
  }
  document.getElementById('a47Login').onclick=showSlots;
- back.onclick=()=>{modal.style.setProperty('display','none','important');back.hidden=true;showSlots()};
+ back.onclick=()=>{modal.style.display='none';back.hidden=true;showSlots()};
  const observer=new MutationObserver(()=>{back.hidden=home.hidden===false||modal.style.display==='none'||select.hidden===false});
  observer.observe(modal,{attributes:true,attributeFilter:['style']});observer.observe(select,{attributes:true,attributeFilter:['hidden']});
- modal.style.setProperty('display','none','important');select.hidden=true;home.hidden=false;back.hidden=true;
+ modal.style.display='none';select.hidden=true;home.hidden=false;back.hidden=true;
 })();
 </script>
 </body></html>
