@@ -1,0 +1,36 @@
+{
+  "era": "2004-07-research",
+  "note": "All six are original prototype artworks, NOT historical Lineage assets or verified 2004 map layout.",
+  "tiles": {
+    "grass": {
+      "file": "grass.svg",
+      "licenseVerified": true,
+      "provenance": "Original artwork created for this prototype; no third-party assets"
+    },
+    "dirt": {
+      "file": "dirt.svg",
+      "licenseVerified": true,
+      "provenance": "Original artwork created for this prototype; no third-party assets"
+    },
+    "water": {
+      "file": "water.svg",
+      "licenseVerified": true,
+      "provenance": "Original artwork created for this prototype; no third-party assets"
+    },
+    "bridge": {
+      "file": "bridge.svg",
+      "licenseVerified": true,
+      "provenance": "Original artwork created for this prototype; no third-party assets"
+    },
+    "tree": {
+      "file": "tree.svg",
+      "licenseVerified": true,
+      "provenance": "Original artwork created for this prototype; no third-party assets"
+    },
+    "rock": {
+      "file": "rock.svg",
+      "licenseVerified": true,
+      "provenance": "Original artwork created for this prototype; no third-party assets"
+    }
+  }
+}
