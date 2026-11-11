@@ -1,0 +1,1250 @@
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><title>天堂 2004｜創角畫面 v0.05-S</title><style>*{box-sizing:border-box}body{margin:0;background:#10130f;color:#e7dfc8;font-family:Arial,'Microsoft JhengHei',sans-serif}header{padding:12px 16px;background:#22291f;border-bottom:2px solid #8c7950}header b{font-size:20px;color:#f1d69a}header small{display:block;color:#b6b5a9;margin-top:4px}.layout{display:flex;gap:10px;padding:10px;max-width:1280px;margin:auto}.game{flex:1;min-width:0;position:relative}canvas{display:block;width:100%;background:#26372c;border:2px solid #66573a;cursor:crosshair;touch-action:none}aside{width:250px;background:#20271f;border:1px solid #62583c;padding:12px}h3{margin:8px 0;color:#e4c886}.stat{margin:8px 0}.meter{height:12px;background:#101510;border:1px solid #5a5a49}.meter i{display:block;height:100%;background:#a8403e}.meter.mp i{background:#3c75ad}.meter.xp i{background:#b7a04a}button,select,input{background:#343c2f;color:#f4e6c4;border:1px solid #85764f;padding:8px;border-radius:3px}button{cursor:pointer;margin:3px 2px}button:hover{background:#526047}.panel{margin-top:12px;padding:9px;background:#161c17;border:1px solid #4d513f;font-size:13px;line-height:1.6}#log{height:122px;overflow:auto;font-size:12px;color:#c6c1ab}#modal{position:absolute;inset:0;background:#000b;display:flex;align-items:center;justify-content:center;padding:12px}#modal .dialog{max-width:430px;width:100%;background:#252e24;border:2px solid #a58c54;padding:20px}#modal label{display:block;margin:12px 0}#modal input,#modal select{width:100%;margin-top:5px}#modal .hint{font-size:12px;color:#d0c5a6}#notice{position:absolute;left:12px;top:12px;background:#131c15cc;padding:6px 10px;font-size:12px;pointer-events:none}@media(max-width:800px){.layout{display:block}aside{width:auto;margin-top:10px}header b{font-size:17px}}
+/* v0.02: touch-first responsive UI, desktop preserved */
+html,body{overscroll-behavior:none}button{min-height:40px}#mobileBar{display:none}#notice{max-width:calc(100% - 20px)}
+@media(pointer:coarse){button,select,input{font-size:16px;min-height:44px}#notice{font-size:11px}canvas{touch-action:none}}
+@media(max-width:950px){header{display:none}.layout{padding:3px;gap:4px;max-width:none}aside{width:205px;padding:5px;font-size:12px}aside h3{font-size:15px;margin:3px 0}.panel{margin-top:5px;padding:5px;font-size:11px}.stat{margin:4px 0}.meter{height:8px}#log{height:45px}#mobileBar{display:flex;position:absolute;left:6px;bottom:6px;right:6px;align-items:center;justify-content:space-between;pointer-events:none;gap:5px}#mobileBar button{pointer-events:auto;background:#202b20e8;border:1px solid #b19b66;font-weight:bold;min-width:52px;min-height:44px}#notice{top:4px;left:4px;font-size:10px;padding:4px}#attributes{display:none}aside>.panel:last-child{display:none}}
+@media(max-width:950px) and (orientation:landscape){.layout{display:flex;height:100dvh;overflow:hidden}.game{height:100%;display:flex;align-items:center}canvas{max-height:100%;height:100%;object-fit:contain}aside{height:100%;overflow-y:auto;flex-shrink:0}#modal{z-index:10}#modal .dialog{max-height:95dvh;overflow-y:auto;padding:12px}#modal label{margin:5px 0}#modal h2{margin:3px 0}}
+@media(max-width:950px) and (orientation:portrait){.layout{display:block}.game{width:100%}aside{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:3px}aside .panel{margin:0}#log{height:50px}#mobileBar{display:flex}#notice{font-size:10px}}
+
+/* v0.05-D: classic desktop-style fixed status panel and undistorted map viewport. */
+@media(min-width:951px){
+ .layout{max-width:1500px;width:100%;gap:12px;padding:12px;align-items:flex-start}
+ .game{flex:1 1 auto;min-width:0}
+ .game canvas{width:100%;height:auto;aspect-ratio:960/620;object-fit:contain}
+ aside{flex:0 0 264px;width:264px;position:sticky;top:12px;max-height:calc(100dvh - 24px);overflow-y:auto}
+ #mobileBar{display:none}
+}
+@media(min-width:951px) and (max-height:800px){header{padding:6px 12px}header small{margin-top:1px}.layout{padding-top:6px}aside{top:6px;max-height:calc(100dvh - 12px)}}
+@media(max-width:950px) and (orientation:landscape){
+ .layout{align-items:stretch}
+ .game{min-width:0;justify-content:center}
+ .game canvas{width:auto;max-width:100%;height:auto;max-height:100%;aspect-ratio:960/620;object-fit:contain}
+ aside{flex:0 0 205px;width:205px}
+}
+
+/* v0.05-D: provisional classic-style two-column creation screen; not a pixel-perfect original. */
+#modal{z-index:20;background:radial-gradient(ellipse at 45% 35%,#3d3a2b 0%,#171b18 62%,#080b09 100%)}
+#modal .dialog{width:min(900px,100%);max-width:900px;max-height:96dvh;overflow:auto;border:3px double #b09a68;box-shadow:0 12px 42px #000b;background:#22271f;padding:16px}
+#modal h2{text-align:center;margin:0 0 10px;color:#e9d3a0;letter-spacing:3px}
+.creation-columns{display:grid;grid-template-columns:minmax(155px,0.9fr) minmax(260px,1.2fr);gap:16px}
+.creation-preview{border:1px solid #766b4a;background:linear-gradient(145deg,#343d30,#171e19);padding:12px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:330px}
+.creation-heading{color:#d8c28b;font-weight:bold;font-size:14px}
+.creation-figure{height:175px;width:116px;position:relative;margin:14px auto 6px;filter:drop-shadow(7px 8px 5px #0009);--armor:#67777b}
+.creation-head{position:absolute;left:42px;top:15px;width:34px;height:38px;border-radius:45% 45% 40% 40%;background:#d4b08c;border-top:12px solid #292521}
+.creation-body{position:absolute;left:23px;top:53px;width:72px;height:82px;background:var(--armor);clip-path:polygon(25% 0,75% 0,100% 26%,85% 100%,15% 100%,0 26%);border-bottom:9px solid #443d30}
+.creation-legs{position:absolute;left:31px;top:133px;width:56px;height:39px;background:linear-gradient(90deg,#403f39 0 43%,transparent 43% 57%,#403f39 57%)}
+.creation-figure[data-gender="女"] .creation-body{width:62px;left:28px;clip-path:polygon(27% 0,73% 0,90% 30%,100% 100%,0 100%,10% 30%)}
+#creationCaption{font-size:16px;color:#f3dda4;font-weight:bold}
+.creation-historical{font-size:11px;color:#b6b09d;margin-top:9px;line-height:1.5}
+.creation-controls{min-width:0}#modal .creation-controls label{margin:5px 0}#modal .creation-controls .panel{margin:7px 0}
+@media(max-width:600px){.creation-columns{grid-template-columns:110px minmax(0,1fr);gap:7px}.creation-preview{min-height:220px;padding:5px}.creation-figure{transform:scale(.65);margin:-8px auto -23px}.creation-heading{font-size:11px}.creation-historical{font-size:10px}#modal .dialog{padding:7px}#modal h2{font-size:17px}#modal .creation-controls .hint{font-size:10px}}
+
+/* v0.05-D: visible five-class selector, while retaining the tested select control. */
+.creation-class-tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;margin:7px 0}
+.creation-class-tabs button{font-size:12px;min-height:38px;margin:0;padding:4px 1px;border:1px solid #7c6a44;background:#30352b;color:#d7c9a8}
+.creation-class-tabs button.selected{background:#75623b;border-color:#e1c481;color:#fff4d2;box-shadow:inset 0 0 0 1px #c9a76a}
+@media(max-width:600px){.creation-class-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}.creation-class-tabs button{min-height:32px}}
+
+/* v0.05-D: screenshot-guided composition. All ornaments and placeholder figure are CSS-made. */
+#modal{background:radial-gradient(circle at 54% 35%,#36352c 0%,#151612 42%,#090a09 85%)}
+#modal .dialog{max-width:1040px;width:min(1040px,100%);background:linear-gradient(145deg,#22221c,#0c0e0c 55%,#29261e);border:1px solid #4b402d;padding:14px;box-shadow:inset 0 0 45px #000,0 12px 45px #000}
+#modal .dialog>h2{font-size:18px;letter-spacing:6px;color:#bba87c}
+#modal .creation-columns{display:grid;grid-template-columns:30% 25% minmax(0,45%);gap:10px;align-items:stretch}
+#modal .creation-parchment{position:relative;min-height:395px;padding:48px 18px 40px;background:linear-gradient(90deg,#b2a17c,#f0e5c8 12%,#e7dcc0 83%,#aa9771);color:#29251d;box-shadow:inset 0 0 22px #7c664a,5px 6px 8px #0008;line-height:1.7}
+.creation-parchment h3{color:#242017;text-align:center;margin:0 0 18px;font-size:17px}.creation-parchment p{white-space:pre-line;font-size:14px;margin:0 0 20px}.creation-parchment small{font-size:11px;color:#554e3c}
+.scroll-top,.scroll-bottom{position:absolute;left:-6px;right:-6px;height:24px;border-radius:50%;background:linear-gradient(#e9dcc0,#a68c62 48%,#57432a 80%,#b59a6b);box-shadow:0 3px 6px #0009}.scroll-top{top:3px}.scroll-bottom{bottom:3px}
+#modal .creation-preview{background:radial-gradient(ellipse at 50% 68%,#a950172e,#151a15 62%,transparent 80%);border:0;min-height:395px;padding:10px 0}
+#modal .creation-figure{transform:scale(1.25);margin:42px auto 37px}
+#modal .creation-preview:after{content:'';width:105px;height:17px;border-radius:50%;background:radial-gradient(ellipse,#e3a33d,#d95417 45%,#b23c1010 73%,transparent 76%);box-shadow:0 0 23px #e47c24;order:2;margin-top:-28px;margin-bottom:18px}
+#modal .creation-controls{display:flex;flex-direction:column;gap:3px}
+#modal .creation-class-tabs{order:0;grid-template-columns:repeat(5,minmax(0,1fr));margin:2px 0 6px}
+#modal .creation-class-tabs button{min-height:45px;font-size:12px;background:#29291f;border:1px solid #5f5035;color:#d2c3a0}
+#modal .creation-class-tabs button.selected{background:#77613a;border-color:#e0bb76}
+#modal .creation-controls label{font-size:12px;margin:2px 0}
+#modal .creation-controls .panel{font-size:12px;background:#131510d9;border:1px solid #66583d;line-height:1.3}
+#modal .creation-controls .hint{font-size:10px;line-height:1.3;margin:2px 0;color:#aaa18b}
+#modal .creation-controls button{min-height:32px}
+@media(max-width:700px){#modal .dialog{padding:5px}#modal .creation-columns{grid-template-columns:27% 23% minmax(0,50%);gap:3px}#modal .creation-parchment{min-height:300px;padding:31px 7px 25px}.creation-parchment h3{font-size:12px;margin-bottom:8px}.creation-parchment p{font-size:10px;line-height:1.4}.creation-parchment small{font-size:8px}#modal .creation-preview{min-height:300px}#modal .creation-figure{transform:scale(.75);margin:0 auto -12px}#modal .creation-class-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}#modal .creation-class-tabs button{min-height:29px;font-size:10px}#modal .creation-controls .hint{display:none}#modal .creation-controls label{font-size:11px}#modal .creation-controls input,#modal .creation-controls select{padding:3px;min-height:30px;font-size:12px}#modal .creation-controls .panel{padding:3px;font-size:10px}#modal .creation-controls .panel button{min-height:25px}}
+
+/* v0.05-D: character-centered five emblems, inspired by the user-supplied layout.
+   Symbols are generic Unicode stand-ins, not extracted original game artwork. */
+#modal .creation-preview{position:relative;isolation:isolate;overflow:visible}
+.creation-emblems{position:absolute;inset:35px 0 45px;pointer-events:none;z-index:3}
+#modal .creation-emblem{position:absolute;pointer-events:auto;width:42px;height:42px;min-height:42px;margin:0;padding:0;border:0;border-radius:50%;background:#161811aa;color:#d9c18a;font-size:27px;text-shadow:0 0 7px #e6bd60;box-shadow:0 0 0 1px #6e5c3388}
+#modal .creation-emblem.selected{color:#fff2ba;box-shadow:0 0 12px #e7b84c,inset 0 0 8px #aa752e;background:#463923}
+.creation-emblem.royal{top:1%;left:7%}.creation-emblem.knight{top:5%;right:4%}.creation-emblem.elf{top:31%;left:-1%}.creation-emblem.mage{top:33%;right:-1%}.creation-emblem.darkelf{bottom:8%;left:7%}
+#modal .creation-emblem:focus-visible{outline:2px solid #fff0b8;outline-offset:2px}
+@media(max-width:700px){#modal .creation-emblems{inset:40px 0 25px}#modal .creation-emblem{width:27px;height:27px;min-height:27px;font-size:18px}}
+
+/* v0.05-D: screenshot-oriented controls and dedicated gender selection. */
+#modal .creation-controls{justify-content:flex-start}
+#modal .creation-controls>label:first-child{order:5;margin-top:8px}
+#modal .creation-controls #creationClassTabs{order:0}
+#modal .creation-controls>label:has(#job){order:1}
+#modal .creation-controls #creationGenderButtons{order:2}
+#modal .creation-controls>label:has(#gender){order:3}
+#modal .creation-controls #creationStats{order:4}
+#modal .creation-controls .hint{order:7}
+#modal .creation-controls #start{order:6;background:linear-gradient(#74623d,#3c3425);border:1px solid #a88d54;color:#fff1c9}
+#modal .creation-controls #load{order:8}
+.creation-gender-buttons{display:flex;gap:6px;margin:3px 0}
+#modal .creation-gender-buttons button{flex:1;min-height:33px;background:#29291f;border:1px solid #685638;color:#c4b594}
+#modal .creation-gender-buttons button.selected{background:#6e5c3c;color:#fff0c4;border-color:#d1b171}
+#modal .creation-controls #creationStats>div{border-bottom:1px solid #8a795125;padding-bottom:1px}
+#modal .creation-controls #creationStats>div:last-child{border:0}
+@media(max-width:700px){#modal .creation-controls>label:first-child{margin-top:3px}#modal .creation-gender-buttons button{min-height:28px;font-size:11px}}
+
+/* v0.05-D: compact two-column stat panel based on the supplied classic layout.
+   No change to character stat calculations or historical-status labels. */
+#modal #creationStats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:3px 7px;align-items:center}
+#modal #creationStats>.stat-heading{grid-column:1/-1;text-align:center;color:#d9c69b;font-size:13px;letter-spacing:2px}
+#modal #creationStats>.stat-remaining{grid-column:1/-1;text-align:center;font-size:12px;border-bottom:1px solid #74623b77;padding-bottom:4px}
+#modal #creationStats>.creation-stat-row{display:grid;grid-template-columns:minmax(0,1fr) 25px 25px;gap:2px;align-items:center;min-width:0;margin:0;border-bottom:1px solid #77694933;padding:1px 0}
+#modal .creation-stat-name{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#e0d5bd}
+#modal .creation-stat-row .stat-step{min-width:0;width:25px;min-height:24px;height:24px;padding:0;margin:0;font-size:14px;line-height:1;border:1px solid #71613f;background:#2a2c24}
+#modal .creation-stat-row .stat-step:disabled{opacity:.3;cursor:not-allowed}
+#modal #creationStats>.stat-provisional-note{grid-column:1/-1;font-size:10px;line-height:1.35;color:#c7b88e;padding-top:4px}
+#modal #creationStats>.creation-stat-row:nth-of-type(2n){background:#ffffff05}
+#modal .creation-controls #start:disabled{opacity:.45;cursor:not-allowed}
+@media(max-width:700px){#modal #creationStats{gap:2px 3px}#modal .creation-stat-name{font-size:9px}#modal .creation-stat-row .stat-step{width:20px;height:23px;min-height:23px}#modal #creationStats>.creation-stat-row{grid-template-columns:minmax(0,1fr) 20px 20px}#modal #creationStats>.stat-provisional-note{font-size:9px}}
+
+/* v0.05-E: original inline SVG character concept, five class silhouettes and gender variations.
+   This is original temporary artwork, NOT a ripped 2004 Lineage sprite. */
+#modal .creation-illustrated{width:160px;height:250px;margin:0 auto 0;transform:scale(.94);transform-origin:center center;--armor:#77818b;--cloak:#343b46;--hair:#29221e;filter:drop-shadow(4px 7px 5px #000b)}
+#modal .creation-illustrated svg{width:100%;height:100%;overflow:visible}
+#modal .creation-illustrated .figure-longhair,#modal .creation-illustrated .figure-helmet,#modal .creation-illustrated .figure-crown,#modal .creation-illustrated .figure-ears,#modal .creation-illustrated .figure-staff,#modal .creation-illustrated .figure-bow,#modal .creation-illustrated .figure-daggers{display:none}
+#modal .creation-illustrated[data-gender="女"] .figure-longhair{display:block}
+#modal .creation-illustrated[data-job="王族"]{--armor:#b4a16c;--cloak:#613c34}#modal .creation-illustrated[data-job="王族"] .figure-crown{display:block}
+#modal .creation-illustrated[data-job="騎士"]{--armor:#84939c;--cloak:#3b404c}#modal .creation-illustrated[data-job="騎士"] .figure-helmet{display:block}
+#modal .creation-illustrated[data-job="妖精"]{--armor:#6f8d68;--cloak:#3e5945}#modal .creation-illustrated[data-job="妖精"] .figure-ears,#modal .creation-illustrated[data-job="妖精"] .figure-bow{display:block}#modal .creation-illustrated[data-job="妖精"] .figure-sword{display:none}
+#modal .creation-illustrated[data-job="法師"]{--armor:#6d688e;--cloak:#302f54}#modal .creation-illustrated[data-job="法師"] .figure-staff{display:block}#modal .creation-illustrated[data-job="法師"] .figure-sword{display:none}
+#modal .creation-illustrated[data-job="黑暗妖精"]{--armor:#555569;--cloak:#292733;--hair:#dedede}#modal .creation-illustrated[data-job="黑暗妖精"] .figure-ears,#modal .creation-illustrated[data-job="黑暗妖精"] .figure-daggers{display:block}#modal .creation-illustrated[data-job="黑暗妖精"] .figure-sword{display:none}
+#modal .creation-illustrated[data-gender="女"] svg{transform:scaleX(.93)}
+@media(max-width:700px){#modal .creation-illustrated{transform:scale(.64);margin:-35px auto -42px}}
+
+/* v0.05-F: per-class costume detail layers, stage lighting and reduced UI obstruction. */
+#modal .creation-illustrated{--trim:#c7b18a;z-index:2;position:relative}
+#modal .creation-illustrated .figure-royal-detail,#modal .creation-illustrated .figure-knight-detail,#modal .creation-illustrated .figure-elf-detail,#modal .creation-illustrated .figure-mage-detail,#modal .creation-illustrated .figure-darkelf-detail{display:none}
+#modal .creation-illustrated[data-job="王族"]{--trim:#e1c471}#modal .creation-illustrated[data-job="王族"] .figure-royal-detail{display:block}
+#modal .creation-illustrated[data-job="騎士"]{--trim:#c3d1d3}#modal .creation-illustrated[data-job="騎士"] .figure-knight-detail{display:block}
+#modal .creation-illustrated[data-job="妖精"]{--trim:#c2d9a0}#modal .creation-illustrated[data-job="妖精"] .figure-elf-detail{display:block}
+#modal .creation-illustrated[data-job="法師"]{--trim:#bfb0e6}#modal .creation-illustrated[data-job="法師"] .figure-mage-detail{display:block}
+#modal .creation-illustrated[data-job="黑暗妖精"]{--trim:#b2a7c3}#modal .creation-illustrated[data-job="黑暗妖精"] .figure-darkelf-detail{display:block}
+#modal .creation-preview{background:radial-gradient(ellipse 90px 150px at 50% 43%,#bd9a5333,transparent 100%),radial-gradient(ellipse 110px 45px at 50% 73%,#b65b1a35,transparent 100%),linear-gradient(90deg,#12170f33,#38392a22 50%,#12170f33)}
+#modal .creation-preview::before{content:'';position:absolute;left:50%;top:23%;width:120px;height:220px;transform:translateX(-50%);background:radial-gradient(ellipse,#d7b46a19,transparent 72%);pointer-events:none}
+#modal .creation-illustrated svg{filter:drop-shadow(0 0 8px #c28e3b20)}
+#modal .creation-emblems{z-index:4}
+#modal .creation-illustrated[data-gender="女"] .figure-longhair{display:block}
+@media(max-width:700px){#modal .creation-preview::before{display:none}}
+
+/* v0.05-G: larger figure, medieval illustration silhouette and screenshot-inspired stage.
+   The original 2004 art has not been sourced or reproduced. */
+@media(min-width:701px){
+#modal .dialog{max-width:1100px;width:min(1100px,98vw);padding:10px 15px 14px}
+#modal .creation-columns{grid-template-columns:32% 34% minmax(0,34%);gap:9px}
+#modal .creation-preview{min-height:475px;padding:10px 4px 2px}
+#modal .creation-parchment{min-height:475px;padding-top:58px}
+#modal .creation-illustrated{transform:scale(1.36);margin:43px auto 54px}
+#modal .creation-emblems{inset:54px 10px 64px}
+#modal .creation-emblem{width:45px;height:45px;min-height:45px}
+}
+#modal .creation-illustrated .figure-hair-locks{display:none}
+#modal .creation-illustrated[data-gender="女"] .figure-hair-locks{display:block}
+#modal .creation-illustrated[data-job="法師"] .figure-hair-locks,#modal .creation-illustrated[data-job="黑暗妖精"] .figure-hair-locks{display:block}
+#modal .creation-illustrated[data-job="騎士"] .figure-hair-locks{display:none}
+#modal .creation-illustrated .figure-tailoring{filter:drop-shadow(1px 2px 1px #0008)}
+#modal .creation-preview{background:radial-gradient(ellipse 140px 260px at 50% 42%,#b2a57d21,transparent 90%),linear-gradient(90deg,#0c120e,#25291d 48%,#0b110e);box-shadow:inset 0 0 38px #050806;border-left:1px solid #5c5235;border-right:1px solid #5c5235}
+#modal .creation-preview:after{width:160px;height:25px;box-shadow:0 0 32px #e47c24;opacity:.85}
+#modal .creation-heading{color:#d7c49b;letter-spacing:2px;font-size:12px}
+#modal .creation-historical{font-size:10px;color:#958d79}
+#modal .creation-parchment{background:repeating-linear-gradient(0deg,transparent 0 23px,#6f60410a 24px),linear-gradient(95deg,#9b8966,#d6c49f 9%,#e5d7b5 55%,#c4b08a 92%,#8a7554);border:1px solid #85704e}
+#modal .creation-parchment h3{font-family:serif;font-size:22px;letter-spacing:4px;border-bottom:1px solid #857552;padding-bottom:10px}
+#modal .creation-parchment p{font-family:serif;font-size:16px;line-height:2}
+#modal .creation-class-tabs button{border-radius:2px;box-shadow:inset 0 1px 0 #b4a16b25}
+#modal .creation-controls input,#modal .creation-controls select{background:#13160f;color:#e6d7ae;border:1px solid #74603e}
+@media(max-width:700px){#modal .creation-illustrated{transform:scale(.72);margin:-24px auto -35px}#modal .creation-parchment p{font-size:10px;line-height:1.5}}
+
+/* v0.05-H: direct visual reference from the user-specified fan site; no asset redistribution.
+   Known prince preview is shown only if successfully loaded; other classes retain original SVG fallback. */
+#modal .creation-preview{position:relative;overflow:hidden;background:#131710}
+#referenceCreationBg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.6;pointer-events:none;z-index:0}
+#modal .creation-illustrated{z-index:2}
+#modal .creation-illustrated .reference-creation-avatar{display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:contain;image-rendering:auto;filter:drop-shadow(0 8px 8px #000b)}
+#modal .creation-illustrated.reference-loaded svg{visibility:hidden}
+#modal .creation-illustrated.reference-loaded .reference-creation-avatar{display:block!important}
+#modal .creation-emblem img{width:100%;height:100%;object-fit:contain;pointer-events:none}
+#modal .creation-emblem{display:flex;align-items:center;justify-content:center;overflow:hidden}
+#modal .creation-preview::before{z-index:1}
+#modal .creation-preview .creation-heading,#modal .creation-preview #creationCaption,#modal .creation-preview .creation-historical{position:relative;z-index:3}
+
+/* v0.05-I: all five classes x two genders from the user-provided site's verified frame map. */
+#modal .creation-illustrated.reference-loaded .reference-creation-avatar{object-fit:contain;object-position:center bottom;mix-blend-mode:screen;filter:drop-shadow(0 12px 10px #000b) contrast(1.06) saturate(1.07)}
+@media(min-width:701px){#modal .creation-illustrated.reference-loaded{transform:scale(1.5)}}
+
+/* v0.05-J: reliable per-frame loading, visible gender labels and portrait proportions. */
+#creationAnimationStatus{position:relative;z-index:5;font-size:11px;color:#c9b27c;min-height:18px;margin-top:3px}
+#modal .creation-illustrated.reference-loaded .reference-creation-avatar{mix-blend-mode:normal;object-position:center bottom;filter:drop-shadow(0 8px 12px #000b);image-rendering:auto}
+#modal .creation-illustrated.reference-loaded svg{display:none}
+#modal .creation-illustrated[data-gender="女"].reference-loaded{outline:1px solid #d5b97b44;outline-offset:4px}
+#modal .creation-gender-buttons button.selected{box-shadow:inset 0 0 0 1px #ffe4a6,0 0 8px #d3a65a55}
+
+/* v0.05-K: original-reference-oriented creation screen, retaining working controls and animation. */
+@media(min-width:701px){
+#modal .dialog{max-width:1190px;width:min(1190px,98vw);background:linear-gradient(145deg,#25281e,#10140f 55%,#1a1c15);border:2px solid #81714d;box-shadow:0 0 0 4px #15170f,0 22px 75px #000c}
+#modal .creation-columns{grid-template-columns:29% 39% minmax(0,32%);gap:6px}
+#modal .creation-preview{min-height:525px;padding-top:12px}
+#modal .creation-parchment{min-height:525px;padding:65px 20px 24px}
+#modal .creation-illustrated.reference-loaded{transform:scale(1.73);margin:64px auto 83px}
+#modal .creation-emblems{inset:57px 15px 85px}
+#modal .creation-emblem{width:53px;height:53px;min-height:53px}
+}
+#modal .creation-preview{isolation:isolate;border:1px solid #7d6d43;box-shadow:inset 0 0 65px #000c}
+#referenceCreationBg{opacity:.83;object-position:center;filter:saturate(.8) contrast(1.12)}
+#modal .creation-preview::after{content:'';position:absolute;bottom:45px;left:50%;transform:translateX(-50%);width:155px;height:28px;border-radius:50%;background:radial-gradient(ellipse,#ffba52b8 0%,#b9502380 40%,transparent 72%);filter:blur(9px);z-index:1;pointer-events:none}
+#modal .creation-heading{font-family:serif;letter-spacing:2px;text-shadow:0 2px 4px #000,0 0 8px #000;background:linear-gradient(90deg,transparent,#151910c9,transparent);padding:6px 0}
+#modal .creation-emblems{z-index:5}
+#modal .creation-emblem{background:radial-gradient(circle,#504b31,#1a1d16 80%);border:1px solid #9a8251;box-shadow:0 2px 9px #000a;transition:filter .15s,box-shadow .15s}
+#modal .creation-emblem.selected{filter:brightness(1.3);box-shadow:0 0 0 2px #d7bd75,0 0 18px #ffbf59}
+#modal .creation-emblem img{object-fit:contain;max-width:92%;max-height:92%}
+#modal .creation-parchment{box-shadow:inset 0 0 24px #6b4e2a55,4px 0 15px #0007}
+#modal .creation-parchment h3{color:#4b2f18;text-shadow:0 1px #f5e2b4}
+#modal .creation-parchment p{color:#3c3020}
+#modal .creation-controls{background:linear-gradient(100deg,#22251d,#161a15);border-left:1px solid #7a6943;padding:12px}
+#modal .creation-controls .panel{border:1px solid #74633f;background:#171d16}
+#modal .creation-illustrated.reference-loaded .reference-creation-avatar{image-rendering:auto;object-fit:contain;object-position:center bottom}
+@media(max-width:700px){#modal .creation-preview{min-height:365px}#modal .creation-illustrated.reference-loaded{transform:scale(1.1)}#modal .creation-emblems{z-index:5}}
+
+/* v0.05-L: blend black-backed reference sprite into the scene without changing frame playback. */
+#modal .creation-preview{background:#0c0e0b;isolation:isolate}
+#referenceCreationBg{z-index:0;opacity:.95;filter:saturate(.9) contrast(1.05)}
+#modal .creation-illustrated.reference-loaded{background:transparent!important;border:0!important;box-shadow:none!important;isolation:auto}
+#modal .creation-illustrated.reference-loaded .reference-creation-avatar{mix-blend-mode:screen!important;filter:drop-shadow(0 3px 7px #0008) saturate(1.05)!important;opacity:1}
+#modal .creation-preview::before{content:''!important;display:block!important;position:absolute;inset:0;z-index:1;pointer-events:none;background:radial-gradient(ellipse 45% 66% at 50% 46%,transparent 24%,#080b09a0 100%)}
+#modal .creation-preview .creation-illustrated{position:relative;z-index:2}
+#modal .creation-preview::after{z-index:1}
+
+/* v0.05-M: suppress SVG flash while image loads and feather the hard-edged sprite rectangle. */
+#modal .creation-illustrated.reference-pending svg,#modal .creation-illustrated.reference-loaded svg{display:none!important;visibility:hidden!important}
+#modal .creation-illustrated.reference-pending{background:transparent!important;box-shadow:none!important}
+#modal .creation-illustrated.reference-pending .reference-creation-avatar{visibility:hidden!important}
+#modal .creation-illustrated.reference-loaded .reference-creation-avatar{
+ visibility:visible!important;mix-blend-mode:screen!important;
+ -webkit-mask-image:radial-gradient(ellipse 48% 48% at 50% 50%,#000 46%,#000e 60%,#0008 76%,transparent 100%)!important;
+ mask-image:radial-gradient(ellipse 48% 48% at 50% 50%,#000 46%,#000e 60%,#0008 76%,transparent 100%)!important;
+ -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+}
+
+/* v0.05-N: screenshot-proportioned single-screen creation layout. No separate right text window. */
+@media(min-width:701px){
+#modal{padding:0!important;display:flex;align-items:center;justify-content:center;overflow:auto}
+#modal .dialog{position:relative;width:min(1260px,100vw,173.55vh);height:min(726px,100vh,57.62vw);max-width:none;max-height:none;min-height:560px;padding:0!important;overflow:hidden;border:0!important;border-radius:0!important;background:#11100d url('https://shines871.github.io/idle-lineage-class/public/assets/login/824.png') center/100% 100% no-repeat!important;box-shadow:0 0 90px #000!important}
+#modal .dialog>h2{display:none!important}
+#modal .creation-columns{position:absolute;inset:0;display:block!important;margin:0!important;gap:0!important}
+#modal .creation-parchment{position:absolute;left:10.5%;top:1%;width:33.5%;height:84%;min-height:0!important;padding:15% 8% 5% 8%!important;background:linear-gradient(90deg,#d0bd94,#f1e7c9 10%,#f4ead2 85%,#c2a778)!important;border:0!important;clip-path:polygon(1% 1%,98% 1%,100% 96%,94% 100%,2% 99%,0 94%);overflow:hidden;box-shadow:none!important;z-index:2}
+#modal .creation-parchment .scroll-top,#modal .creation-parchment .scroll-bottom{display:none!important}
+#modal .creation-parchment h3{font-size:clamp(13px,1.25vw,17px)!important;color:#29241b!important;letter-spacing:0!important;text-align:center;border:0!important;padding:0!important;margin:0 0 12px!important}
+#modal .creation-parchment p{font-size:clamp(11px,1.03vw,14px)!important;line-height:1.55!important;color:#27221a!important}
+#modal .creation-parchment small{display:none!important}
+#modal .creation-preview{position:absolute!important;left:48%;top:4%;width:38%;height:54%;min-height:0!important;padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important;overflow:visible!important;isolation:isolate}
+#modal #referenceCreationBg{display:none!important}
+#modal .creation-preview::before,#modal .creation-preview::after{display:none!important}
+#modal .creation-heading,#modal #creationCaption,#modal #creationAnimationStatus,#modal .creation-historical{display:none!important}
+#modal .creation-illustrated.reference-loaded{position:absolute!important;left:50%;top:9%;margin:0!important;transform:translateX(-50%) scale(1.48)!important;transform-origin:top center;background:transparent!important}
+#modal .creation-emblems{position:absolute!important;inset:0!important;z-index:5!important}
+#modal .creation-emblem{position:absolute!important;width:56px!important;height:56px!important;min-height:56px!important;border:0!important;background:transparent!important;box-shadow:none!important;filter:drop-shadow(0 0 5px #ffe9a4)!important}
+#modal .creation-emblem.royal{top:3%!important;left:-3%!important}
+#modal .creation-emblem.knight{top:4%!important;left:49%!important;right:auto!important}
+#modal .creation-emblem.elf{top:35%!important;left:-4%!important}
+#modal .creation-emblem.mage{top:35%!important;left:48%!important;right:auto!important}
+#modal .creation-emblem.darkelf{top:74%!important;left:-2%!important;bottom:auto!important}
+#modal .creation-emblem.selected{filter:drop-shadow(0 0 12px #fff1a4)!important;outline:1px solid #ffedaa;border-radius:50%}
+#modal .creation-controls{position:absolute!important;left:50%;top:57%;width:37%;height:42%;padding:0!important;display:block!important;min-height:0!important;background:transparent!important;border:0!important;box-shadow:none!important;z-index:6}
+#modal .creation-controls #creationClassTabs,#modal .creation-controls>label:has(#job),#modal .creation-controls>label:has(#gender),#modal .creation-controls .hint,#modal .creation-controls #load{display:none!important}
+#modal #creationGenderButtons{position:absolute;top:-84%;left:12%;width:76%;display:flex;justify-content:space-between;pointer-events:none}
+#modal #creationGenderButtons button{pointer-events:auto;flex:0 0 42px;min-height:40px;font-size:0!important;border:0!important;background:transparent!important;color:#f6e9c4!important;text-shadow:0 0 8px #f5d995}
+#modal #creationGenderButtons button[data-gender="男"]::after{content:'♂';font-size:30px}
+#modal #creationGenderButtons button[data-gender="女"]::after{content:'♀';font-size:30px}
+#modal #creationGenderButtons button.selected{filter:drop-shadow(0 0 7px #f9d58e)}
+#modal #creationStats{position:absolute!important;top:0;left:0;width:100%;height:55%;padding:28px 0 0!important;display:grid!important;grid-template-columns:1fr 1fr!important;grid-template-rows:repeat(4,auto)!important;grid-auto-flow:column!important;column-gap:6%!important;background:transparent!important;border:0!important;box-shadow:none!important;overflow:visible!important}
+#modal #creationStats .stat-heading{position:absolute;top:-3px;left:36%;font-size:12px;color:#e6d3a5!important}
+#modal #creationStats .stat-remaining{position:absolute;top:12px;left:46%;color:#f7e9bc!important;font-size:16px!important}
+#modal #creationStats .creation-stat-row{display:flex!important;justify-content:space-between!important;align-items:center!important;min-width:0;padding:0!important;margin:0!important;border:0!important;background:transparent!important}
+#modal #creationStats .creation-stat-name{font-family:Georgia,serif!important;font-size:clamp(11px,1.05vw,14px)!important;white-space:nowrap;color:#eee4cd!important;text-shadow:0 1px 3px #000,0 0 4px #000}
+#modal #creationStats .stat-step{min-width:20px!important;width:20px!important;height:19px!important;min-height:19px!important;padding:0!important;margin-left:2px!important;background:#272932!important;border:1px solid #8c8b9b!important;color:#f4e9ce!important;font-size:12px!important}
+#modal #creationStats .stat-provisional-note{display:none!important}
+#modal .creation-controls>label:first-child{position:absolute;top:62%;left:0;width:100%;display:flex;align-items:center;gap:8px;font-family:Georgia,serif;font-size:15px;color:#f0e2be}
+#modal .creation-controls #name{flex:1;width:auto;min-width:0;height:26px;min-height:26px;background:#151515;color:#eee;border:1px solid #383838;border-radius:0}
+#modal .creation-controls #start{position:absolute;top:83%;left:42%;width:22%;min-height:25px;padding:2px!important;background:transparent!important;border:0!important;box-shadow:none!important;color:#f3e8d0!important;font-family:Georgia,serif;font-size:15px}
+#modal .creation-controls #start::after{content:' ok'}
+}
+@media(max-width:700px){#modal .creation-controls .hint{display:none!important}}
+
+/* v0.05-O: creation-only full viewport; no gameplay status sidebar until entry. */
+body:has(#modal:not([style*="display: none"]))>header,body:has(#modal:not([style*="display: none"])) .layout>aside{display:none!important}
+body:has(#modal:not([style*="display: none"])) .layout{padding:0!important;margin:0!important;max-width:none!important;display:block!important}
+body:has(#modal:not([style*="display: none"])) .layout>.game{width:100vw!important;max-width:none!important;min-height:100vh!important}
+body:has(#modal:not([style*="display: none"])) #modal{position:fixed!important;inset:0!important;z-index:999!important;background:#080806!important}
+@media(min-width:701px){
+#modal .dialog{width:min(1260px,100vw,173.55vh)!important;height:min(726px,100vh,57.62vw)!important;min-height:0!important}
+#modal .creation-parchment{left:9.5%!important;top:2%!important;width:35%!important;height:82%!important;padding:13% 8% 4% 8%!important}
+#modal .creation-preview{left:48%!important;top:4%!important;width:42%!important;height:55%!important}
+#modal .creation-emblem{width:clamp(42px,4.4vw,62px)!important;height:clamp(42px,4.4vw,62px)!important;min-height:0!important;padding:4px!important;cursor:pointer;touch-action:manipulation;z-index:8!important}
+#modal .creation-emblem.royal{left:2%!important;top:1%!important}
+#modal .creation-emblem.knight{left:auto!important;right:0%!important;top:2%!important}
+#modal .creation-emblem.elf{left:0%!important;top:35%!important}
+#modal .creation-emblem.mage{left:auto!important;right:0%!important;top:35%!important}
+#modal .creation-emblem.darkelf{left:2%!important;top:78%!important}
+#modal .creation-emblems{pointer-events:none!important}
+#modal .creation-emblem{pointer-events:auto!important}
+#modal .creation-illustrated.reference-loaded{left:50%!important;top:11%!important;transform:translateX(-50%) scale(1.45)!important;pointer-events:none!important}
+#modal .creation-controls{left:50%!important;top:57%!important;width:39%!important;height:41%!important}
+}
+
+/* v0.05-P: coordinate calibration against supplied 1260x726 creation reference. */
+@media(min-width:701px){
+#modal .creation-preview{left:49%!important;top:6%!important;width:37%!important;height:53%!important}
+#modal .creation-emblem{width:clamp(43px,4.1vw,55px)!important;height:clamp(43px,4.1vw,55px)!important;transform:none!important}
+#modal .creation-emblem.royal{left:3%!important;right:auto!important;top:4%!important;bottom:auto!important}
+#modal .creation-emblem.knight{left:auto!important;right:3%!important;top:4%!important;bottom:auto!important}
+#modal .creation-emblem.elf{left:3%!important;right:auto!important;top:32%!important;bottom:auto!important}
+#modal .creation-emblem.mage{left:auto!important;right:3%!important;top:32%!important;bottom:auto!important}
+#modal .creation-emblem.darkelf{left:3%!important;right:auto!important;top:60%!important;bottom:auto!important}
+#modal #creationGenderButtons{position:absolute!important;top:-15%!important;left:6%!important;width:88%!important;height:46px!important;display:flex!important;justify-content:space-between!important;align-items:center!important;z-index:12!important;pointer-events:none!important}
+#modal #creationGenderButtons button{position:relative!important;flex:0 0 46px!important;width:46px!important;height:46px!important;min-height:46px!important;padding:0!important;pointer-events:auto!important;z-index:12!important;cursor:pointer!important}
+#modal #creationGenderButtons button[data-gender="男"]::after,#modal #creationGenderButtons button[data-gender="女"]::after{font-size:32px!important}
+#modal .creation-illustrated.reference-loaded{left:50%!important;top:12%!important}
+}
+
+/* v0.05-Q: typography and palette tuned to the user's classic creation screenshot. */
+@media(min-width:701px){
+#modal .dialog{color:#eee4c8!important;font-family:Georgia,'Times New Roman','Noto Serif TC','PMingLiU',serif!important}
+#modal .creation-parchment{background:linear-gradient(90deg,#b9a47e 0%,#e8dfc7 5%,#f3eedc 17%,#f1ecd9 83%,#d4c2a1 96%,#a18b68 100%)!important;box-shadow:inset 0 0 28px #81694a44!important}
+#modal .creation-parchment h3{font-family:'Noto Serif TC','PMingLiU',serif!important;font-size:clamp(15px,1.35vw,19px)!important;font-weight:600!important;color:#241c13!important;text-shadow:0 1px #fff5e2!important;letter-spacing:1px!important}
+#modal .creation-parchment p{font-family:'Noto Serif TC','PMingLiU',serif!important;font-size:clamp(12px,1.08vw,15px)!important;font-weight:500!important;line-height:1.6!important;color:#30261c!important;text-shadow:none!important;letter-spacing:.1px}
+#modal #creationStats .stat-heading{font-family:Georgia,'Times New Roman',serif!important;color:#e8dfc8!important;text-shadow:0 1px 4px #000!important;letter-spacing:.5px}
+#modal #creationStats .stat-remaining{font-family:Georgia,serif!important;color:#f6e8c6!important;text-shadow:0 0 5px #000,0 0 8px #b39a61!important}
+#modal #creationStats .creation-stat-name{font-family:Georgia,'Times New Roman','Noto Serif TC',serif!important;color:#e6e0d0!important;font-weight:600!important;letter-spacing:.1px!important;text-shadow:0 2px 3px #000,0 0 7px #000!important}
+#modal #creationStats .stat-step{border:1px solid #666775!important;background:linear-gradient(#343641,#171920)!important;color:#e4e3e6!important;border-radius:1px!important;box-shadow:inset 0 1px #8d8c8a55!important}
+#modal #creationStats .stat-step:disabled{opacity:.34!important}
+#modal .creation-controls>label:first-child{font-family:Georgia,'Noto Serif TC',serif!important;color:#ece1c9!important;text-shadow:0 2px 5px #000!important;letter-spacing:.4px}
+#modal .creation-controls #name{font-family:'Noto Serif TC','PMingLiU',serif!important;background:#111315!important;border:1px solid #48463f!important;color:#e9e5dc!important;box-shadow:inset 0 2px 4px #0009!important}
+#modal .creation-controls #start{font-family:Georgia,'Times New Roman',serif!important;color:#e9e1cc!important;text-shadow:0 2px 4px #000,0 0 7px #000!important;letter-spacing:1px!important}
+#modal .creation-controls #start:hover:not(:disabled){color:#fff5cf!important;text-shadow:0 0 9px #f6d17a!important}
+#modal .creation-emblem{filter:drop-shadow(0 0 5px #f7dfac)!important}
+#modal .creation-emblem.selected{filter:drop-shadow(0 0 9px #ffec9a)!important;border-color:#dfca85!important}
+#modal #creationGenderButtons button{color:#f3e9d2!important;text-shadow:0 0 6px #d8bc79,0 1px 3px #000!important}
+}
+
+/* v0.05-R: tactile aged parchment and single illuminated class emblem. */
+@media(min-width:701px){
+#modal .creation-parchment{
+ background-image:radial-gradient(ellipse at 9% 14%,#8d6a3b3d,transparent 33%),radial-gradient(ellipse at 89% 84%,#86643c3d,transparent 31%),repeating-linear-gradient(3deg,transparent 0 2px,#66543a0b 3px 4px,transparent 5px 11px),repeating-linear-gradient(94deg,#fff8e719 0 1px,transparent 2px 8px),linear-gradient(90deg,#9d8058 0%,#ddcda8 4%,#f3e9ce 15%,#f0e6cd 83%,#d0b991 96%,#957650 100%)!important;
+ border-left:5px solid #8b6945!important;border-right:5px solid #9c7b4d!important;
+ box-shadow:inset 14px 0 19px #71512f40,inset -14px 0 18px #6c4d2c42,inset 0 10px 18px #8d6b3930,0 6px 16px #0007!important;
+ clip-path:polygon(0.5% 1%,8% 0.4%,16% 1%,27% .4%,39% 1%,51% .3%,64% 1%,77% .4%,89% 1%,99% .5%,100% 7%,99% 18%,100% 30%,99% 42%,100% 56%,99% 68%,100% 80%,99% 93%,97% 99%,85% 98.7%,71% 99.5%,58% 98.8%,44% 99.5%,31% 98.7%,17% 99.4%,4% 98.5%,0 95%,1% 82%,0 70%,1% 57%,0 45%,1% 31%,0 17%)!important;
+ }
+}
+#modal .creation-emblem{opacity:.48!important;filter:grayscale(.65) brightness(.58) drop-shadow(0 0 1px #8d7c57)!important;box-shadow:none!important;border-color:transparent!important;transition:opacity .16s ease,filter .16s ease!important}
+#modal .creation-emblem img{opacity:.83!important}
+#modal .creation-emblem.selected{opacity:1!important;filter:grayscale(0) brightness(1.25) drop-shadow(0 0 7px #ffdf78) drop-shadow(0 0 12px #ffd064)!important;outline:1px solid #ffebae!important;outline-offset:0!important;border-radius:50%!important}
+#modal .creation-emblem.selected img{opacity:1!important}
+#modal .creation-emblem:not(.selected):hover{opacity:.76!important;filter:grayscale(.25) brightness(.85) drop-shadow(0 0 3px #d0b77b)!important}
+
+/* v0.05-S: real illustrated scroll image with fibrous SVG paper, rolled edges and wax-red ribbon. */
+@media(min-width:701px){
+#modal .creation-parchment{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20420%20650%22%20preserveAspectRatio%3D%22none%22%3E%3Cdefs%3E%3Cfilter%20id%3D%22paper%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%22.045%20.085%22%20numOctaves%3D%224%22%20seed%3D%228%22%20stitchTiles%3D%22stitch%22%2F%3E%3CfeColorMatrix%20type%3D%22saturate%22%20values%3D%220%22%2F%3E%3CfeComponentTransfer%3E%3CfeFuncA%20type%3D%22linear%22%20slope%3D%22.21%22%2F%3E%3C%2FfeComponentTransfer%3E%3C%2Ffilter%3E%3ClinearGradient%20id%3D%22sheet%22%20x1%3D%220%22%20x2%3D%221%22%3E%3Cstop%20stop-color%3D%22%238a7758%22%2F%3E%3Cstop%20offset%3D%22.035%22%20stop-color%3D%22%23c9b99a%22%2F%3E%3Cstop%20offset%3D%22.12%22%20stop-color%3D%22%23f1ead9%22%2F%3E%3Cstop%20offset%3D%22.52%22%20stop-color%3D%22%23eee8d9%22%2F%3E%3Cstop%20offset%3D%22.9%22%20stop-color%3D%22%23e8dfcb%22%2F%3E%3Cstop%20offset%3D%22.97%22%20stop-color%3D%22%23c7b697%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%238e7759%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22roll%22%20x1%3D%220%22%20x2%3D%220%22%20y1%3D%220%22%20y2%3D%221%22%3E%3Cstop%20stop-color%3D%22%234d4536%22%2F%3E%3Cstop%20offset%3D%22.14%22%20stop-color%3D%22%23c9c1ad%22%2F%3E%3Cstop%20offset%3D%22.3%22%20stop-color%3D%22%23fffef2%22%2F%3E%3Cstop%20offset%3D%22.55%22%20stop-color%3D%22%23eee8d9%22%2F%3E%3Cstop%20offset%3D%22.8%22%20stop-color%3D%22%23b2a894%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%2350483b%22%2F%3E%3C%2FlinearGradient%3E%3Cfilter%20id%3D%22shadow%22%3E%3CfeGaussianBlur%20stdDeviation%3D%226%22%2F%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Cpath%20d%3D%22M31%2030%20L388%2028%20L391%20601%20L27%20601Z%22%20fill%3D%22%23000%22%20opacity%3D%22.65%22%20filter%3D%22url(%23shadow)%22%2F%3E%3Cpath%20d%3D%22M31%2027%20Q17%2040%2025%2061%20L27%20567%20Q17%20590%2032%20609%20L390%20608%20Q402%20587%20391%20567%20L391%2062%20Q399%2037%20384%2026Z%22%20fill%3D%22url(%23sheet)%22%2F%3E%3Cpath%20d%3D%22M31%2027%20Q17%2040%2025%2061%20L27%20567%20Q17%20590%2032%20609%20L390%20608%20Q402%20587%20391%20567%20L391%2062%20Q399%2037%20384%2026Z%22%20filter%3D%22url(%23paper)%22%20opacity%3D%22.42%22%2F%3E%3Cpath%20d%3D%22M20%2018%20Q10%2010%2028%208%20L386%207%20Q414%2012%20398%2022%20Q412%2036%20397%2048%20Q404%2062%20384%2065%20L32%2065%20Q10%2058%2020%2046%20Q5%2031%2020%2018Z%22%20fill%3D%22url(%23roll)%22%20stroke%3D%22%2382745b%22%20stroke-width%3D%223%22%2F%3E%3Cpath%20d%3D%22M20%2018%20Q10%2010%2028%208%20L386%207%20Q414%2012%20398%2022%20Q412%2036%20397%2048%20Q404%2062%20384%2065%20L32%2065%20Q10%2058%2020%2046%20Q5%2031%2020%2018Z%22%20filter%3D%22url(%23paper)%22%20opacity%3D%22.55%22%2F%3E%3Cpath%20d%3D%22M22%20569%20Q12%20558%2029%20558%20L391%20558%20Q407%20566%20397%20579%20Q408%20594%20395%20605%20Q401%20619%20379%20624%20L30%20624%20Q11%20619%2021%20605%20Q9%20593%2022%20569Z%22%20fill%3D%22url(%23roll)%22%20stroke%3D%22%2385745a%22%20stroke-width%3D%223%22%2F%3E%3Cpath%20d%3D%22M22%20569%20Q12%20558%2029%20558%20L391%20558%20Q407%20566%20397%20579%20Q408%20594%20395%20605%20Q401%20619%20379%20624%20L30%20624%20Q11%20619%2021%20605%20Q9%20593%2022%20569Z%22%20filter%3D%22url(%23paper)%22%20opacity%3D%22.5%22%2F%3E%3Cpath%20d%3D%22M201%20625%20L212%20625%20L218%20648%20L208%20640%20L196%20650Z%22%20fill%3D%22%23a8211e%22%20stroke%3D%22%2368221d%22%20stroke-width%3D%222%22%2F%3E%3C%2Fsvg%3E")!important;background-size:100% 100%!important;background-position:center!important;background-repeat:no-repeat!important;clip-path:none!important;border:0!important;box-shadow:none!important;left:9.5%!important;top:0%!important;width:35%!important;height:91%!important;padding:11% 8% 8% 8%!important}
+#modal .creation-parchment h3,#modal .creation-parchment p{position:relative;z-index:2}
+}
+#modal .creation-emblem:not(.selected){opacity:.31!important;filter:grayscale(1) brightness(.42)!important}
+#modal .creation-emblem.selected{opacity:1!important;filter:grayscale(0) brightness(1.4) drop-shadow(0 0 10px #ffdf81) drop-shadow(0 0 16px #ffe9a4)!important}
+
+/* v0.05-T: unify warm stone/patina palette and eliminate the character preview rectangle. */
+@media(min-width:701px){
+#modal .creation-parchment{filter:sepia(.38) saturate(.75) brightness(.84) contrast(1.1)!important}
+#modal .creation-parchment h3,#modal .creation-parchment p{filter:none!important}
+#modal .creation-preview{border:0!important;outline:0!important;box-shadow:none!important;background:transparent!important;isolation:auto!important;overflow:visible!important}
+#modal .creation-preview::before,#modal .creation-preview::after{display:none!important}
+#modal .creation-figure,#modal .creation-illustrated,#modal .creation-illustrated.reference-pending,#modal .creation-illustrated.reference-loaded{border:0!important;outline:0!important;box-shadow:none!important;background:transparent!important;overflow:visible!important}
+#modal .creation-illustrated.reference-loaded .reference-creation-avatar{border:0!important;outline:0!important;box-shadow:none!important;mix-blend-mode:screen!important;-webkit-mask-image:radial-gradient(ellipse 30% 45% at 50% 50%,#000 37%,#000f 49%,#000a 62%,transparent 78%)!important;mask-image:radial-gradient(ellipse 30% 45% at 50% 50%,#000 37%,#000f 49%,#000a 62%,transparent 78%)!important}
+#modal .creation-controls{background:transparent!important;box-shadow:none!important}
+}
+
+/* v0.05-U: cohesive dark weapon-collage background; reference-aligned scroll and 3x2 stats. */
+@media(min-width:701px){
+#modal .dialog{background:#17130f url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%201260%20726%22%20preserveAspectRatio%3D%22xMidYMid%20slice%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x2%3D%22.8%22%20y2%3D%221%22%3E%3Cstop%20stop-color%3D%22%2317130f%22%2F%3E%3Cstop%20offset%3D%22.45%22%20stop-color%3D%22%23282019%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23090909%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22steel%22%3E%3Cstop%20stop-color%3D%22%23211f1c%22%2F%3E%3Cstop%20offset%3D%22.45%22%20stop-color%3D%22%23746e60%22%2F%3E%3Cstop%20offset%3D%22.55%22%20stop-color%3D%22%23292a28%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%230c0b0a%22%2F%3E%3C%2FlinearGradient%3E%3Cfilter%20id%3D%22grain%22%3E%3CfeTurbulence%20baseFrequency%3D%22.035%22%20numOctaves%3D%224%22%20seed%3D%2212%22%2F%3E%3CfeColorMatrix%20type%3D%22saturate%22%20values%3D%220%22%2F%3E%3CfeComponentTransfer%3E%3CfeFuncA%20type%3D%22linear%22%20slope%3D%22.17%22%2F%3E%3C%2FfeComponentTransfer%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Cpath%20fill%3D%22url(%23g)%22%20d%3D%22M0%200h1260v726H0z%22%2F%3E%3Cg%20opacity%3D%22.72%22%3E%3Cpath%20d%3D%22M0%200L185%200%2088%20205%200%20230Z%22%20fill%3D%22%23494036%22%2F%3E%3Cpath%20d%3D%22M40%200L165%200%2032%20362%200%20380Z%22%20fill%3D%22%23241d17%22%2F%3E%3Cpath%20d%3D%22M110%200L280%200%20134%20253Z%22%20fill%3D%22%2355483a%22%2F%3E%3Cpath%20d%3D%22M560%200L940%200%20630%20280%20460%20195Z%22%20fill%3D%22%2337271d%22%2F%3E%3Cpath%20d%3D%22M860%200L1260%200%201260%20310%201060%20210Z%22%20fill%3D%22%23272019%22%2F%3E%3Cpath%20d%3D%22M1120%200L1260%200%201260%20726%201170%20605Z%22%20fill%3D%22%23171310%22%2F%3E%3Cpath%20d%3D%22M0%20590L220%20440%20590%20726H0Z%22%20fill%3D%22%233a2b1f%22%2F%3E%3Cpath%20d%3D%22M450%20726L720%20410%201050%20726Z%22%20fill%3D%22%232e231b%22%2F%3E%3C%2Fg%3E%3Cg%20opacity%3D%22.75%22%20transform%3D%22translate(595%20190)%20rotate(23)%22%3E%3Cpath%20d%3D%22M0%200L63%20-160%2096%20-175%20102%2055%2035%20310%200%20265Z%22%20fill%3D%22url(%23steel)%22%20stroke%3D%22%234e473e%22%20stroke-width%3D%226%22%2F%3E%3Cpath%20d%3D%22M0%200L105%2055%22%20stroke%3D%22%2381745d%22%20stroke-width%3D%2214%22%2F%3E%3Cpath%20d%3D%22M45%20280L67%20340%22%20stroke%3D%22%231d1510%22%20stroke-width%3D%2220%22%2F%3E%3C%2Fg%3E%3Cg%20transform%3D%22translate(1030%20400)%20rotate(-35)%22%20opacity%3D%22.85%22%3E%3Cpath%20d%3D%22M-40%20-260L50%20-300%2032%20225%20-30%20255Z%22%20fill%3D%22url(%23steel)%22%20stroke%3D%22%234e3b2a%22%20stroke-width%3D%227%22%2F%3E%3Cpath%20d%3D%22M-90%20160L95%20140%20108%20170%20-99%20196Z%22%20fill%3D%22%235d4732%22%2F%3E%3Cpath%20d%3D%22M-15%20170L15%20340%22%20stroke%3D%22%2326180f%22%20stroke-width%3D%2224%22%2F%3E%3C%2Fg%3E%3Cg%20opacity%3D%22.65%22%3E%3Cpath%20d%3D%22M0%20490L330%20560%20200%20726%200%20726Z%22%20fill%3D%22%2368513a%22%2F%3E%3Cpath%20d%3D%22M0%20630L365%20520%22%20stroke%3D%22%23a18b66%22%20stroke-width%3D%2217%22%2F%3E%3Cpath%20d%3D%22M0%20653L365%20543%22%20stroke%3D%22%23261c13%22%20stroke-width%3D%228%22%2F%3E%3Cpath%20d%3D%22M1150%20100L1260%20180%201260%20430%201090%20325Z%22%20fill%3D%22%23544130%22%2F%3E%3Cpath%20d%3D%22M1145%20135L1260%20210%22%20stroke%3D%22%23927659%22%20stroke-width%3D%2219%22%2F%3E%3C%2Fg%3E%3Cpath%20d%3D%22M770%200H940L929%20540%20770%20550Z%22%20fill%3D%22%2307090a%22%20opacity%3D%22.77%22%2F%3E%3Cpath%20d%3D%22M0%200h1260v726H0z%22%20filter%3D%22url(%23grain)%22%20opacity%3D%22.3%22%2F%3E%3Cpath%20d%3D%22M0%200h1260v726H0z%22%20fill%3D%22%23000%22%20opacity%3D%22.32%22%2F%3E%3C%2Fsvg%3E") center/100% 100% no-repeat!important}
+#modal .creation-parchment{left:9.8%!important;top:0%!important;width:35%!important;height:89%!important;filter:sepia(.12) saturate(.8) brightness(.98)!important;padding:11% 8% 7% 8%!important}
+#modal .creation-parchment h3{font-size:clamp(13px,1.15vw,16px)!important}
+#modal .creation-parchment p{font-size:clamp(11px,1vw,14px)!important;line-height:1.45!important}
+#modal .creation-preview{left:49%!important;top:6%!important;width:37%!important;height:53%!important}
+#modal .creation-controls{top:57%!important}
+#modal #creationStats{display:grid!important;grid-template-columns:1fr 1fr!important;grid-template-rows:repeat(3,30px)!important;grid-auto-flow:row!important;column-gap:12px!important;row-gap:4px!important;position:relative!important}
+#modal #creationStats>.creation-stat-row{margin:0!important;min-width:0!important}
+#modal #creationStats>.creation-stat-row[data-stat="0"]{grid-column:1;grid-row:1}
+#modal #creationStats>.creation-stat-row[data-stat="1"]{grid-column:1;grid-row:2}
+#modal #creationStats>.creation-stat-row[data-stat="2"]{grid-column:1;grid-row:3}
+#modal #creationStats>.creation-stat-row[data-stat="3"]{grid-column:2;grid-row:3}
+#modal #creationStats>.creation-stat-row[data-stat="4"]{grid-column:2;grid-row:1}
+#modal #creationStats>.creation-stat-row[data-stat="5"]{grid-column:2;grid-row:2}
+#modal #creationStats .stat-heading,#modal #creationStats .stat-remaining{position:absolute!important;left:50%!important;transform:translateX(-50%)!important;white-space:nowrap!important}
+#modal #creationStats .stat-heading{top:-39px!important}
+#modal #creationStats .stat-remaining{top:-21px!important}
+#modal #creationStats>.stat-provisional-note{display:none!important}
+#modal .creation-illustrated.reference-loaded .reference-creation-avatar{mix-blend-mode:screen!important}
+}
+
+/* v0.05-V: reference screenshot typography and controls; localized Traditional Chinese. */
+@media(min-width:701px){
+#modal .creation-parchment h3{text-align:left!important;margin:0 0 15px!important;font-family:'PMingLiU','Noto Serif TC',serif!important;font-weight:500!important;color:#191611!important;letter-spacing:0!important}
+#modal .creation-parchment p{white-space:pre-line!important;font-family:'PMingLiU','Noto Serif TC',serif!important;font-weight:500!important;line-height:1.25!important;font-size:clamp(11px,1.05vw,14px)!important;color:#201a15!important;text-shadow:none!important}
+#modal #creationStats .creation-stat-name{font-family:Georgia,'PMingLiU',serif!important;font-size:clamp(10px,.97vw,13px)!important;color:#e7e0d2!important;white-space:nowrap!important;text-shadow:0 1px 3px #000,0 0 5px #c9bda477!important}
+#modal #creationStats .stat-step{width:17px!important;height:17px!important;min-height:17px!important;font-size:11px!important;padding:0!important;line-height:14px!important;border:1px solid #77727a!important;background:linear-gradient(#38343c,#15131a)!important;color:#eee4e5!important}
+#modal #creationStats>.creation-stat-row{grid-template-columns:minmax(0,1fr) 17px 17px!important;gap:2px!important;border:0!important;background:transparent!important}
+#modal #creationStats .stat-heading{font-family:Georgia,'PMingLiU',serif!important;font-size:12px!important;color:#e6dfd1!important;letter-spacing:0!important}
+#modal #creationStats .stat-remaining{font-family:Georgia,'PMingLiU',serif!important;font-size:12px!important;color:#eee9df!important;border:0!important}
+#modal .creation-controls #name{border-radius:0!important;height:26px!important;min-height:26px!important;background:#151515!important;color:#d8d6d0!important;border:1px solid #363433!important}
+#modal .creation-controls #start{background:transparent!important;border:0!important;box-shadow:none!important;color:#eee8db!important;font-family:Georgia,'PMingLiU',serif!important;font-size:15px!important;text-transform:lowercase!important}
+}
+
+/* v0.05-W: classic confirm/cancel actions, independent of modern form widgets. */
+@media(min-width:701px){
+#modal .creation-controls #start,#modal .creation-controls #creationCancel{position:absolute!important;left:50%!important;transform:translateX(-50%)!important;width:104px!important;min-height:23px!important;height:23px!important;margin:0!important;padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important;color:#eee7d9!important;font-family:Georgia,'PMingLiU',serif!important;font-size:14px!important;font-weight:400!important;text-shadow:0 1px 4px #000,0 0 5px #000!important;cursor:pointer!important;z-index:20!important}
+#modal .creation-controls #start{top:83%!important}
+#modal .creation-controls #creationCancel{top:95%!important}
+#modal .creation-controls #start:hover,#modal .creation-controls #creationCancel:hover{color:#ffe3a1!important;text-shadow:0 0 7px #e7b960!important}
+#modal .creation-controls>label:first-child{position:absolute!important;top:62%!important;left:32%!important;width:68%!important;margin:0!important}
+#modal .creation-controls>label:first-child #name{width:100%!important}
+}
+@media(max-width:700px){#modal #creationCancel{display:inline-block!important;min-height:28px!important;background:#32291e!important;color:#e8dbc1!important;border:1px solid #88734e!important}}
+
+/* v0.05-X: verified complete class descriptions from reference site's creation source. */
+@media(min-width:701px){
+#modal .creation-parchment{padding:10.5% 7.4% 6.5% 7.4%!important}
+#modal .creation-parchment h3{margin:0 0 8px!important;font-size:clamp(12px,1.1vw,15px)!important}
+#modal .creation-parchment p{font-size:clamp(9px,.92vw,12px)!important;line-height:1.24!important;letter-spacing:0!important;white-space:pre-line!important;overflow-wrap:anywhere!important;max-height:93%!important;overflow-y:auto!important;scrollbar-width:thin;scrollbar-color:#8a7356 transparent}
+}
+
+/* v0.05-Y: asset-ready Classic visual reference layer.
+   Source images are NOT bundled: only use licensed/authorized image URLs.
+   The existing SVG artwork remains a clearly provisional fallback. */
+@media(min-width:701px){
+#modal .dialog{background-image:var(--classic-creation-background, var(--creation-fallback-background, url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%201260%20726%22%20preserveAspectRatio%3D%22xMidYMid%20slice%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x2%3D%22.8%22%20y2%3D%221%22%3E%3Cstop%20stop-color%3D%22%2317130f%22%2F%3E%3Cstop%20offset%3D%22.45%22%20stop-color%3D%22%23282019%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23090909%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22steel%22%3E%3Cstop%20stop-color%3D%22%23211f1c%22%2F%3E%3Cstop%20offset%3D%22.45%22%20stop-color%3D%22%23746e60%22%2F%3E%3Cstop%20offset%3D%22.55%22%20stop-color%3D%22%23292a28%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%230c0b0a%22%2F%3E%3C%2FlinearGradient%3E%3Cfilter%20id%3D%22grain%22%3E%3CfeTurbulence%20baseFrequency%3D%22.035%22%20numOctaves%3D%224%22%20seed%3D%2212%22%2F%3E%3CfeColorMatrix%20type%3D%22saturate%22%20values%3D%220%22%2F%3E%3CfeComponentTransfer%3E%3CfeFuncA%20type%3D%22linear%22%20slope%3D%22.17%22%2F%3E%3C%2FfeComponentTransfer%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Cpath%20fill%3D%22url(%23g)%22%20d%3D%22M0%200h1260v726H0z%22%2F%3E%3Cg%20opacity%3D%22.72%22%3E%3Cpath%20d%3D%22M0%200L185%200%2088%20205%200%20230Z%22%20fill%3D%22%23494036%22%2F%3E%3Cpath%20d%3D%22M40%200L165%200%2032%20362%200%20380Z%22%20fill%3D%22%23241d17%22%2F%3E%3Cpath%20d%3D%22M110%200L280%200%20134%20253Z%22%20fill%3D%22%2355483a%22%2F%3E%3Cpath%20d%3D%22M560%200L940%200%20630%20280%20460%20195Z%22%20fill%3D%22%2337271d%22%2F%3E%3Cpath%20d%3D%22M860%200L1260%200%201260%20310%201060%20210Z%22%20fill%3D%22%23272019%22%2F%3E%3Cpath%20d%3D%22M1120%200L1260%200%201260%20726%201170%20605Z%22%20fill%3D%22%23171310%22%2F%3E%3Cpath%20d%3D%22M0%20590L220%20440%20590%20726H0Z%22%20fill%3D%22%233a2b1f%22%2F%3E%3Cpath%20d%3D%22M450%20726L720%20410%201050%20726Z%22%20fill%3D%22%232e231b%22%2F%3E%3C%2Fg%3E%3Cg%20opacity%3D%22.75%22%20transform%3D%22translate(595%20190)%20rotate(23)%22%3E%3Cpath%20d%3D%22M0%200L63%20-160%2096%20-175%20102%2055%2035%20310%200%20265Z%22%20fill%3D%22url(%23steel)%22%20stroke%3D%22%234e473e%22%20stroke-width%3D%226%22%2F%3E%3Cpath%20d%3D%22M0%200L105%2055%22%20stroke%3D%22%2381745d%22%20stroke-width%3D%2214%22%2F%3E%3Cpath%20d%3D%22M45%20280L67%20340%22%20stroke%3D%22%231d1510%22%20stroke-width%3D%2220%22%2F%3E%3C%2Fg%3E%3Cg%20transform%3D%22translate(1030%20400)%20rotate(-35)%22%20opacity%3D%22.85%22%3E%3Cpath%20d%3D%22M-40%20-260L50%20-300%2032%20225%20-30%20255Z%22%20fill%3D%22url(%23steel)%22%20stroke%3D%22%234e3b2a%22%20stroke-width%3D%227%22%2F%3E%3Cpath%20d%3D%22M-90%20160L95%20140%20108%20170%20-99%20196Z%22%20fill%3D%22%235d4732%22%2F%3E%3Cpath%20d%3D%22M-15%20170L15%20340%22%20stroke%3D%22%2326180f%22%20stroke-width%3D%2224%22%2F%3E%3C%2Fg%3E%3Cg%20opacity%3D%22.65%22%3E%3Cpath%20d%3D%22M0%20490L330%20560%20200%20726%200%20726Z%22%20fill%3D%22%2368513a%22%2F%3E%3Cpath%20d%3D%22M0%20630L365%20520%22%20stroke%3D%22%23a18b66%22%20stroke-width%3D%2217%22%2F%3E%3Cpath%20d%3D%22M0%20653L365%20543%22%20stroke%3D%22%23261c13%22%20stroke-width%3D%228%22%2F%3E%3Cpath%20d%3D%22M1150%20100L1260%20180%201260%20430%201090%20325Z%22%20fill%3D%22%23544130%22%2F%3E%3Cpath%20d%3D%22M1145%20135L1260%20210%22%20stroke%3D%22%23927659%22%20stroke-width%3D%2219%22%2F%3E%3C%2Fg%3E%3Cpath%20d%3D%22M770%200H940L929%20540%20770%20550Z%22%20fill%3D%22%2307090a%22%20opacity%3D%22.77%22%2F%3E%3Cpath%20d%3D%22M0%200h1260v726H0z%22%20filter%3D%22url(%23grain)%22%20opacity%3D%22.3%22%2F%3E%3Cpath%20d%3D%22M0%200h1260v726H0z%22%20fill%3D%22%23000%22%20opacity%3D%22.32%22%2F%3E%3C%2Fsvg%3E")))!important}
+#modal .creation-parchment{background-image:var(--classic-parchment-image, var(--creation-fallback-parchment, none))!important;background-size:100% 100%!important;background-repeat:no-repeat!important}
+}
+
+/* v0.05-Z: Use the exact creation background asset path declared by the supplied reference project.
+   The image itself includes its parchment artwork; never overlay our generated scroll. */
+@media(min-width:701px){
+#modal .dialog{background:#050505 url("https://shines871.github.io/idle-lineage-class/public/assets/login/824.png") center center / 100% 100% no-repeat!important}
+#modal .creation-parchment{background:transparent!important;background-image:none!important;clip-path:none!important;filter:none!important;box-shadow:none!important;border:0!important}
+#modal .creation-parchment::before,#modal .creation-parchment::after,#modal .creation-parchment .scroll-top,#modal .creation-parchment .scroll-bottom{display:none!important;content:none!important}
+#modal .creation-parchment h3{color:#f4d583!important;text-shadow:0 1px 2px #000,0 0 5px #000!important}
+#modal .creation-parchment p{color:#f0e3c4!important;text-shadow:0 1px 2px #000,0 0 5px #000!important}
+}
+
+/* v0.06-A: desktop full-bleed cover stage, proportional scaling (no stretching).
+   The creation stage keeps 1260x726 design coordinates; excess edges are cropped. */
+@media(min-width:701px){
+#modal{overflow:hidden!important}
+#modal .dialog{position:absolute!important;left:50%!important;top:50%!important;width:1260px!important;height:726px!important;min-width:1260px!important;min-height:726px!important;max-width:none!important;max-height:none!important;margin:0!important;transform:translate(-50%,-50%) scale(var(--creation-cover-scale,1))!important;transform-origin:center center!important;overflow:hidden!important;background-size:cover!important;background-position:center center!important;border-radius:0!important}
+#modal .creation-parchment p{font-size:13px!important;line-height:1.25!important}
+#modal .creation-parchment h3{font-size:16px!important}
+#modal .creation-emblem{width:52px!important;height:52px!important}
+}
+
+/* v0.06-B: fullscreen backdrop, safe proportional foreground, no document scrollbars. */
+@media(min-width:701px){
+html:has(#modal:not([style*="display: none"])),body:has(#modal:not([style*="display: none"])){overflow:hidden!important;height:100%!important}
+#modal{position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;overflow:hidden!important;display:flex!important;align-items:center!important;justify-content:center!important;background:#050505 url("https://shines871.github.io/idle-lineage-class/public/assets/login/824.png") center center / cover no-repeat!important}
+#modal .dialog{position:absolute!important;left:50%!important;top:50%!important;width:1260px!important;height:726px!important;min-width:1260px!important;min-height:726px!important;max-width:none!important;max-height:none!important;transform:translate(-50%,-50%) scale(var(--creation-safe-scale,1))!important;transform-origin:center center!important;overflow:hidden!important;background:#050505 url("https://shines871.github.io/idle-lineage-class/public/assets/login/824.png") center center / 100% 100% no-repeat!important;box-shadow:0 0 70px #0009!important}
+}
+
+/* v0.06-C: single-stage proportional cover. No secondary backdrop or stretch. */
+@media(min-width:701px){
+html:has(#modal:not([style*="display: none"])),body:has(#modal:not([style*="display: none"])){overflow:hidden!important}
+#modal{position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;overflow:hidden!important;background:#050505!important}
+#modal .dialog{position:absolute!important;left:50%!important;top:50%!important;width:1260px!important;height:726px!important;min-width:1260px!important;min-height:726px!important;max-width:none!important;max-height:none!important;transform:translate(-50%,-50%) scale(var(--creation-cover-scale,1))!important;transform-origin:center center!important;overflow:hidden!important;background:#050505 url("https://shines871.github.io/idle-lineage-class/public/assets/login/824.png") center / 100% 100% no-repeat!important}
+}
+
+/* v0.06-D: readable period-style typography and consistent five-class emblem contrast. */
+@media(min-width:701px){
+#modal .creation-parchment h3{font-family:'PMingLiU','Noto Serif TC',serif!important;font-size:19px!important;font-weight:400!important;color:#f5d995!important;letter-spacing:1px!important;text-align:left!important;margin:0 0 12px!important}
+#modal .creation-parchment p{font-family:'PMingLiU','Noto Serif TC',serif!important;font-size:15px!important;line-height:1.28!important;letter-spacing:.15px!important;color:#f2e4c8!important;white-space:pre-line!important;overflow-y:auto!important;scrollbar-width:thin!important;scrollbar-color:#806f52 transparent!important}
+#modal .creation-emblem{width:56px!important;height:56px!important;padding:5px!important;background:radial-gradient(circle,#2b281d99,#09090930 72%,transparent)!important;border:1px solid #86764e66!important;border-radius:50%!important;opacity:1!important;box-shadow:none!important;outline:none!important;transition:filter .15s,background .15s,border-color .15s!important}
+#modal .creation-emblem img{display:block!important;width:100%!important;height:100%!important;object-fit:contain!important;opacity:1!important}
+#modal .creation-emblem:not(.selected){filter:grayscale(.75) brightness(.62)!important}
+#modal .creation-emblem:not(.selected):hover{filter:grayscale(.25) brightness(1.05)!important;border-color:#c5ac75!important}
+#modal .creation-emblem.selected{filter:grayscale(0) brightness(1.3) drop-shadow(0 0 8px #ffe2a0)!important;border-color:#f4dca2!important;background:radial-gradient(circle,#6e552eaa,#18110c55 70%,transparent)!important}
+#modal .creation-emblem:focus-visible{outline:2px solid #f9e3b5!important;outline-offset:3px!important}
+#modal #creationStats .creation-stat-name{font-family:'PMingLiU','Noto Serif TC',serif!important;font-size:14px!important;letter-spacing:.15px!important}
+#modal .creation-controls>label:first-child{font-family:'PMingLiU','Noto Serif TC',serif!important;font-size:16px!important}
+}
+
+/* v0.06-E: finish creation form affordances; preserve verified background, class emblems and lore. */
+@media(min-width:701px){
+#modal #creationGenderButtons button{border:1px solid transparent!important;border-radius:5px!important;filter:grayscale(.5) brightness(.7)!important;opacity:.75!important;transition:filter .15s,opacity .15s,box-shadow .15s!important}
+#modal #creationGenderButtons button.selected{opacity:1!important;filter:grayscale(0) brightness(1.25)!important;border-color:#cbb075!important;box-shadow:inset 0 0 12px #d5ae4a35,0 0 12px #e2c47c66!important}
+#modal #creationGenderButtons button:hover{opacity:1!important;filter:brightness(1.15)!important}
+#modal #creationGenderButtons button:focus-visible,#modal .creation-controls #start:focus-visible,#modal .creation-controls #creationCancel:focus-visible{outline:2px solid #e8d09b!important;outline-offset:3px!important}
+#modal .creation-controls>label:first-child #name{box-sizing:border-box!important;border:1px solid #74694f!important;background:linear-gradient(#141310,#24221d)!important;color:#f4e7c8!important;font-family:'PMingLiU','Noto Serif TC',serif!important;font-size:15px!important;padding:2px 8px!important;box-shadow:inset 0 1px 4px #000!important}
+#modal .creation-controls>label:first-child #name:focus{outline:1px solid #d7b77b!important;outline-offset:1px!important}
+#modal .creation-controls #start,#modal .creation-controls #creationCancel{font-family:'PMingLiU','Noto Serif TC',serif!important;font-size:17px!important;letter-spacing:2px!important;color:#eee0c5!important;text-transform:none!important}
+#modal .creation-controls #start:disabled{color:#877f70!important;cursor:not-allowed!important;text-shadow:0 1px 2px #000!important}
+#modal #creationStats .stat-step:disabled{opacity:.35!important;cursor:not-allowed!important}
+#modal #creationStats .stat-step:not(:disabled):hover{border-color:#ddc18a!important;color:#fff0c9!important;background:#4b3e2b!important}
+}
+
+/* v0.06-F: iPhone landscape uses desktop creation geometry at a contain scale.
+   On mobile portrait, retain prior responsive behavior. Desktop is unchanged. */
+html.creation-mobile-landscape:has(#modal:not([style*="display: none"])),html.creation-mobile-landscape body{overflow:hidden!important}
+html.creation-mobile-landscape #modal{position:fixed!important;inset:0!important;overflow:hidden!important;width:100vw!important;height:100dvh!important;background:#050505!important}
+html.creation-mobile-landscape #modal .dialog{position:absolute!important;left:50%!important;top:50%!important;width:1260px!important;height:726px!important;min-width:1260px!important;min-height:726px!important;max-width:none!important;max-height:none!important;margin:0!important;padding:0!important;overflow:hidden!important;transform:translate(-50%,-50%) scale(var(--creation-mobile-scale,1))!important;transform-origin:center center!important;background:#050505 url("https://shines871.github.io/idle-lineage-class/public/assets/login/824.png") center / 100% 100% no-repeat!important}
+html.creation-mobile-landscape #modal .creation-columns{display:block!important;position:static!important}
+html.creation-mobile-landscape #modal .creation-parchment,html.creation-mobile-landscape #modal .creation-preview,html.creation-mobile-landscape #modal .creation-controls{position:absolute!important}
+html.creation-mobile-landscape #modal .creation-parchment{left:9.5%!important;top:2%!important;width:35%!important;height:82%!important;background:transparent!important}
+html.creation-mobile-landscape #modal .creation-preview{left:48%!important;top:4%!important;width:42%!important;height:55%!important}
+html.creation-mobile-landscape #modal .creation-controls{left:48%!important;top:57%!important;width:43%!important;height:42%!important}
+html.creation-mobile-landscape #modal .creation-controls #start{position:absolute!important;top:83%!important;left:50%!important}
+html.creation-mobile-landscape #modal .creation-controls #creationCancel{position:absolute!important;top:95%!important;left:50%!important}
+html.creation-mobile-landscape #modal .creation-controls>label:first-child{position:absolute!important;top:62%!important;left:32%!important;width:68%!important}
+
+
+/* v0.06-F2: avoid old mobile column flow; center inside visible iOS browser area. */
+html.creation-mobile-landscape #modal{display:block!important;position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;overflow:hidden!important}
+html.creation-mobile-landscape #modal .dialog{left:50%!important;top:50%!important;transform:translate(-50%,-50%) scale(var(--creation-mobile-scale,.65))!important}
+html.creation-mobile-landscape #modal .creation-parchment{padding:10.5% 7.4% 6.5% 7.4%!important}
+html.creation-mobile-landscape #modal .creation-parchment p{font-size:15px!important;line-height:1.28!important}
+html.creation-mobile-landscape #modal .creation-emblem{width:56px!important;height:56px!important}
+
+/* v0.07-A: Windows gameplay help; does not change the tested creation UI. */
+#desktopGameHelp[hidden]{display:none!important}
+#desktopGameHelp{position:absolute;z-index:90;left:50%;top:50%;transform:translate(-50%,-50%);width:min(360px,90vw);padding:22px;background:#171912f5;color:#f0e3c7;border:2px solid #9b8356;box-shadow:0 12px 45px #000c;font-size:15px;line-height:1.8}
+#desktopGameHelp b{font-size:20px;color:#f4d99d}
+#desktopGameHelp p{margin:12px 0}
+#desktopGameHelp small{display:block;margin-top:12px;font-size:11px;color:#b8b3a1}
+#desktopGameHelp button{background:#332b1b;color:#f4e4bf;border:1px solid #998255;padding:7px 18px;cursor:pointer}
+
+/* v0.07-B: character-selection step between creation and world. */
+#characterSelect[hidden]{display:none!important}
+#characterSelect{position:fixed;inset:0;z-index:9998;background:radial-gradient(ellipse at 50% 40%,#272117,#080907 78%);display:flex;align-items:center;justify-content:center;padding:24px;color:#eadfca;font-family:'PMingLiU','Microsoft JhengHei',serif}
+.character-select-panel{width:min(720px,95vw);min-height:390px;border:2px solid #8b7448;box-shadow:0 0 0 5px #19140c,0 16px 80px #000;padding:34px 40px;text-align:center;background:linear-gradient(135deg,#2b271e,#11130f 75%)}
+.character-select-panel h2{font-size:29px;color:#e9d5a0;margin:0 0 10px}.select-hint{font-size:15px;color:#c7b99e;margin:0 0 24px}
+.character-slot{width:100%;min-height:110px;display:flex;align-items:center;text-align:left;gap:22px;padding:15px 22px;background:#252216;border:2px solid #d3b777;color:#f5e7c5;cursor:pointer}
+.character-slot .slot-emblem{font-size:50px;color:#d9bc7b}.character-slot strong{display:block;font-size:24px;margin-bottom:8px}.character-slot small{display:block;font-size:15px;color:#c4baa5}.slot-selected{margin-left:auto;font-size:13px;color:#ffdb87}
+.character-select-actions{display:flex;justify-content:center;gap:24px;margin:30px 0 22px}.character-select-actions button{font-size:18px;padding:11px 27px;color:#f4e3c2;background:#3b3020;border:1px solid #a68d57;cursor:pointer}.character-select-actions button:hover{background:#5b4728}
+.select-disclaimer{display:block;color:#a8a094;font-size:12px}
+@media(max-width:600px){.character-select-panel{padding:22px}.character-select-actions{gap:10px}.character-select-actions button{padding:10px;font-size:15px}}
+
+/* v0.07-B1: keep controls in the cover viewport and class lore inside gold frame. */
+@media(min-width:701px){
+#modal .creation-parchment{overflow:hidden!important;padding:10.5% 7.4% 0 7.4%!important}
+#modal .creation-parchment h3{margin:0 0 10px!important}
+#modal .creation-parchment p{display:block!important;max-height:300px!important;height:auto!important;overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior:contain!important;white-space:pre-line!important;line-height:1.28!important;font-size:14px!important;scrollbar-width:thin!important;scrollbar-color:#9e8658 #211a10!important}
+#modal .creation-controls #start{top:69%!important;left:42%!important;min-height:32px!important;width:24%!important;font-size:17px!important}
+#modal .creation-controls #start::after{content:none!important}
+#modal .creation-controls #creationCancel{top:81%!important;left:42%!important;min-height:30px!important;font-size:16px!important}
+#modal .creation-controls>label:first-child{top:57%!important}
+}
+
+/* v0.07-C: class/gender-specific character preview in selection screen. */
+#characterSelect .character-select-panel{width:min(790px,95vw);min-height:460px;background:radial-gradient(ellipse at 65% 35%,#332d22,#13130f 73%);border-color:#a48b59}
+#characterSelect .character-slot{min-height:185px;gap:28px;position:relative}
+#characterSelect .slot-emblem{flex:0 0 130px;height:158px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:radial-gradient(ellipse,#4c4232 0%,#211f18 65%,#14150f 100%);border:1px solid #6e6248}
+#characterSelect #characterSelectPortrait{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 3px 8px #000)}
+#characterSelect #characterSelectPortrait[hidden]{display:none}
+#characterSelect .character-slot strong{font-size:27px;color:#f8e4af}
+#characterSelect .character-slot small{font-size:17px;line-height:1.5}
+#characterSelect .character-select-actions button:focus-visible,#characterSelect .character-slot:focus-visible{outline:2px solid #f5d88e;outline-offset:3px}
+@media(max-width:600px){#characterSelect .slot-emblem{flex-basis:88px;height:130px}#characterSelect .character-slot{gap:12px;min-height:150px;padding:10px}#characterSelect .character-slot strong{font-size:19px}#characterSelect .character-slot small{font-size:13px}}
+
+/* v0.07-D: safe return to character selection after saving game state. */
+#returnToCharacterSelect[hidden]{display:none!important}
+#returnToCharacterSelect{position:fixed;right:18px;bottom:18px;z-index:100;background:#302719;color:#f1dfb9;border:1px solid #a38a55;padding:9px 15px;font:14px 'Microsoft JhengHei',sans-serif;cursor:pointer;box-shadow:0 4px 15px #0008}
+#returnToCharacterSelect:hover{background:#514027}
+body:has(#modal:not([style*="display: none"])) #returnToCharacterSelect{display:none!important}
+
+/* v0.07-E: source-site character selection assets (load.png and load1.png).
+   Layout follows user's four-arch screenshot; unavailable historical fields stay unverified. */
+#characterSelect{background:#000!important;padding:0!important;overflow:hidden!important}
+#characterSelect .character-select-panel{position:absolute!important;left:50%!important;top:50%!important;width:1104px!important;height:824px!important;min-height:0!important;max-width:none!important;box-sizing:border-box!important;margin:0!important;padding:0!important;border:0!important;box-shadow:none!important;transform:translate(-50%,-50%) scale(var(--selection-stage-scale,1))!important;transform-origin:center center!important;background:#070605 url('https://shines871.github.io/idle-lineage-class/public/assets/login/load.png') center/100% 100% no-repeat!important;overflow:hidden!important}
+#characterSelect .selection-decor{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;pointer-events:none;z-index:1}
+#characterSelect .selection-arch-grid{position:absolute;left:1%;top:4%;width:98%;height:49%;display:grid;grid-template-columns:repeat(4,1fr);gap:1.8%;z-index:2}
+#characterSelect .character-slot,#characterSelect .selection-empty-slot{position:relative;min-width:0;height:100%;background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important}
+#characterSelect .character-slot{cursor:pointer;display:flex;align-items:center;justify-content:center}
+#characterSelect #characterSelectPortrait{position:absolute;left:10%;top:11%;width:80%;height:79%;object-fit:contain;filter:drop-shadow(0 0 8px #d8b26a55)!important}
+#characterSelect .slot-selected{position:absolute;bottom:0;left:15%;right:15%;color:#e7d3a2;font-size:15px;text-shadow:0 1px 5px #000}
+#characterSelect .selection-pages{position:absolute;z-index:3;left:44%;top:55%;width:12%;display:flex;justify-content:space-around;color:#a5a092;font-size:20px}
+#characterSelect .selection-pages span.active{color:#f1d89a}
+#characterSelect .selection-details{position:absolute;z-index:3;left:8%;top:66%;width:84%;height:32%;display:grid;grid-template-columns:42% 37% 17%;column-gap:2%;text-align:left}
+#characterSelect .selection-detail-column{display:grid;grid-template-rows:repeat(7,1fr);gap:2px}
+#characterSelect .selection-detail-column>div{display:grid;grid-template-columns:47% 53%;align-items:center;min-height:0;gap:4px}
+#characterSelect .selection-detail-column label{font-family:Georgia,'PMingLiU',serif;font-size:17px;color:#e7d9bb;text-shadow:0 1px 4px #000;text-align:right}
+#characterSelect .selection-detail-column output{display:flex;align-items:center;min-width:0;height:24px;box-sizing:border-box;padding:0 7px;background:#0c0a09e8;border:2px ridge #756459;color:#fff3d9;font-size:13px;overflow:hidden;white-space:nowrap}
+#characterSelect .selection-actions{display:flex;flex-direction:column;gap:8px;justify-content:flex-start;padding-top:5px}
+#characterSelect .selection-actions button{width:100%;min-height:29px;padding:3px!important;background:#100c0b!important;color:#e7d09a!important;border:1px solid #8b713b!important;font:13px 'PMingLiU',serif!important;cursor:pointer}
+#characterSelect .selection-actions button:disabled{opacity:.4;cursor:not-allowed}
+#characterSelect .selection-actions button:not(:disabled):hover{background:#48331b!important}
+
+/* Traditional Chinese selection typography test: isolated visual patch. */
+#characterSelect .selection-detail-column label{
+ font-family:'Noto Serif TC','Songti TC','PMingLiU',serif!important;
+ font-size:14px!important;font-weight:600!important;letter-spacing:.045em!important;
+ color:#f5dfad!important;line-height:1.2!important;
+ text-shadow:0 0 2px #ffe8b5,0 0 5px #b98235,0 1px 2px #100900!important;
+ background:linear-gradient(90deg,rgba(20,13,11,.94),rgba(20,13,11,.88))!important;
+ padding:2px 4px!important;border-radius:2px!important;
+}
+#characterSelect .selection-detail-column output{
+ font-family:'Noto Serif TC','PMingLiU',serif!important;font-size:12px!important;
+ color:#f1e4c9!important;text-shadow:0 0 3px #a87d3e!important;
+}
+#characterSelect .selection-actions button{
+ font-family:'Noto Serif TC','PMingLiU',serif!important;font-size:12px!important;
+ letter-spacing:.08em!important;text-shadow:0 0 4px #bd8e47!important;
+}
+#characterSelect .slot-selected{font-family:'Noto Serif TC','PMingLiU',serif!important;font-size:14px!important;letter-spacing:.08em!important;text-shadow:0 0 4px #f5cf81,0 0 8px #b47a2c!important;}
+
+/* A2: cover baked-in English stat captions with a restrained dark inset,
+   while retaining the original ornamental border and interactive elements. */
+#characterSelect .selection-details{
+ background:linear-gradient(90deg,rgba(13,9,9,.94) 0%,rgba(19,13,12,.91) 78%,rgba(14,10,10,.78) 100%)!important;
+ border-radius:3px!important;
+ padding:5px 7px 5px 3px!important;
+}
+#characterSelect .selection-detail-column label{
+ background:transparent!important;
+ padding:1px 5px!important;
+}
+#characterSelect .selection-detail-column output{
+ border:1px solid #756044!important;
+ background:rgba(6,5,5,.94)!important;
+ box-shadow:inset 0 0 4px #000!important;
+}
+#characterSelect .selection-actions button{
+ box-shadow:inset 0 0 6px #5e421c55,0 0 3px #8e6b2a33!important;
+}
+
+/* A3 isolated fixes: original background art remains, baked-in English overlay removed. */
+#characterSelect .selection-decor{display:none!important}
+#characterSelect .selection-details{background:linear-gradient(180deg,rgba(19,13,12,.72),rgba(10,8,8,.79))!important;border:1px solid #69512d!important;box-shadow:inset 0 0 18px #080504!important;z-index:8!important}
+#characterSelect .selection-pages{z-index:9!important}
+#characterSelect .selection-arch-grid{z-index:7!important}
+#characterSelect #characterSelectPortrait{mix-blend-mode:screen!important;filter:drop-shadow(0 0 6px #c9a36a55)!important}
+#characterSelect .selection-actions button{position:relative!important;z-index:12!important;pointer-events:auto!important}
+#characterSelect .selection-detail-column label{font-size:13px!important;font-weight:400!important;text-shadow:0 0 3px #f4d39a,0 1px 2px #000!important}
+
+/* A4: restore the original English inscriptions baked into the background.
+   Hide only duplicated Chinese captions; retain live character data and buttons. */
+#characterSelect .selection-decor{display:block!important;z-index:1!important}
+#characterSelect .selection-details{background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important;z-index:8!important}
+#characterSelect .selection-detail-column label{visibility:hidden!important}
+#characterSelect .selection-detail-column output{background:rgba(9,7,7,.84)!important;border:1px solid #796447!important;color:#f4e6ca!important}
+#characterSelect .selection-actions button{pointer-events:auto!important;z-index:12!important}
+
+/* A5: use the original printed stat boxes; do not draw replacement rectangles. */
+#characterSelect .selection-detail-column output{
+ background:transparent!important;border:0!important;box-shadow:none!important;
+ padding:0 4px!important;height:22px!important;overflow:visible!important;
+ color:#f5e8c9!important;font:12px 'PMingLiU',serif!important;
+ text-shadow:0 1px 2px #000!important;
+ transform:translateX(34px)!important;
+}
+#characterSelect .selection-detail-column>div{grid-template-columns:47% 53%!important}
+#characterSelect .selection-detail-column label{visibility:hidden!important}
+
+/* A6: anchor live values to the preprinted background boxes (1104 x 824 stage). */
+#characterSelect .selection-details{left:0!important;top:0!important;width:100%!important;height:100%!important;display:block!important;pointer-events:none!important}
+#characterSelect .selection-detail-column{display:contents!important}
+#characterSelect .selection-detail-column>div{display:contents!important}
+#characterSelect .selection-detail-column label{display:none!important}
+#characterSelect .selection-detail-column output{position:absolute!important;transform:none!important;display:flex!important;align-items:center!important;justify-content:flex-start!important;box-sizing:border-box!important;width:16.5%!important;height:3.05%!important;padding:0 4px!important;background:transparent!important;border:0!important;box-shadow:none!important;overflow:hidden!important;font:12px 'PMingLiU',serif!important;color:#f5e7c9!important;text-shadow:0 1px 2px #000!important}
+#characterSelect .selection-detail-column:first-child output{left:33.5%!important}
+#characterSelect .selection-detail-column:nth-child(2) output{left:69.5%!important}
+#characterSelect .selection-detail-column:first-child>div:nth-child(1) output,#characterSelect .selection-detail-column:nth-child(2)>div:nth-child(1) output{top:67.0%!important}
+#characterSelect .selection-detail-column:first-child>div:nth-child(2) output,#characterSelect .selection-detail-column:nth-child(2)>div:nth-child(2) output{top:71.65%!important}
+#characterSelect .selection-detail-column:first-child>div:nth-child(3) output,#characterSelect .selection-detail-column:nth-child(2)>div:nth-child(3) output{top:76.30%!important}
+#characterSelect .selection-detail-column:first-child>div:nth-child(4) output,#characterSelect .selection-detail-column:nth-child(2)>div:nth-child(4) output{top:80.95%!important}
+#characterSelect .selection-detail-column:first-child>div:nth-child(5) output,#characterSelect .selection-detail-column:nth-child(2)>div:nth-child(5) output{top:85.60%!important}
+#characterSelect .selection-detail-column:first-child>div:nth-child(6) output,#characterSelect .selection-detail-column:nth-child(2)>div:nth-child(6) output{top:90.25%!important}
+#characterSelect .selection-detail-column:first-child>div:nth-child(7) output,#characterSelect .selection-detail-column:nth-child(2)>div:nth-child(7) output{top:94.90%!important}
+#characterSelect .selection-actions{position:absolute!important;left:86%!important;top:67%!important;width:12%!important;pointer-events:auto!important;z-index:20!important}
+
+/* A7: align data to the original artwork's boxes; percentages of 1104x824 stage. */
+#characterSelect .selection-detail-column:first-child output{left:28.8%!important;width:14.5%!important}
+#characterSelect .selection-detail-column:nth-child(2) output{left:63.6%!important;width:14.8%!important}
+#characterSelect .selection-detail-column:first-child>div:nth-child(1) output,#characterSelect .selection-detail-column:nth-child(2)>div:nth-child(1) output{top:64.9%!important}
+#characterSelect .selection-detail-column:first-child>div:nth-child(2) output,#characterSelect .selection-detail-column:nth-child(2)>div:nth-child(2) output{top:69.1%!important}
+#characterSelect .selection-detail-column:first-child>div:nth-child(3) output,#characterSelect .selection-detail-column:nth-child(2)>div:nth-child(3) output{top:73.3%!important}
+#characterSelect .selection-detail-column:first-child>div:nth-child(4) output,#characterSelect .selection-detail-column:nth-child(2)>div:nth-child(4) output{top:77.5%!important}
+#characterSelect .selection-detail-column:first-child>div:nth-child(5) output,#characterSelect .selection-detail-column:nth-child(2)>div:nth-child(5) output{top:81.7%!important}
+#characterSelect .selection-detail-column:first-child>div:nth-child(6) output,#characterSelect .selection-detail-column:nth-child(2)>div:nth-child(6) output{top:85.9%!important}
+#characterSelect .selection-detail-column:first-child>div:nth-child(7) output,#characterSelect .selection-detail-column:nth-child(2)>div:nth-child(7) output{top:90.1%!important}
+#characterSelect .selection-actions{left:85.7%!important;top:66%!important;z-index:50!important}
+#characterSelect #enterGame{position:relative!important;z-index:51!important;pointer-events:auto!important;touch-action:manipulation!important}
+
+/* A8: fine optical alignment of text inside the original artwork boxes. */
+#characterSelect .selection-detail-column output{
+ padding:2px 0 0 7px!important;
+ height:2.65%!important;
+ line-height:1!important;
+ font-size:11px!important;
+ align-items:center!important;
+}
+#characterSelect .selection-detail-column:first-child output{left:29.2%!important;width:13.8%!important}
+#characterSelect .selection-detail-column:nth-child(2) output{left:64.0%!important;width:13.8%!important}
+
+/* A9: user-confirmed vertical-only adjustment; preserve horizontal alignment. */
+#characterSelect .selection-detail-column output{margin-top:0.8%!important}
+
+/* A10: desktop controls above decoration, preserve original stat placement. */
+#characterSelect .selection-actions{z-index:100!important;pointer-events:auto!important}
+#characterSelect .selection-actions button{pointer-events:auto!important;touch-action:manipulation!important}
+#characterSelect .selection-arch-grid{pointer-events:none!important}
+#characterSelect #characterSlot{pointer-events:auto!important}
+#characterSelect #characterSelectPortrait{mask-image:linear-gradient(to right,transparent 0%,black 9%,black 91%,transparent 100%)!important}
+
+/* A14: removed screen blend and gradient masking; actual PNG alpha handles the portrait. */
+#characterSelect #characterSelectPortrait{mix-blend-mode:normal!important;mask-image:none!important;filter:drop-shadow(0 0 6px #d8b26a66)!important}
+
+/* A17-R: layout reconstructed from user-supplied 2004 screenshot; decorations are original CSS, not copied game assets. */
+body.a17r-world header,body.a17r-world aside{display:none!important}
+body.a17r-world .layout{display:block;max-width:1200px;padding:0;margin:0 auto}
+body.a17r-world .game{width:100%;background:#0b0c09;overflow:hidden}
+body.a17r-world #c{width:100%;height:auto;max-height:calc(100dvh - 116px);object-fit:contain;border:0}
+#a17rBar{display:none;min-height:111px;grid-template-columns:21% 1fr 23%;gap:4px;background:linear-gradient(155deg,#4b4436,#161a18 24%,#35302c 85%,#0c0e0c);border-top:5px ridge #c2b49a;padding:5px 6px;color:#ddd6c8;font:12px Georgia,'Microsoft JhengHei',serif}
+body.a17r-world #a17rBar{display:grid}
+#a17rBar .a17rFrame{border:3px ridge #b5a38b;background:#10141be8;box-shadow:inset 0 0 8px #000;min-width:0;padding:4px}
+#a17rBar .a17rMeter{height:13px;background:#181a1d;border:1px solid #b8ad97;margin:4px 0;position:relative;text-align:center;font:10px Arial}
+#a17rBar .a17rMeter i{position:absolute;inset:0 auto 0 0;background:linear-gradient(#e9a6a6,#921e28);width:0}
+#a17rBar .a17rMeter.mp i{background:linear-gradient(#9ad2ec,#215a95)}
+#a17rBar .a17rMeter span{position:relative;z-index:1;text-shadow:1px 1px #000}
+#a17rBar .a17rChat{overflow:auto;max-height:98px;white-space:pre-wrap;font:12px/1.4 'Microsoft JhengHei',sans-serif}
+#a17rBar .a17rTools{display:grid;grid-template-columns:repeat(4,1fr);gap:3px}
+#a17rBar button{margin:0;min-height:28px;padding:2px;border:2px ridge #9d998a;background:linear-gradient(#535448,#171d1b);color:#f2ead4;font-size:12px}
+#a17rInventory{display:none;position:absolute;z-index:18;right:2%;top:3%;width:245px;max-width:75%;background:linear-gradient(#34322d,#0c1218);border:6px ridge #a69b88;box-shadow:0 5px 18px #000c;color:#e8dfc8;padding:8px;font:13px 'Microsoft JhengHei',sans-serif}
+#a17rInventory.a17r-open{display:block}#a17rInventory .a17rSlots{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:10px}#a17rInventory .a17rSlots span{aspect-ratio:1;background:#171a1b;border:2px ridge #6c6459;text-align:center;padding-top:13px}
+#a17rInventory button{float:right}
+body.a17r-world #notice{display:none}
+@media(max-width:600px){#a17rBar{grid-template-columns:31% 1fr 26%;min-height:92px;font-size:10px;padding:3px;gap:2px}#a17rBar .a17rChat{font-size:10px;max-height:88px}#a17rBar button{font-size:10px;min-height:25px}body.a17r-world #c{max-height:calc(100dvh - 150px)}}
+
+/* A18: desktop viewport proportions and nonintrusive test controls. */
+body.a17r-world{background:#090b0a;overflow-x:hidden}
+body.a17r-world .layout{max-width:1280px;width:100%;padding:0}
+body.a17r-world .game{display:flex;flex-direction:column;min-height:100dvh}
+body.a17r-world #c{flex:1 1 auto;width:100%;height:calc(100dvh - 126px);max-height:none;min-height:0;object-fit:contain;background:#141b16}
+body.a17r-world #a17rBar{flex:0 0 126px;min-height:126px;grid-template-columns:23% minmax(0,1fr) 21%;border-top:6px ridge #c7b9a1;gap:5px;padding:5px}
+body.a17r-world #returnToCharacterSelect{display:none!important}
+body.a17r-world #a12Diagnostics{display:none!important}
+body.a17r-world #a17rBar .a17rFrame{border:4px ridge #a99a82;box-shadow:inset 0 0 12px #000,0 0 0 1px #3b352b}
+body.a17r-world #a17rBar .a17rTools{grid-template-columns:repeat(4,minmax(0,1fr))}
+body.a17r-world #a17rBar .a17rTools button{font-size:11px;min-width:0}
+@media(max-width:650px){body.a17r-world .game{min-height:100dvh}body.a17r-world #c{height:calc(100dvh - 155px);max-height:none}body.a17r-world #a17rBar{flex-basis:100px;min-height:100px;grid-template-columns:31% minmax(0,1fr) 27%;padding:3px;gap:2px}body.a17r-world #a17rBar .a17rTools button{font-size:9px}}
+
+/* A20: landscape mobile playfield without portrait stretching */
+#a20Rotate{display:none}
+@media (orientation:portrait) and (max-width:800px){body.a17r-world #a20Rotate{display:flex;position:fixed;inset:0;z-index:100000;background:#111713;color:#e9dbba;align-items:center;justify-content:center;text-align:center;padding:30px;font:18px/1.8 'Microsoft JhengHei',sans-serif}body.a17r-world .layout{visibility:hidden}}
+@media (orientation:landscape) and (max-height:600px){body.a17r-world .game{height:100dvh;min-height:0}body.a17r-world #c{height:calc(100dvh - 88px);min-height:0;max-height:none}body.a17r-world #a17rBar{flex:0 0 88px;min-height:88px;padding:2px;gap:2px}body.a17r-world #a17rBar .a17rFrame{padding:2px;border-width:2px}body.a17r-world #a17rBar .a17rTools button{min-height:20px;font-size:9px}body.a17r-world #mobileBar{display:none!important}}
+
+/* A22: preserve world proportions by matching canvas backing dimensions to its visible viewport. */
+body.a17r-world #c{display:block;flex:1 1 auto;width:100%;height:auto;min-height:0;max-height:none;object-fit:fill}
+@media (orientation:landscape) and (max-height:600px){body.a17r-world #c{height:auto;max-height:none;min-height:0}}
+</style></head><body><div id="a20Rotate">請將手機橫向旋轉，以正確比例觀看《天與地》測試畫面</div><header><b>天與地 · 2004 歷史研究原型</b><small>A25｜原創地表圖像測試｜雙平台｜獨立技術原型・非官方・非原版客戶端・未使用原版圖像音效</small></header><div class="layout"><div class="game"><canvas id="c" width="960" height="620"></canvas><div id="notice">點地面移動｜點怪物攻擊｜點物品拾取｜拖曳移動畫面<div id="a24AssetStatus" style="color:#e5c58b;font-size:11px">地形素材：載入中</div><div id="spriteStatus" style="color:#f3da93;margin-top:4px">騎士圖片：檢查中</div><img id="spritePreview" alt="騎士圖片預覽" style="display:none;max-height:70px;max-width:90px;image-rendering:pixelated" /></div><div id="mobileBar"><div><button id="centerCam" title="回到角色">定位</button><button id="mobileHeal">藥水</button></div><div><button id="mobileSave">儲存</button><button id="mobileInfo">資訊</button></div></div><button type="button" id="returnToCharacterSelect" hidden>返回角色選擇</button><div id="desktopGameHelp" hidden role="dialog" aria-label="操作說明"><b>Windows 測試操作</b><p>滑鼠點地面：自動尋路<br>點怪物：追擊與攻擊<br>點掉落物：拾取<br>方向鍵：移動畫面<br>C：鏡頭回到角色<br>H：使用治癒藥水<br>S：儲存進度<br>Esc：取消移動／追擊<br>F1 或 ?：開關說明</p><button type="button" id="closeDesktopHelp">關閉說明</button><small>地圖、掉落與戰鬥數值仍為測試資料，非 2004 年原版數據。</small></div><div id="characterSelect" hidden role="dialog" aria-label="選擇角色"><div class="character-select-panel">
+<div class="selection-arch-grid" aria-label="角色展示欄"><button type="button" id="characterSlot" class="character-slot" aria-pressed="true"><img id="characterSelectPortrait" alt="角色外觀" loading="eager"><span class="slot-selected">選擇角色</span></button><div class="selection-empty-slot"></div><div class="selection-empty-slot"></div><div class="selection-empty-slot"></div></div>
+<img class="selection-decor" src="https://shines871.github.io/idle-lineage-class/public/assets/login/load1.png" alt="" aria-hidden="true">
+<div class="selection-pages"><span class="active">1</span><span>2</span></div>
+<div class="selection-details">
+<div class="selection-detail-column">
+<div><label>角色名稱</label><output id="selectedCharacterName"></output></div>
+<div><label>血盟</label><output>－</output></div>
+<div><label>職業</label><output id="selectedCharacterClass"></output></div>
+<div><label>正義值</label><output>待確認</output></div>
+<div><label>體力</label><output id="selectedCharacterHp"></output></div>
+<div><label>魔力</label><output id="selectedCharacterMp"></output></div>
+<div><label>防禦力</label><output>待確認</output></div>
+</div>
+<div class="selection-detail-column">
+<div><label>等級</label><output id="selectedCharacterLevel"></output></div>
+<div><label>力量</label><output id="selectedCharacterStr"></output></div>
+<div><label>敏捷</label><output id="selectedCharacterDex"></output></div>
+<div><label>體質</label><output id="selectedCharacterCon"></output></div>
+<div><label>精神</label><output id="selectedCharacterWis"></output></div>
+<div><label>魅力</label><output id="selectedCharacterCha"></output></div>
+<div><label>智力</label><output id="selectedCharacterInt"></output></div>
+</div>
+<div class="selection-actions"><button type="button" id="enterGame">進入遊戲</button><button type="button" id="saveAndReturn">儲存進度</button><button type="button" disabled title="多角色刪除尚未實裝">刪除角色</button><button type="button" id="backToCreation">返回</button></div>
+</div>
+<div id="selectedCharacterInfo" hidden></div>
+</div></div><div id="modal"><div class="dialog"><h2>創造角色</h2><div class="creation-columns"><section class="creation-parchment"><div class="scroll-top"></div><h3 id="creationLoreTitle">王族</h3><p id="creationLoreText">選擇職業後顯示職業介紹。</p><small>職業介紹為暫寫摘要，等待原版文字核對。</small><div class="scroll-bottom"></div></section><section class="creation-preview"><div class="creation-heading">選擇職業與角色</div><div id="creationEmblems" class="creation-emblems" role="group" aria-label="環繞人物的職業選擇圖示"></div><img id="referenceCreationBg" alt="" aria-hidden="true" loading="lazy"><div id="creationFigure" class="creation-figure creation-illustrated" aria-label="職業人物預覽">
+<img id="referenceCreationAvatar" class="reference-creation-avatar" alt="參考網站角色預覽" loading="lazy"><svg viewBox="0 0 160 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="角色造型預覽">
+<defs><linearGradient id="armorLight" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff" stop-opacity=".33"/><stop offset=".4" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".5"/></linearGradient><linearGradient id="steelBlade" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#4a5860"/><stop offset=".5" stop-color="#e5e9dd"/><stop offset="1" stop-color="#697985"/></linearGradient></defs>
+<ellipse cx="80" cy="238" rx="49" ry="8" fill="#000" opacity=".45"/>
+<path class="figure-cloak" d="M51 86Q23 103 22 190L41 215 80 191 119 215 138 190Q135 103 109 86Z" fill="var(--cloak)"/>
+<path d="M59 166L50 226 71 226 80 175 89 226 110 226 101 166Z" fill="#3d3b34" stroke="#1c211f" stroke-width="3"/>
+<path d="M48 224H73L75 236H43Z M87 224H112L117 236H85Z" fill="#292b2b" stroke="#85755c" stroke-width="2"/>
+<path d="M54 82L35 97 30 143 43 153 57 121 53 169 106 169 103 121 117 153 130 143 124 97 106 82Z" fill="var(--armor)" stroke="#2b2b27" stroke-width="3"/>
+<path d="M54 82L35 97 30 143 43 153 57 121 53 169 106 169 103 121 117 153 130 143 124 97 106 82Z" fill="url(#armorLight)"/>
+<path d="M50 148Q80 155 110 148L107 159Q80 164 53 159Z" fill="#3b2b1d" stroke="#a78c54" stroke-width="2"/>
+<path d="M71 151H89V163H71Z" fill="#ad8e52" stroke="#4e3d25" stroke-width="2"/>
+<path d="M65 70L64 91 80 105 96 91 95 70Z" fill="#c69a76" stroke="#5d4334" stroke-width="2"/>
+<ellipse cx="80" cy="52" rx="24" ry="32" fill="#cfa17e" stroke="#684d39" stroke-width="2"/>
+<path class="figure-hair" d="M56 57Q47 20 70 15Q96 5 105 31L104 62 97 49 95 29Q80 38 61 31L62 59Z" fill="var(--hair)"/>
+<path class="figure-longhair" d="M57 42Q44 70 49 113L59 107 62 59M102 42Q115 76 108 113L98 107 98 59" fill="var(--hair)"/>
+<path d="M67 56h8m10 0h8" stroke="#3c312c" stroke-width="2.5" stroke-linecap="round"/>
+<path d="M76 72q4 3 8 0" fill="none" stroke="#7f4d42" stroke-width="1.5"/>
+<g class="figure-details" pointer-events="none">
+<path d="M56 87L80 107 104 87" fill="none" stroke="var(--trim)" stroke-width="4" opacity=".9"/>
+<path d="M59 105L68 116 63 144M101 105L92 116 97 144" fill="none" stroke="var(--trim)" stroke-width="2" opacity=".7"/>
+<path d="M39 99L31 123 42 129 51 105M121 99L129 123 118 129 109 105" fill="none" stroke="var(--trim)" stroke-width="2" opacity=".65"/>
+<path d="M58 166L58 202M102 166L102 202" stroke="#d7c4a0" stroke-width="2" opacity=".3"/>
+<path d="M50 227H71M89 227H110" stroke="#b8aa86" stroke-width="2" opacity=".65"/>
+<path d="M72 111L80 119 88 111" fill="none" stroke="var(--trim)" stroke-width="2"/>
+<circle cx="80" cy="125" r="3" fill="var(--trim)"/>
+</g>
+<g class="figure-royal-detail"><path d="M61 111L80 135 99 111" fill="none" stroke="#e4c56e" stroke-width="3"/><circle cx="80" cy="137" r="6" fill="#a74439" stroke="#e7c96b" stroke-width="2"/></g>
+<g class="figure-knight-detail"><path d="M53 99L80 112 107 99 102 140 80 149 58 140Z" fill="#aab6ba" opacity=".55" stroke="#e2e7dc" stroke-width="2"/><path d="M80 111V146M59 123H101" stroke="#53616b" stroke-width="3"/></g>
+<g class="figure-elf-detail"><path d="M56 98Q80 114 104 98" fill="none" stroke="#c4d8a4" stroke-width="3"/><path d="M73 116Q80 107 87 116L80 130Z" fill="#7ecb9e" stroke="#d2e9b7" stroke-width="1.5"/></g>
+<g class="figure-mage-detail"><path d="M52 94L80 120 108 94M60 137L80 152 100 137" fill="none" stroke="#b6a4df" stroke-width="3"/><circle cx="80" cy="127" r="7" fill="#9aa5e8" stroke="#e5d9ff" stroke-width="2"/></g>
+<g class="figure-darkelf-detail"><path d="M56 104L80 114 104 104M58 139L80 128 102 139" fill="none" stroke="#a39dbd" stroke-width="3"/><path d="M75 118L80 124 85 118" fill="#a85882"/></g>
+<g class="figure-tailoring" pointer-events="none">
+<path d="M48 88Q34 86 26 102L19 129 33 145 48 126 57 100Z" fill="var(--armor)" stroke="#292b2b" stroke-width="3"/>
+<path d="M112 88Q126 86 134 102L141 129 127 145 112 126 103 100Z" fill="var(--armor)" stroke="#292b2b" stroke-width="3"/>
+<path d="M28 108L22 127 33 135 44 115M132 108L138 127 127 135 116 115" fill="none" stroke="var(--trim)" stroke-width="3" opacity=".85"/>
+<path d="M30 140L26 160 36 167 48 145 43 132Z M130 140L134 160 124 167 112 145 117 132Z" fill="var(--armor)" stroke="#272a28" stroke-width="3"/>
+<path d="M26 160Q30 175 40 166L44 159 33 153Z M134 160Q130 175 120 166L116 159 127 153Z" fill="#b99073" stroke="#564338" stroke-width="2"/>
+<path d="M51 164L43 195 54 204 76 177 85 179 107 204 117 195 109 164" fill="var(--armor)" stroke="#34312c" stroke-width="2" opacity=".8"/>
+<path d="M51 178L47 194 56 199M109 178L113 194 104 199" fill="none" stroke="var(--trim)" stroke-width="2" opacity=".65"/>
+<path d="M69 43Q73 40 78 44M83 44Q88 40 93 43" stroke="#533b30" stroke-width="2" fill="none"/>
+<path d="M72 61L70 64M90 61L88 64" stroke="#e5b393" stroke-width="2" opacity=".7"/>
+<path d="M78 60L76 68 81 69" fill="none" stroke="#98694f" stroke-width="1.5"/>
+</g>
+<g class="figure-hair-locks" pointer-events="none"><path d="M60 32Q55 58 58 83L64 76 65 38M100 32Q105 58 102 83L96 76 95 38" fill="var(--hair)" stroke="#241e1b" stroke-width="1.5"/></g>
+<g class="figure-helmet"><path d="M54 55Q48 17 80 13Q112 17 106 55L98 49 94 31H66L62 49Z" fill="#aeb7b6" stroke="#404c53" stroke-width="3"/><path d="M78 13V49" stroke="#e8e3c7" stroke-width="5"/><path d="M53 49H107" stroke="#58656a" stroke-width="6"/></g>
+<g class="figure-crown"><path d="M58 34L55 16 68 25 80 9 92 25 105 16 102 34Z" fill="#b99b4d" stroke="#f4d998" stroke-width="2"/></g>
+<g class="figure-ears"><path d="M57 55L45 44 52 66M103 55L115 44 108 66" fill="#cfa17e" stroke="#684d39" stroke-width="2"/></g>
+<g class="figure-sword"><path d="M118 124L145 28 153 16 151 35 127 129Z" fill="url(#steelBlade)" stroke="#37474c" stroke-width="2"/><path d="M108 117L137 132" stroke="#c5aa70" stroke-width="7"/><path d="M122 125L107 164" stroke="#4d3829" stroke-width="8"/></g>
+<g class="figure-staff"><path d="M131 218L140 31" stroke="#614326" stroke-width="8" stroke-linecap="round"/><circle cx="140" cy="26" r="14" fill="#7b89c9" stroke="#d6c2a1" stroke-width="4"/><circle cx="140" cy="26" r="7" fill="#e0e9ff"/></g>
+<g class="figure-bow"><path d="M135 55Q165 120 135 190" fill="none" stroke="#a78348" stroke-width="7"/><path d="M135 55L135 190" stroke="#e2d7bd" stroke-width="1.8"/></g>
+<g class="figure-daggers"><path d="M27 115L8 79 6 66 18 76 36 109Z M122 115L141 79 143 66 131 76 113 109Z" fill="url(#steelBlade)" stroke="#6b7a7c" stroke-width="2"/></g>
+</svg></div><div id="creationCaption">王族・男性</div><div id="creationAnimationStatus" role="status" aria-live="polite">人物動畫載入中</div><div class="creation-historical">人物圖片引用參考網站；載入失敗時使用自製替代圖</div></section><section class="creation-controls"><label>角色名稱<input id="name" maxlength="12" value="冒險者"></label><div class="creation-class-tabs" id="creationClassTabs" role="group" aria-label="職業選擇"></div><label>職業<select id="job"><option>王族</option><option>騎士</option><option>妖精</option><option>法師</option><option>黑暗妖精</option></select></label><div id="creationGenderButtons" class="creation-gender-buttons" role="group" aria-label="角色性別選擇"><button type="button" data-gender="男">男性</button><button type="button" data-gender="女">女性</button></div><label>性別<select id="gender"><option value="男">男性</option><option value="女">女性</option></select></label><div id="creationStats" class="panel" aria-live="polite">職業能力值載入中</div><p class="hint">2004 年角色建立流程包含職業選擇與六項能力值。此介面為歷史還原中的測試版；職業初值、配點限制及人物圖像仍須依當年資料核對。性別目前僅保存角色資料，不代表已有對應動畫。</p><p class="hint">六大能力值採用待歷史覆核的早期職業基礎表。HP、MP、怪物傷害及經驗值均為「測試參數」，不是 2004 年官方數值。</p><button id="start">確定</button><button id="creationCancel" type="button">取消</button><button id="load">讀取存檔</button></section></div></div></div><div id="a17rInventory" role="dialog" aria-label="道具欄"><button id="a17rCloseInventory" type="button">×</button><b>道具欄</b><div class="a17rSlots" id="a17rSlots"></div><small>測試版：物品分類與原版圖示待考證</small></div><div id="a17rBar"><section class="a17rFrame"><div id="a17rName">Lv.1</div><div>EXP <span id="a17rExp">0%</span></div><div class="a17rMeter"><i id="a17rHpFill"></i><span id="a17rHp"></span></div><div class="a17rMeter mp"><i id="a17rMpFill"></i><span id="a17rMp"></span></div></section><section class="a17rFrame a17rChat" id="a17rChat">2004 年《天與地》介面還原測試</section><section class="a17rFrame a17rTools"><button id="a17rStatus" type="button">狀態</button><button id="a17rBag" type="button">背包</button><button id="a17rHeal" type="button">藥水</button><button id="a17rSave" type="button">儲存</button><button id="a17rChatSize" type="button">聊天</button><button id="a17rHelp" type="button">說明</button><button id="a17rReturn" type="button">選角</button><button id="a17rCloseBag" type="button">關背包</button></section></div></div><aside><h3 id="who">尚未建立角色</h3><div class="stat">HP <span id="hptext"></span><div class="meter"><i id="hpbar"></i></div></div><div class="stat">MP <span id="mptext"></span><div class="meter mp"><i id="mpbar"></i></div></div><div class="stat">EXP <span id="xptext"></span><div class="meter xp"><i id="xpbar"></i></div></div><div class="panel" id="attributes">角色資料</div><div class="panel"><button id="heal">使用治癒藥水 (<span id="pots">3</span>)</button><button id="save">儲存</button><button id="reset">重建角色</button></div><div class="panel"><b>訊息紀錄</b><div id="log"></div></div><div class="panel"><b>資料狀態</b><div>歷史基準：2004/07《天與地》</div><div>五職業：歷史版本已確認</div><div>能力初值：暫定、待覆核</div><div>戰鬥公式：測試用，待考證</div><div>地圖與美術：自製佔位，不是原版地圖</div></div></aside></div><script>
+'use strict';
+const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');const W=40,H=40,TW=56,TH=28;const jobs={'王族':[13,10,10,10,11,13,8],'騎士':[16,12,14,8,9,12,4],'妖精':[11,12,12,12,12,9,7],'法師':[8,7,12,12,12,8,16],'黑暗妖精':[12,15,8,11,10,9,10]};let player=null,monsters=[],drops=[],cam={x:0,y:0},target=null,keys={},last=0,attackTimer=0;let spriteFacing=4,spriteMovingUntil=0,spriteAttackUntil=0,spritePickupUntil=0,spriteHitUntil=0,spriteMoveFrom=null,spriteMoveTo=null,spriteMoveStart=0;const SPRITE_STEP_MS=170;const tile=[];let seed=7412;function rand(){seed=(seed*1664525+1013904223)>>>0;return seed/4294967296}for(let y=0;y<H;y++){tile[y]=[];for(let x=0;x<W;x++){let r=rand();tile[y][x]=(x>15&&x<19&&y>3&&y<32)?'water':r<.07?'tree':r<.10?'rock':r<.14?'dirt':'grass'}}for(let y=17;y<=19;y++)for(let x=15;x<=18;x++)tile[y][x]='bridge';for(let y=7;y<14;y++)for(let x=7;x<14;x++)tile[y][x]='grass';function pass(x,y){return x>=0&&y>=0&&x<W&&y<H&&!['water','tree','rock'].includes(tile[y][x])}function msg(s){let p=document.createElement('div');p.textContent='• '+s;let l=document.getElementById('log');l.prepend(p);while(l.children.length>25)l.lastChild.remove()}function spawn(){monsters=[];for(let i=0;i<22;i++){let x=3+Math.floor(rand()*34),y=3+Math.floor(rand()*34);if(pass(x,y)&&Math.hypot(x-10,y-10)>5)monsters.push({x,y,hp:30,max:30,alive:true,name:i%3===0?'獸人':'哥布林',cool:0})}}function newPlayer(name,job){let a=jobs[job];if(creationRemaining()!==0){alert('請先分配全部能力值點數');return}player={name,job,gender:document.getElementById('gender').value,x:10,y:10,hp:90,maxHp:90,mp:35,maxMp:35,lv:1,xp:0,pots:3,stats:a.slice(0,6).map((v,i)=>v+creationPoints[i]),path:[],step:0};drops=[];target=null;spawn();centerCamera();document.getElementById('modal').style.display='none';save();showCharacterSelection();update()}let worldEntered=false;
+function showCharacterSelection(){
+ if(!player)return;
+ worldEntered=false;a17rRefresh();target=null;player.path=[];
+ document.getElementById('selectedCharacterName').textContent=player.name;
+ document.getElementById('selectedCharacterInfo').textContent=player.job+'・'+(player.gender||'男')+'・Lv.'+player.lv;
+ const frame=referenceCreationFrames[player.job]?.[player.gender||'男'];
+ const portrait=document.getElementById('characterSelectPortrait');
+ // A16: keep the previous portrait hidden until the new image has finished processing.
+ portrait.hidden=true;
+ const portraitRequest=String(Date.now())+'-'+Math.random();portrait.dataset.request=portraitRequest;
+ if(frame){
+  // A14: use a flood-filled transparent portrait, falling back to the source if blocked.
+  portrait.onerror=()=>{portrait.hidden=true;};
+  const src=referenceBase+frame[0]+'/'+frame[1]+'.png';
+  const asset=new Image();asset.crossOrigin='anonymous';
+  asset.onload=()=>{try{
+   const c=document.createElement('canvas');c.width=asset.naturalWidth;c.height=asset.naturalHeight;
+   const ctx=c.getContext('2d',{willReadFrequently:true});ctx.drawImage(asset,0,0);
+   const im=ctx.getImageData(0,0,c.width,c.height),d=im.data,w=c.width,h=c.height;
+   const seen=new Uint8Array(w*h),stack=[];
+   // A15: conservative removal: only edge-connected near-pure black pixels, preserving dark armor and outlines.
+   function dark(i){const p=i*4;return d[p]<=10&&d[p+1]<=10&&d[p+2]<=10&&d[p+3]>0;}
+   function add(i){if(!seen[i]&&dark(i)){seen[i]=1;stack.push(i);}}
+   for(let x=0;x<w;x++){add(x);add((h-1)*w+x)}
+   for(let y=0;y<h;y++){add(y*w);add(y*w+w-1)}
+   while(stack.length){const i=stack.pop(),x=i%w,y=(i/w)|0;d[i*4+3]=0;
+    if(x>0)add(i-1);if(x<w-1)add(i+1);if(y>0)add(i-w);if(y<h-1)add(i+w);
+   }
+   ctx.putImageData(im,0,0);if(portrait.dataset.request!==portraitRequest)return;portrait.onload=()=>{if(portrait.dataset.request===portraitRequest)portrait.hidden=false;};portrait.src=c.toDataURL('image/png');
+  }catch(e){if(portrait.dataset.request===portraitRequest){portrait.onload=()=>{portrait.hidden=false;};portrait.src=src;}}}
+  asset.onerror=()=>{if(portrait.dataset.request===portraitRequest){portrait.onload=()=>{portrait.hidden=false;};portrait.src=src;}};asset.src=src;
+ }
+ document.getElementById('characterSlot').setAttribute('aria-pressed','true');
+ document.getElementById('selectedCharacterClass').textContent=player.job;
+ document.getElementById('selectedCharacterLevel').textContent=String(player.lv);
+ document.getElementById('selectedCharacterHp').textContent=player.hp+' / '+player.maxHp;
+ document.getElementById('selectedCharacterMp').textContent=player.mp+' / '+player.maxMp;
+ const fields=['Str','Dex','Con','Int','Wis','Cha'];
+ fields.forEach((key,i)=>{document.getElementById('selectedCharacter'+key).textContent=String(player.stats?.[i]??'待確認')});
+ document.getElementById('enterGame').disabled=false;
+ document.getElementById('characterSelect').hidden=false;
+}
+function enterSelectedCharacter(){
+ if(!player)return;
+ worldEntered=true;a17rRefresh();
+ // A13: explicitly close creation modal before revealing the world (desktop and mobile).
+ document.getElementById('modal').style.setProperty('display','none','important');
+ document.getElementById('characterSelect').hidden=true;
+ document.getElementById('returnToCharacterSelect').hidden=false;
+ msg('已進入測試地圖。戰鬥數值仍為佔位參數。');update();
+ // A11: desktop page layout contains header/sidebar above the game canvas.
+ // Bring the actual game viewport into view after closing the selection overlay.
+ const gameCanvas=document.getElementById('c');
+ if(gameCanvas){gameCanvas.scrollIntoView({block:'center',inline:'nearest',behavior:'instant'});}
+ const status=document.getElementById('a11EntryStatus');
+ if(status)status.textContent='已進入地圖；若未看見地圖，請向下捲動至遊戲畫面';
+}
+function returnToCharacterSelection(){
+ if(!player||!worldEntered)return;
+ if(!confirm('確定返回角色選擇畫面？目前進度將先儲存。'))return;
+ save();
+ document.getElementById('desktopGameHelp').hidden=true;
+ showCharacterSelection();
+ document.getElementById('returnToCharacterSelect').hidden=true;
+}
+document.getElementById('returnToCharacterSelect').onclick=returnToCharacterSelection;
+document.getElementById('characterSlot').onclick=()=>{document.getElementById('characterSlot').setAttribute('aria-pressed','true')};
+document.getElementById('enterGame').onclick=enterSelectedCharacter;
+/* A7 desktop fallback: keyboard Enter on selection screen triggers the same action. */
+document.addEventListener('keydown',function(e){
+ if(e.key==='Enter' && !document.getElementById('characterSelect').hidden && document.getElementById('modal').style.display==='none'){
+  if(e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;
+  e.preventDefault();enterSelectedCharacter();
+ }
+});
+
+document.getElementById('saveAndReturn').onclick=()=>save();
+document.getElementById('backToCreation').onclick=()=>{document.getElementById('characterSelect').hidden=true;document.getElementById('modal').style.display='flex';worldEntered=false;document.getElementById('returnToCharacterSelect').hidden=true;};
+function save(){if(!player)return;localStorage.setItem('lineage_2004_research_v003_preview',JSON.stringify({player,drops,monsters}));msg('已儲存到此瀏覽器。')}function load(){try{let d=JSON.parse(localStorage.getItem('lineage_2004_research_v003_preview'));if(!d||!d.player)throw Error();player=d.player;drops=d.drops||[];monsters=d.monsters||[];player.path=[];target=null;centerCamera();document.getElementById('modal').style.display='none';showCharacterSelection();msg('已載入角色，請選擇角色後開始遊戲');update()}catch(e){alert('尚無有效存檔')}}const creationStatNames=['力量 STR','敏捷 DEX','體質 CON','智力 INT','精神 WIS','魅力 CHA'];
+let creationPoints=[0,0,0,0,0,0];
+function creationRemaining(){const a=jobs[document.getElementById('job').value];return a[6]-creationPoints.reduce((sum,v)=>sum+v,0)}
+function creationCap(job,i){return i===0&&job==='騎士'?20:18} // Provisional cap pending 2004 client verification.
+function updateCreationStats(){
+ const job=document.getElementById('job').value,a=jobs[job],panel=document.getElementById('creationStats');panel.replaceChildren();
+ const title=document.createElement('b');title.className='stat-heading';title.textContent='屬性分配點數';panel.appendChild(title);
+ const remaining=document.createElement('div');remaining.className='stat-remaining';remaining.textContent='剩餘 '+creationRemaining()+' / '+a[6];remaining.style.color='#f1d69a';panel.appendChild(remaining);
+ for(let i=0;i<6;i++){
+  const line=document.createElement('div');line.className='creation-stat-row';line.dataset.stat=String(i);
+  const name=document.createElement('span');name.textContent=creationStatNames[i]+'：'+(a[i]+creationPoints[i]);name.className='creation-stat-name';line.appendChild(name);
+  const minus=document.createElement('button');minus.type='button';minus.textContent='−';minus.className='stat-step';minus.disabled=creationPoints[i]===0;minus.onclick=()=>{creationPoints[i]--;updateCreationStats()};line.appendChild(minus);
+  const plus=document.createElement('button');plus.type='button';plus.textContent='＋';plus.className='stat-step';plus.disabled=creationRemaining()===0||a[i]+creationPoints[i]>=creationCap(job,i);plus.onclick=()=>{creationPoints[i]++;updateCreationStats()};line.appendChild(plus);panel.appendChild(line);
+ }
+ const note=document.createElement('div');note.className='stat-provisional-note';note.textContent='基礎數值與點數參照早期資料；單項上限目前採暫定測試限制（一般18，騎士力量20），尚待2004原始客戶端核實。';panel.appendChild(note);
+ const start=document.getElementById('start');start.disabled=creationRemaining()!==0;start.title=start.disabled?'請先分配全部能力值點數':'';
+}
+const creationEmblems=[{job:'王族',symbol:'♛',pos:'royal'},{job:'騎士',symbol:'⚔',pos:'knight'},{job:'妖精',symbol:'❧',pos:'elf'},{job:'法師',symbol:'✧',pos:'mage'},{job:'黑暗妖精',symbol:'☾',pos:'darkelf'}];
+function renderCreationEmblems(){const holder=document.getElementById('creationEmblems');holder.replaceChildren();const selected=document.getElementById('job').value;for(const entry of creationEmblems){const btn=document.createElement('button');btn.type='button';btn.className='creation-emblem '+entry.pos+(entry.job===selected?' selected':'');const icon=document.createElement('img');icon.alt='';icon.loading='lazy';icon.src='https://shines871.github.io/idle-lineage-class/assets/logo/'+encodeURIComponent(entry.job+'logo.png');icon.onerror=()=>{icon.remove();btn.textContent=entry.symbol};btn.appendChild(icon);btn.title=entry.job;btn.setAttribute('aria-label','選擇'+entry.job);btn.setAttribute('aria-pressed',String(entry.job===selected));btn.onclick=()=>{const select=document.getElementById('job');select.value=entry.job;select.dispatchEvent(new Event('change'))};holder.appendChild(btn)}}
+function renderCreationClassTabs(){const holder=document.getElementById('creationClassTabs'),selected=document.getElementById('job').value;holder.replaceChildren();for(const job of Object.keys(jobs)){const btn=document.createElement('button');btn.type='button';btn.textContent=job;btn.className=job===selected?'selected':'';btn.setAttribute('aria-pressed',job===selected?'true':'false');btn.onclick=()=>{document.getElementById('job').value=job;document.getElementById('job').dispatchEvent(new Event('change'))};holder.appendChild(btn)}}
+const creationLore={"王族":"召集成員克服險惡的苦難與逆境\n只為了建立自己國家的遠大夢想\n就能夠犧牲所有的一切，那麼你就\n具備了王族最重要的「心」。\n\n『王族』是個非常特別的職業\n在天堂世界中只有\n『王族』才能創造血盟。\n雖然王族在戰鬥的時候\n沒有任何一個職業的優點\n但是如果想在天堂世界裡\n實現自己遠大的夢想，\n那麼唯有王族才能滿足你的夢想。\n王族必須聚集擁有相同夢想的成員\n並建立屬於自己的城堡。","騎士":"沒有什麼特別突出的才能\n只有默默地不間斷地修練，\n奮勇地擋在前端面對危險，\n就像主角一樣。\n\n騎士剛開始是以「自由騎士」\n的身份出發，並自由地到各地旅遊\n與冒險。但是騎士是個最重視\n自己要服從的王族與組織血盟\n並為他們奉獻、\n團體生活時騎士能夠表現出\n他的強大，並擁有堅忍的毅力。\n騎士是戰鬥最基本的職業，\n能夠使用多種武器與與盔甲等\n騎士強大的攻擊力及優越的防禦\n是其他職業無法比擬的\n尤其在近距離戰鬥時\n所表現出的強大戰鬥力。\n但是他們對於魔法的耐性不是很好，\n受到魔法的傷害比其他職業還高。","妖精":"妖精擁有比人類更長的壽命\n與美麗的外貌，他們順應自然\n追求融合安定的生活\n並對所有的事情表現較為保守\n因此妖精不喜歡與人類接觸\n在『森林之母』的保護之下\n建立獨自的文化生活。\n\n妖精能夠使用的武器比騎士少\n但是他可以使用大部分的武器\n尤其可以使用遠距離攻擊的弓箭\n比其他武器擁有更多的優勢\n而且能夠使用法師的多種魔法\n可謂是個最均衡的職業。\n\n你想要以妖精的身份存活\n就必須取得妖森守護者\n『那魯帕』的協助，妖精所使用的\n物品都是透過她製造出來的。","法師":"將此世界的神秘現象體制地處理\n並在現實中完成這些事的人\n被人們尊稱為「賢者」\n他們利用「瑪那」的力量\n釋放出神般的偉大力量\n他們的力量甚至能夠導致世界\n的滅亡，在幻想的世界中最為突出\n成為他人最具威脅\n又最受尊崇的對象。\n\n法師優先於精神上的發展與學習\n並能使用多種魔法\n因此法師比其他職業在剛開始時\n看似非常地軟弱\n但是透過冒險逐漸成長後\n最後一定能受到所有人的肯定。\n法師在戰鬥時總是在後方\n給予成員多種的魔法協助。","黑暗妖精":"黑暗妖精承襲妖精的敏銳與長壽\n卻選擇在陰影中磨練自己的道路。\n他們不以守護森林為使命，\n而是追求更快速、更致命的力量，\n在寂靜之中完成一次決定勝負的攻擊。\n\n黑暗妖精能夠使用匕首、雙刀、鋼爪\n與十字弓等武器，\n並以毒與閃避牽制敵人的行動。\n他們的防禦並不穩固，\n但是敏捷的身手與爆發性的殺傷力\n足以在短時間內扭轉戰局。\n\n你若想以黑暗妖精的身份生存，\n就必須習慣孤獨與危險，\n並相信藏在黑暗中的刀鋒。"};
+const referenceCreationFrames={王族:{男:['prince',714,798],女:['princess',629,710]},騎士:{男:['m_knight',378,448],女:['f_knight',315,374]},妖精:{男:['m_elf',245,311],女:['f_elf',166,241]},法師:{男:['m_mage',531,625],女:['f_mage',452,527]},黑暗妖精:{男:['m_dark',90,162],女:['f_dark',25,86]}};
+let referenceCreationState=null;
+const referenceBase='https://shines871.github.io/idle-lineage-class/assets/start/';
+function setReferenceCreationAvatar(job,gender,figure,img){
+ const entry=referenceCreationFrames[job]?.[gender];if(!entry)return;
+ const selection=job+gender;if(referenceCreationState?.selection===selection)return;
+ const state={selection,folder:entry[0],first:entry[1],last:entry[2],frame:entry[1],figure,img,ready:false,token:(referenceCreationState?.token||0)+1,cache:new Map(),lastTick:0,busy:false};
+ referenceCreationState=state;figure.classList.add('reference-pending');figure.classList.remove('reference-loaded');img.style.opacity='0';
+ const status=document.getElementById('creationAnimationStatus');if(status)status.textContent='載入 '+job+'・'+(gender==='男'?'男性':'女性')+' 人物動畫…';
+ function frameUrl(n){return referenceBase+state.folder+'/'+n+'.png'}
+ const first=new Image();first.onload=()=>{if(referenceCreationState!==state)return;state.cache.set(state.first,first);img.src=first.src;state.ready=true;figure.classList.remove('reference-pending');figure.classList.add('reference-loaded');img.style.opacity='1';if(status)status.textContent=job+'・'+(gender==='男'?'男性':'女性')+'｜動畫播放中';
+  for(let n=state.first+1;n<=Math.min(state.first+8,state.last);n++){const pre=new Image();pre.onload=()=>{if(referenceCreationState===state)state.cache.set(n,pre)};pre.src=frameUrl(n)}
+ };first.onerror=()=>{if(referenceCreationState!==state)return;figure.classList.remove('reference-loaded','reference-pending');img.style.opacity='0';if(status)status.textContent='參考圖片載入失敗，顯示替代人物'};first.src=frameUrl(state.first);
+}
+(function animateReferenceCreation(){let last=0;function tick(now){requestAnimationFrame(tick);const st=referenceCreationState;if(!st||!st.ready||document.hidden||now-last<110)return;last=now;
+ const modal=document.getElementById('modal');if(modal&&getComputedStyle(modal).display==='none')return;
+ const next=st.frame>=st.last?st.first:st.frame+1;
+ const cached=st.cache.get(next);if(cached?.complete&&cached.naturalWidth){st.frame=next;st.img.src=cached.src;return}
+ if(st.busy)return;st.busy=true;const probe=new Image();probe.onload=()=>{st.busy=false;if(referenceCreationState!==st)return;st.cache.set(next,probe);st.frame=next;st.img.src=probe.src;const after=next>=st.last?st.first:next+1;if(!st.cache.has(after)){const preload=new Image();preload.onload=()=>{if(referenceCreationState===st)st.cache.set(after,preload)};preload.src=referenceBase+st.folder+'/'+after+'.png'}};probe.onerror=()=>{st.busy=false};probe.src=referenceBase+st.folder+'/'+next+'.png';
+ }requestAnimationFrame(tick)})();
+function updateCreationPreview(){const job=document.getElementById('job').value,gender=document.getElementById('gender').value;const figure=document.getElementById('creationFigure');figure.dataset.gender=gender;figure.dataset.job=job;const refAvatar=document.getElementById('referenceCreationAvatar');const refBg=document.getElementById('referenceCreationBg');if(!refBg.dataset.loaded){refBg.src='https://shines871.github.io/idle-lineage-class/public/assets/login/824.png';refBg.dataset.loaded='1';refBg.onerror=()=>refBg.style.display='none'};setReferenceCreationAvatar(job,gender,figure,refAvatar);figure.style.setProperty('--armor',({'王族':'#a99b63','騎士':'#7a8794','妖精':'#648267','法師':'#6e6594','黑暗妖精':'#595d73'})[job]);document.getElementById('creationCaption').textContent=job+'・'+(gender==='男'?'男性':'女性');document.getElementById('creationLoreTitle').textContent=job;document.getElementById('creationLoreText').textContent=creationLore[job];requestAnimationFrame(()=>{const p=document.getElementById('creationLoreText');if(!p)return;p.style.fontSize='';let size=parseFloat(getComputedStyle(p).fontSize)||15;while(size>11&&p.scrollHeight>p.clientHeight+2){size-=.5;p.style.fontSize=size+'px'}})}
+function updateCreationGenderButtons(){const selected=document.getElementById('gender').value;for(const btn of document.querySelectorAll('#creationGenderButtons button')){const active=btn.dataset.gender===selected;btn.classList.toggle('selected',active);btn.setAttribute('aria-pressed',String(active))}}
+for(const btn of document.querySelectorAll('#creationGenderButtons button'))btn.addEventListener('click',()=>{const sel=document.getElementById('gender');sel.value=btn.dataset.gender;sel.dispatchEvent(new Event('change'))});
+document.getElementById('gender').addEventListener('change',()=>{updateCreationPreview();updateCreationGenderButtons()});updateCreationGenderButtons();
+document.getElementById('creationCancel').addEventListener('click',()=>{document.getElementById('name').value='';const job=document.getElementById('job');job.value='王族';job.dispatchEvent(new Event('change'));const gender=document.getElementById('gender');gender.value='男';gender.dispatchEvent(new Event('change'));creationPoints=[0,0,0,0,0,0];updateCreationStats();document.getElementById('name').focus()});
+document.getElementById('job').addEventListener('change',()=>{creationPoints=[0,0,0,0,0,0];updateCreationStats();updateCreationPreview();renderCreationClassTabs();renderCreationEmblems()});updateCreationStats();updateCreationPreview();renderCreationClassTabs();renderCreationEmblems();
+document.getElementById('closeDesktopHelp').onclick=()=>document.getElementById('desktopGameHelp').hidden=true;
+document.getElementById('start').onclick=()=>newPlayer(document.getElementById('name').value.trim()||'冒險者',document.getElementById('job').value);document.getElementById('load').onclick=load;document.getElementById('save').onclick=save;document.getElementById('reset').onclick=()=>{if(confirm('重新建立角色？舊存檔不會自動刪除。'))(creationPoints=[0,0,0,0,0,0],updateCreationStats(),document.getElementById('modal').style.display='flex')};document.getElementById('heal').onclick=()=>{if(!player)return;if(player.pots<1){msg('治癒藥水不足');return}if(player.hp===player.maxHp)return;player.pots--;player.hp=Math.min(player.maxHp,player.hp+40);msg('使用治癒藥水，回復 40 HP（測試值）');update()};function update(){if(!player)return;a17rRefresh();document.getElementById('who').textContent=player.name+'｜'+player.job+' Lv.'+player.lv;for(let k of ['hp','mp']){let max=k==='hp'?'maxHp':'maxMp';document.getElementById(k+'text').textContent=player[k]+' / '+player[max];document.getElementById(k+'bar').style.width=(100*player[k]/player[max])+'%'}document.getElementById('xptext').textContent=player.xp+' / 100（測試）';document.getElementById('xpbar').style.width=player.xp+'%';document.getElementById('pots').textContent=player.pots;document.getElementById('attributes').innerHTML='<b>能力值（歷史待覆核）</b><div>'+['STR','DEX','CON','INT','WIS','CHA'].map((s,i)=>s+': '+player.stats[i]).join('　')+'</div><div>座標：'+player.x+', '+player.y+'</div>'}function screen(x,y){return {x:(x-y)*TW/2+canvas.width/2-cam.x,y:(x+y)*TH/2+90-cam.y}}function unproject(sx,sy){let a=(sx-canvas.width/2+cam.x)/(TW/2),b=(sy-90+cam.y)/(TH/2);return {x:Math.floor((a+b)/2+.5),y:Math.floor((b-a)/2+.5)}}function pathfind(sx,sy,gx,gy){if(!pass(gx,gy))return [];let start=sx+sy*W,goal=gx+gy*W,q=[start],prev=new Int32Array(W*H).fill(-1);prev[start]=start;for(let head=0;head<q.length;head++){let u=q[head];if(u===goal)break;let x=u%W,y=Math.floor(u/W);for(let [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,1],[1,-1],[-1,-1]]){let nx=x+dx,ny=y+dy,v=nx+ny*W;if(!pass(nx,ny)||prev[v]!==-1)continue;if(dx&&dy&&(!pass(x+dx,y)||!pass(x,y+dy)))continue;prev[v]=u;q.push(v)}}if(prev[goal]===-1)return [];let out=[];for(let v=goal;v!==start;v=prev[v])out.push({x:v%W,y:Math.floor(v/W)});return out.reverse()}function clickAt(sx,sy){if(!player)return;let t=unproject(sx,sy),m=monsters.find(m=>m.alive&&m.x===t.x&&m.y===t.y);if(m){target={type:'monster',ref:m};msg('鎖定 '+m.name);return}let d=drops.find(d=>d.x===t.x&&d.y===t.y);if(d){target={type:'drop',ref:d};return}target=null;player.path=pathfind(player.x,player.y,t.x,t.y);if(!player.path.length&&!pass(t.x,t.y))msg('該地形不可通行')}function centerCamera(){if(!player)return;cam.x=(player.x-player.y)*TW/2;cam.y=(player.x+player.y)*TH/2+90-canvas.height*.53}
+function pointerXY(e){let r=canvas.getBoundingClientRect();return {x:(e.clientX-r.left)*canvas.width/r.width,y:(e.clientY-r.top)*canvas.height/r.height}}
+let gesture=null;
+canvas.addEventListener('pointerdown',e=>{if(!player)return;e.preventDefault();let p=pointerXY(e);gesture={id:e.pointerId,x:p.x,y:p.y,camX:cam.x,camY:cam.y,drag:false};canvas.setPointerCapture(e.pointerId)});
+canvas.addEventListener('pointermove',e=>{if(!gesture||gesture.id!==e.pointerId)return;let p=pointerXY(e);let dx=p.x-gesture.x,dy=p.y-gesture.y;if(Math.hypot(dx,dy)>12)gesture.drag=true;if(gesture.drag){cam.x=gesture.camX-dx;cam.y=gesture.camY-dy}});
+canvas.addEventListener('pointerup',e=>{if(!gesture||gesture.id!==e.pointerId)return;let g=gesture,p=pointerXY(e);gesture=null;if(!g.drag)clickAt(p.x,p.y)});
+canvas.addEventListener('pointercancel',()=>gesture=null);
+document.getElementById('centerCam').onclick=centerCamera;
+document.getElementById('mobileHeal').onclick=()=>document.getElementById('heal').click();
+document.getElementById('mobileSave').onclick=()=>document.getElementById('save').click();
+document.getElementById('mobileInfo').onclick=()=>{let a=document.getElementById('attributes');a.style.display=a.style.display==='block'?'none':'block';if(a.style.display==='block')a.scrollIntoView({block:'nearest'})};
+window.addEventListener('keydown',e=>{
+ const tag=document.activeElement?.tagName;
+ if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT'||document.getElementById('modal').style.display!=='none')return;
+ keys[e.key]=true;
+ if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key))e.preventDefault();
+ if(e.repeat||e.ctrlKey||e.metaKey||e.altKey)return;
+ if(e.key.toLowerCase()==='h'){document.getElementById('heal').click();e.preventDefault();}
+ if(e.key.toLowerCase()==='s'){document.getElementById('save').click();e.preventDefault();}
+ if(e.key.toLowerCase()==='c'){centerCamera();e.preventDefault();}
+ if(e.key==='Escape'){target=null;if(player)player.path=[];msg('已取消目前的移動或追擊指令');e.preventDefault();}
+ if(e.key==='F1'||e.key==='?'){const help=document.getElementById('desktopGameHelp');help.hidden=!help.hidden;e.preventDefault();}
+});window.addEventListener('keyup',e=>keys[e.key]=false);function loop(ts){let dt=Math.min(.05,(ts-last)/1000||0);last=ts;if(!player||!worldEntered){if(worldEntered)draw();requestAnimationFrame(loop);return;}if(player){if(keys.ArrowLeft)cam.x-=350*dt;if(keys.ArrowRight)cam.x+=350*dt;if(keys.ArrowUp)cam.y-=350*dt;if(keys.ArrowDown)cam.y+=350*dt;player.step+=dt;if(target){let o=target.ref;if(target.type==='monster'&&!o.alive)target=null;else{let distance=Math.max(Math.abs(player.x-o.x),Math.abs(player.y-o.y));if(distance<=1){player.path=[];if(target.type==='drop'){spriteFacing=direction8(o.x-player.x,o.y-player.y);spritePickupUntil=ts+340;drops=drops.filter(v=>v!==o);player.pots++;msg('拾取治癒藥水（測試掉落）');target=null;update()}else if(ts>attackTimer){attackTimer=ts+700;spriteFacing=direction8(o.x-player.x,o.y-player.y);spriteAttackUntil=ts+280;o.hp-=8+Math.floor(rand()*9);msg('攻擊 '+o.name+'，造成測試傷害');if(o.hp<=0){o.alive=false;player.xp+=20;msg('擊倒 '+o.name+'，獲得測試 EXP 20');if(rand()<.45)drops.push({x:o.x,y:o.y});if(player.xp>=100){player.lv++;player.xp-=100;player.maxHp+=7;player.hp=player.maxHp;msg('升級！成長數值為測試參數')}target=null}update()}}else if(player.path.length===0||player.path[player.path.length-1].x!==o.x||player.path[player.path.length-1].y!==o.y)player.path=pathfind(player.x,player.y,o.x,o.y)}}}if(player.step>.17&&player.path.length){player.step=0;let p=player.path.shift();if(pass(p.x,p.y)){spriteFacing=direction8(p.x-player.x,p.y-player.y);spriteMoveFrom={x:player.x,y:player.y};spriteMoveTo={x:p.x,y:p.y};spriteMoveStart=ts;player.x=p.x;player.y=p.y;spriteMovingUntil=ts+SPRITE_STEP_MS;update()}}for(let m of monsters){if(!m.alive)continue;m.cool-=dt;if(Math.max(Math.abs(m.x-player.x),Math.abs(m.y-player.y))<=1&&m.cool<=0){m.cool=2.3;spriteHitUntil=ts+240;player.hp=Math.max(0,player.hp-3);if(player.hp===0){player.hp=player.maxHp;player.x=10;player.y=10;player.path=[];target=null;msg('角色倒下，返回起點（測試規則）')}update()}}draw();requestAnimationFrame(loop)}/* A23: cached original procedural texture atlas. Placeholder art, not original Lineage assets. */
+/* A24: external licensed terrain atlas pipeline, with safe procedural fallback. */
+const a24Atlas={images:new Map(),status:'載入中',source:'',failures:[]};
+const a24Types={grass:'grass',tree:'grass',rock:'grass',dirt:'dirt',water:'water',bridge:'bridge'};
+async function a24LoadTerrain(){try{const response=await fetch('./assets/terrain/manifest.json',{cache:'no-store'});if(!response.ok)throw Error('manifest HTTP '+response.status);const manifest=await response.json();if(manifest.era!=='2004-07-research'||!manifest.tiles||typeof manifest.tiles!=='object')throw Error('invalid manifest');const entries=Object.entries(manifest.tiles);let loaded=0;for(const [type,entry] of entries){if(!/^(grass|dirt|water|bridge)$/.test(type)||!entry||typeof entry.file!=='string'||!/^[-a-zA-Z0-9_.]+\.(png|webp|svg)$/.test(entry.file)||entry.licenseVerified!==true)continue;const img=new Image();try{await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=reject;img.src='./assets/terrain/'+entry.file});a24Atlas.images.set(type,img);loaded++;}catch(e){a24Atlas.failures.push(type)}}a24Atlas.status=loaded+' 種原創貼圖載入';}catch(e){a24Atlas.status='使用內建測試紋理';}const status=document.getElementById('a24AssetStatus');if(status)status.textContent='地形素材：'+a24Atlas.status;}
+a24LoadTerrain();
+const a23TileCache=new Map();
+function a23Texture(color){if(a23TileCache.has(color))return a23TileCache.get(color);const c=document.createElement('canvas');c.width=112;c.height=56;const g=c.getContext('2d');g.fillStyle=color;g.fillRect(0,0,112,56);let seed=2166136261;for(const ch of color)seed=Math.imul(seed^ch.charCodeAt(0),16777619)>>>0;function rand(){seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;}for(let i=0;i<1050;i++){let x=rand()*112,y=rand()*56;g.fillStyle=rand()>.48?'rgba(230,213,154,.085)':'rgba(5,12,8,.13)';g.fillRect(x,y,1+rand()*3,.7+rand()*2)}for(let i=0;i<50;i++){let x=rand()*112,y=rand()*56;g.strokeStyle=rand()>.5?'rgba(11,20,12,.19)':'rgba(173,174,120,.13)';g.beginPath();g.moveTo(x,y);g.lineTo(x+rand()*7-3,y-rand()*4);g.stroke()}a23TileCache.set(color,c);return c;}
+function diamond(x,y,fill,terrainType){ctx.save();ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+TW/2,y+TH/2);ctx.lineTo(x,y+TH);ctx.lineTo(x-TW/2,y+TH/2);ctx.closePath();ctx.clip();const atlas=a24Atlas.images.get(a24Types[terrainType]);ctx.drawImage(atlas||a23Texture(fill),x-TW/2,y,TW,TH);ctx.restore();}
+// v0.03 knight animation study: original canvas-drawn sprite, no extracted game assets.
+// Direction order: E, SE, S, SW, W, NW, N, NE in screen coordinates.
+function direction8(dx,dy){let sx=dx-dy,sy=dx+dy;let a=Math.atan2(sy,sx);return (Math.round(a/(Math.PI/4))+8)%8}
+function knightRenderPosition(now){if(!spriteMoveFrom||!spriteMoveTo||now>=spriteMovingUntil)return screen(player.x,player.y);let t=Math.max(0,Math.min(1,(now-spriteMoveStart)/SPRITE_STEP_MS));let e=t*t*(3-2*t);return screen(spriteMoveFrom.x+(spriteMoveTo.x-spriteMoveFrom.x)*e,spriteMoveFrom.y+(spriteMoveTo.y-spriteMoveFrom.y)*e)}
+// v0.03-B: per-frame directional image adapter for Lineage-style class animations.
+// Visual assets are NOT bundled. Set an approved local asset base in the config below.
+// Reference naming: assets/classanim/男騎士[d0..d7]/sword1_{idle,walk,attack}_N.png.
+// This animation system does not change any 2004 gameplay rules.
+const KNIGHT_FRAMES={
+ base:'../assets/classanim',folder:'男騎士',weapon:'sword1',
+ // Actual folder order must be visually verified with licensed sprite frames.
+ // Mapping is configurable without changing movement or combat logic.
+ directionFolders:['','2','F','d3','d4','d5','d6','d7'],
+ actions:{idle:{count:13,ms:150},walk:{count:4,ms:85},attack:{count:6,ms:47}},
+ drawHeight:58,anchorY:49
+};
+// Optional reference-only preview. No third-party artwork is committed to this repository.
+// Use ?spriteSource=reference for a browser-only visual comparison.
+// The default stays local; this is not an assertion of redistribution rights.
+const KNIGHT_REFERENCE_ROOT='https://shines871.github.io/idle-lineage-class/assets/classanim';
+const KNIGHT_REFERENCE_BACKUP='https://raw.githubusercontent.com/shines871/idle-lineage-class/main/assets/classanim';
+const knightReferencePreview=new URLSearchParams(location.search).get('spriteSource')==='reference';
+const knightAssetBase=knightReferencePreview?KNIGHT_REFERENCE_ROOT:KNIGHT_FRAMES.base;
+const knightCache=new Map();
+const knightLastReady=new Map();
+let knightLoadedCount=0,knightFailedCount=0;
+const KNIGHT_MAX_CACHE=150;
+function knightFolder(dir){return KNIGHT_FRAMES.folder+KNIGHT_FRAMES.directionFolders[((dir%8)+8)%8]}
+function knightFrameUrl(dir,action,frame){
+ const k=KNIGHT_FRAMES;
+ return knightAssetBase+'/'+encodeURIComponent(knightFolder(dir))+'/'+k.weapon+'_'+action+'_'+frame+'.png';
+}
+function knightFrame(dir,action,frame){
+ const url=knightFrameUrl(dir,action,frame);
+ if(!knightCache.has(url)){
+  // Avoid unbounded image growth if future weapons or classes are added.
+  if(knightCache.size>=KNIGHT_MAX_CACHE){
+   // Keep in-flight requests cached; evict only completed entries.
+   for(const [key,item] of knightCache){if(item.ready||item.failed){knightCache.delete(key);break}}
+  }
+  const img=new Image();const entry={img,ready:false,failed:false};
+  img.onload=()=>{entry.ready=img.naturalWidth>0&&img.naturalHeight>0;if(entry.ready)knightLoadedCount++;spriteStatus()};
+  img.onerror=()=>{
+   if(knightReferencePreview&&!entry.triedBackup){
+    entry.triedBackup=true;
+    img.src=url.replace(KNIGHT_REFERENCE_ROOT,KNIGHT_REFERENCE_BACKUP);
+   }else{entry.failed=true;knightFailedCount++;spriteStatus()}
+  };
+  knightCache.set(url,entry);img.src=url;
+ }
+ return knightCache.get(url);
+}
+function knightPreload(dir,action,frame){
+ const spec=KNIGHT_FRAMES.actions[action];
+ knightFrame(dir,action,(frame+1)%spec.count);
+}
+function spriteStatus(){
+ const el=document.getElementById('spriteStatus');
+ if(!el)return;
+ el.textContent='騎士圖片：'+(knightReferencePreview?'參考預覽':'本地')+'｜成功 '+knightLoadedCount+'｜失敗 '+knightFailedCount+
+ (knightLoadedCount===0?'｜尚未顯示圖片':'')+(knightFailedCount>0&&knightLoadedCount===0?'｜請截圖回報':'');
+}
+// Start the diagnostic even when the character is outside the camera viewport.
+function initializeKnightPreview(){
+ spriteStatus();
+ if(!knightReferencePreview)return;
+ for(let d=0;d<8;d++)knightFrame(d,'idle',0);
+ const preview=document.getElementById('spritePreview');
+ const entry=knightFrame(spriteFacing,'idle',0);
+ if(preview&&entry){
+  const refresh=()=>{if(entry.ready){preview.src=entry.img.src;preview.style.display='inline-block'}else if(entry.failed){preview.alt='圖片載入失敗'}};
+  entry.img.addEventListener('load',refresh);
+  entry.img.addEventListener('error',refresh);
+  refresh();
+ }
+}
+function drawKnightSprite(px,py,now){
+ const attack=now<spriteAttackUntil,pickup=now<spritePickupUntil,move=now<spriteMovingUntil;
+ const action=attack?'attack':pickup?'idle':move?'walk':'idle',spec=KNIGHT_FRAMES.actions[action];
+ const elapsed=attack?280-(spriteAttackUntil-now):move?now-spriteMoveStart:now;
+ const frame=Math.floor(Math.max(0,elapsed)/spec.ms)%spec.count;
+ // One consistent source direction for idle, walk and attack.
+ // No action-specific mirroring; calibration remains explicit and reversible.
+ // Source folders face 180 degrees opposite to the game's eight-direction indices.
+ // Apply the same half-turn to idle, walk and attack; do not mirror individual actions.
+ const sourceDir=(spriteFacing+4)%8;
+ const mirrored=false;
+ const key=sourceDir+':'+action;
+ let entry=knightFrame(sourceDir,action,frame);
+ if(!entry.ready){
+  const first=knightFrame(sourceDir,action,0);
+  if(first.ready)entry=first;
+  else if(knightLastReady.has(key))entry=knightLastReady.get(key);
+  else{
+   const idle=knightFrame(sourceDir,'idle',0);
+   if(idle.ready)entry=idle;
+  }
+ }
+ if(!entry.ready){
+  // Only use the silhouette before any valid sprite for this direction is available.
+  drawTestSilhouette(px,py,'#a5a8b3');return;
+ }
+ knightLastReady.set(key,entry);
+ knightPreload(sourceDir,action,frame);
+ const img=entry.img,h=KNIGHT_FRAMES.drawHeight,w=Math.max(1,h*img.naturalWidth/img.naturalHeight);
+ ctx.save();ctx.imageSmoothingEnabled=false;
+ ctx.translate(Math.round(px),Math.round(py-KNIGHT_FRAMES.anchorY));
+ // Temporary pickup crouch transform, pending a verified pickup animation asset.
+ if(pickup){const progress=1-(spritePickupUntil-now)/340;const bend=Math.sin(Math.PI*Math.max(0,Math.min(1,progress)));ctx.translate(0,h*0.22*bend);ctx.scale(1,1-0.22*bend)}
+ if(mirrored)ctx.scale(-1,1);
+ ctx.drawImage(img,-w/2,0,w,h);
+ ctx.restore();
+ // Hit feedback is a temporary overlay, not an unverified death/hit sprite asset.
+ if(now<spriteHitUntil){ctx.save();ctx.globalAlpha=0.20+0.12*Math.sin(now/32);ctx.fillStyle='#ff5656';ctx.beginPath();ctx.ellipse(px,py-24,Math.max(12,w*.55),25,0,0,Math.PI*2);ctx.fill();ctx.restore()}
+}
+function drawTestSilhouette(x,y,color){
+ ctx.fillStyle='#d2b178';ctx.beginPath();ctx.ellipse(x,y+8,13,5,0,0,7);ctx.fill();
+ ctx.fillStyle=color;ctx.fillRect(x-9,y-26,18,27);
+ ctx.fillStyle='#e0c49d';ctx.beginPath();ctx.arc(x,y-31,8,0,7);ctx.fill();
+}
+function drawCharacterSprite(p,now){
+ if(player.job==='騎士'){drawKnightSprite(p.x,p.y,now);return}
+ // Unchanged test silhouettes for other classes pending verified 2004 references.
+ drawTestSilhouette(p.x,p.y,{'王族':'#a08c62','妖精':'#649c68','法師':'#607fb3','黑暗妖精':'#80609a'}[player.job]||'#a5a8b3');
+}
+// v0.05-D decorative terrain transitions; collision and map data are untouched.
+function terrainDetails(x,y,p,type){
+ const grassLike=t=>t==='grass'||t==='tree'||t==='rock';
+ const waterAt=(a,b)=>a>=0&&b>=0&&a<W&&b<H&&tile[b][a]==='water';
+ const neighbors=[[1,0],[-1,0],[0,1],[0,-1]];
+ if(type==='grass'||type==='dirt'){
+  for(const [dx,dy] of neighbors){const nx=x+dx,ny=y+dy;if(nx<0||ny<0||nx>=W||ny>=H)continue;
+   const other=tile[ny][nx];if((type==='grass'&&other==='dirt')||(type==='dirt'&&grassLike(other))){
+    const vx=dx*TW/4-dy*TW/4,vy=(dx+dy)*TH/4;
+    ctx.fillStyle=type==='grass'?'#a29a6877':'#4e764477';
+    for(let j=-1;j<=1;j++){ctx.beginPath();ctx.arc(p.x+vx+j*3,p.y+TH/2+vy+j*1.5,2.2,0,Math.PI*2);ctx.fill()}
+   }
+  }
+ }
+ if(type==='water'){
+  // Highlight banks only where a water tile meets land.
+  ctx.strokeStyle='#aac7a477';ctx.lineWidth=2;
+  for(const [dx,dy] of neighbors){if(waterAt(x+dx,y+dy))continue;
+   const cx=p.x,cy=p.y+TH/2;
+   ctx.beginPath();
+   if(dx===1){ctx.moveTo(cx+TW/2,cy);ctx.lineTo(cx,cy+TH/2)}
+   else if(dx===-1){ctx.moveTo(cx-TW/2,cy);ctx.lineTo(cx,cy-TH/2)}
+   else if(dy===1){ctx.moveTo(cx,cy+TH/2);ctx.lineTo(cx-TW/2,cy)}
+   else{ctx.moveTo(cx,cy-TH/2);ctx.lineTo(cx+TW/2,cy)}
+   ctx.stroke();
+  }
+ }
+ if(type==='tree'){
+  ctx.fillStyle='#101c144d';ctx.beginPath();ctx.ellipse(p.x+5,p.y+TH/2+3,15,5,0,0,Math.PI*2);ctx.fill();
+ }
+}
+function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#1a241c';ctx.fillRect(0,0,canvas.width,canvas.height);for(let y=0;y<H;y++)for(let x=0;x<W;x++){let p=screen(x,y);if(p.x<-TW||p.x>canvas.width+TW||p.y<-TH*3||p.y>canvas.height+TH)continue;let type=tile[y][x];diamond(p.x,p.y,{grass:'#42543a',dirt:'#655c42',water:'#2d5260',bridge:'#776348',tree:'#42543a',rock:'#42543a'}[type],type);// Small deterministic ground texture: no gameplay RNG or tile data changes.
+if(type==='grass'||type==='dirt'){
+ const h=((x*73856093)^(y*19349663))>>>0;
+ ctx.fillStyle=type==='grass'?'#77875a44':'#9e89624d';
+ for(let i=0;i<8;i++){
+  const ox=((h>>((i*3)%23))&31)-15,oy=((h>>((i*5+3)%23))&15)-7;
+  ctx.fillRect(p.x+ox,p.y+TH/2+oy,1.5,1.5);
+ }
+}
+if(type==='water'){
+ ctx.strokeStyle='#91bac055';ctx.lineWidth=1;
+ ctx.beginPath();ctx.moveTo(p.x-11,p.y+TH/2-2);ctx.lineTo(p.x-2,p.y+TH/2-2);ctx.moveTo(p.x+4,p.y+TH/2+3);ctx.lineTo(p.x+12,p.y+TH/2+3);ctx.stroke();
+}
+if(type==='bridge'){
+ ctx.strokeStyle='#5a4934aa';ctx.lineWidth=1;
+ for(let i=-1;i<=1;i++){ctx.beginPath();ctx.moveTo(p.x-17,p.y+TH/2+i*4);ctx.lineTo(p.x+17,p.y+TH/2+i*4);ctx.stroke()}
+}
+terrainDetails(x,y,p,type);if(type==='tree'){const seed=((x*92821)^(y*68917))>>>0;ctx.fillStyle='#28291d';ctx.beginPath();ctx.ellipse(p.x+4,p.y+13,14,5,-.15,0,Math.PI*2);ctx.fill();ctx.fillStyle='#403629';ctx.fillRect(p.x-3,p.y-16,6,25);for(let j=0;j<9;j++){const angle=j*2.399+seed%7,rr=7+(j%3)*4,ox=Math.cos(angle)*rr,oy=Math.sin(angle)*rr*.48;ctx.fillStyle=['#233b2a','#2b472f','#365136','#405a39'][((seed>>j)+j)%4];ctx.beginPath();ctx.ellipse(p.x+ox,p.y-23+oy,8+(j%4),7+(j%3),angle*.1,0,Math.PI*2);ctx.fill();}}if(type==='rock'){ctx.fillStyle='#a3a79b';ctx.beginPath();ctx.moveTo(p.x-10,p.y+8);ctx.lineTo(p.x-6,p.y-8);ctx.lineTo(p.x+6,p.y-13);ctx.lineTo(p.x+12,p.y+8);ctx.fill()}}for(let d of drops){let p=screen(d.x,d.y);ctx.fillStyle='#e9c85d';ctx.fillRect(p.x-5,p.y-5,10,10)}for(let m of monsters){if(!m.alive)continue;let p=screen(m.x,m.y);ctx.fillStyle='#773b2b';ctx.fillRect(p.x-8,p.y-21,16,22);ctx.fillStyle='#a7a37a';ctx.beginPath();ctx.arc(p.x,p.y-24,8,0,7);ctx.fill();ctx.fillStyle='#151515';ctx.fillRect(p.x-14,p.y-36,28,4);ctx.fillStyle='#c74c45';ctx.fillRect(p.x-14,p.y-36,28*Math.max(0,m.hp/m.max),4);if(target&&target.ref===m){ctx.strokeStyle='#f1d377';ctx.strokeRect(p.x-13,p.y-38,26,36)}}if(player){let now=performance.now();let p=player.job==='騎士'?knightRenderPosition(now):screen(player.x,player.y);drawCharacterSprite(p,now);ctx.fillStyle='#fff1c8';ctx.font='14px Arial';ctx.textAlign='center';ctx.fillText(player.name,p.x,p.y-55)}ctx.fillStyle='#e6ddbd';ctx.textAlign='left';ctx.font='13px Arial';ctx.fillText('A20 地圖美術測試｜非原版素材',12,canvas.height-12)}initializeKnightPreview();requestAnimationFrame(loop);
+
+/* v0.05-Y: artwork substitution hooks; URLs must be separately authorized. */
+window.lineageCreationArt={
+ setBackground(url){const v=typeof url==='string'&&/^https:\/\//.test(url)?'url('+JSON.stringify(url)+')':null;document.documentElement.style.setProperty('--classic-creation-background',v||'var(--creation-fallback-background)')},
+ setParchment(url){const v=typeof url==='string'&&/^https:\/\//.test(url)?'url('+JSON.stringify(url)+')':null;document.documentElement.style.setProperty('--classic-parchment-image',v||'var(--creation-fallback-parchment)')}
+};
+
+/* v0.06-F2: account for iOS browser bars and visual viewport; do not change meta viewport. */
+(function(){
+ const vp=document.querySelector('meta[name="viewport"]');
+ const defaultMeta=vp?.content||'width=device-width,initial-scale=1,viewport-fit=cover';
+ function fitCreationScreen(){
+  const landscape=innerWidth>innerHeight;
+  const mobile= navigator.maxTouchPoints>0 && landscape && Math.min(screen.width,screen.height)<701;
+  document.documentElement.classList.toggle('creation-mobile-landscape',mobile);
+  if(vp){const desired=mobile?'width=1260,initial-scale=1,maximum-scale=1,viewport-fit=cover':defaultMeta;if(vp.content!==desired){vp.content=desired;requestAnimationFrame(fitCreationScreen);return;}}
+  const vv=window.visualViewport;
+  const width=vv?.width||innerWidth, height=vv?.height||innerHeight;
+  const scale=mobile?Math.min(width/1260,height/726)*0.83:Math.max(innerWidth/1260,innerHeight/726);
+  document.documentElement.style.setProperty('--creation-cover-scale',String(scale));
+  document.documentElement.style.setProperty('--creation-mobile-scale',String(scale));
+ }
+ addEventListener('resize',fitCreationScreen,{passive:true});
+ addEventListener('orientationchange',fitCreationScreen,{passive:true});
+ window.visualViewport?.addEventListener('resize',fitCreationScreen,{passive:true});
+ fitCreationScreen();
+})();
+
+/* Fit the entire character selection stage without cropping its action buttons. */
+(function(){function fit(){const vv=window.visualViewport;const w=vv?.width||innerWidth,h=vv?.height||innerHeight;document.documentElement.style.setProperty('--selection-stage-scale',String(Math.min(w/1104,h/824)));}addEventListener('resize',fit,{passive:true});window.visualViewport?.addEventListener('resize',fit,{passive:true});fit();})();
+
+function a17rRefresh(){document.body.classList.toggle('a17r-world',!!player&&worldEntered);if(!player)return;
+ const put=(id,value)=>{const el=document.getElementById(id);if(el)el.textContent=value;};
+ put('a17rName',player.name+'　Lv.'+player.lv);put('a17rExp','EXP '+player.xp+'/100（測試）');
+ put('a17rHp',player.hp+'/'+player.maxHp);put('a17rMp',player.mp+'/'+player.maxMp);
+ document.getElementById('a17rHpFill').style.width=(100*player.hp/Math.max(1,player.maxHp))+'%';
+ document.getElementById('a17rMpFill').style.width=(100*player.mp/Math.max(1,player.maxMp))+'%';
+ const log=document.getElementById('log'),chat=document.getElementById('a17rChat');
+ if(log&&chat)chat.textContent=log.innerText||'2004 年《天與地》介面還原測試';
+}
+document.getElementById('a17rBag').onclick=()=>document.getElementById('a17rInventory').classList.toggle('a17r-open');
+document.getElementById('a17rCloseInventory').onclick=document.getElementById('a17rCloseBag').onclick=()=>document.getElementById('a17rInventory').classList.remove('a17r-open');
+document.getElementById('a17rHeal').onclick=()=>document.getElementById('heal').click();
+document.getElementById('a17rSave').onclick=()=>document.getElementById('save').click();
+document.getElementById('a17rStatus').onclick=()=>{const p=document.getElementById('attributes');alert(p?.innerText||'角色資料尚未載入');};
+document.getElementById('a17rHelp').onclick=()=>{const d=document.getElementById('desktopGameHelp');d.hidden=!d.hidden;};
+document.getElementById('a17rReturn').onclick=()=>document.getElementById('returnToCharacterSelect').click();
+document.getElementById('a17rChatSize').onclick=()=>{const c=document.getElementById('a17rChat');c.style.maxHeight=c.style.maxHeight==='150px'?'98px':'150px';};
+document.getElementById('a17rSlots').innerHTML=Array.from({length:20},()=>'<span></span>').join('');
+window.addEventListener('keydown',e=>{if(!worldEntered)return;if(e.key==='Tab'&&!e.target.matches('input,textarea')){e.preventDefault();document.getElementById('a17rBag').click();}});
+
+/* A22: real canvas aspect correction. Input uses pointerXY's rect-to-backing conversion. */
+(function a22Viewport(){
+ const surface=document.getElementById('c');
+ function fit(){if(!document.body.classList.contains('a17r-world'))return;
+  const rect=surface.getBoundingClientRect();if(rect.width<100||rect.height<80)return;
+  const width=Math.round(Math.min(1440,rect.width*window.devicePixelRatio));
+  const height=Math.round(width*rect.height/rect.width);
+  if(Math.abs(surface.width-width)>2||Math.abs(surface.height-height)>2){surface.width=width;surface.height=height;
+   if(typeof player!=='undefined'&&player&&typeof centerCamera==='function')centerCamera();}
+ }
+ if(typeof ResizeObserver!=='undefined')new ResizeObserver(fit).observe(surface);
+ window.addEventListener('resize',fit);window.addEventListener('orientationchange',fit);
+ const check=new MutationObserver(fit);check.observe(document.body,{attributes:true,attributeFilter:['class']});
+})();
+</script><script>
+/* A10: surface a visible desktop diagnostic if the click does not enter the world. */
+(function(){
+ const b=document.getElementById('enterGame');if(!b)return;
+ b.addEventListener('click',function(){
+  if(!window.worldEntered && !document.getElementById('characterSelect').hidden){
+   const p=document.getElementById('characterSelect');
+   let note=document.getElementById('a10EnterStatus');
+   if(!note){note=document.createElement('div');note.id='a10EnterStatus';note.style.cssText='position:absolute;right:3%;bottom:1%;z-index:120;color:#ffe0a0;font:12px sans-serif;text-shadow:0 1px 2px black';p.appendChild(note)}
+   note.textContent='進入遊戲未完成，請回報此訊息';
+  }
+ });
+})();
+</script><div id="a11EntryStatus" role="status" style="position:fixed;bottom:8px;left:8px;z-index:9000;color:#f2d59b;background:#17110dcc;padding:4px 8px;font:12px sans-serif;pointer-events:none"></div><script>
+/* A12: desktop entry trace; visible regardless of game panel position. */
+(function(){
+ const b=document.getElementById('enterGame');if(!b)return;
+ const diag=document.createElement('div');diag.id='a12Diagnostics';diag.setAttribute('role','status');diag.style.cssText='position:fixed;left:10px;top:10px;z-index:2147483647;background:#15100ef2;border:1px solid #b18a43;color:#ffe5a5;padding:8px;font:14px sans-serif;max-width:90vw;display:none;pointer-events:none';document.body.appendChild(diag);
+ function report(t){diag.style.display='block';diag.textContent='A12 診斷：'+t;}
+ b.addEventListener('pointerdown',()=>report('按鈕已接收滑鼠/觸控事件'),true);
+ b.addEventListener('click',()=>{report('已點擊，準備切換');setTimeout(()=>{const panel=document.getElementById('characterSelect');const c=document.getElementById('c');report('選角畫面 '+(panel.hidden?'已關閉':'仍開啟')+'；地圖畫布 '+(c&&c.getBoundingClientRect().width>0?'存在':'未顯示')+'；遊戲狀態 '+(typeof worldEntered!=='undefined'&&worldEntered?'已進入':'未進入'));},250);},false);
+ window.addEventListener('error',e=>report('程式錯誤：'+e.message));
+ window.addEventListener('unhandledrejection',e=>report('執行錯誤：'+String(e.reason)));
+})();
+</script></body></html>
