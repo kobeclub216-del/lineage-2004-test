@@ -1090,6 +1090,7 @@ function knightRenderPosition(now){if(!spriteMoveFrom||!spriteMoveTo||now>=sprit
 // Reference naming: assets/classanim/男騎士[d0..d7]/sword1_{idle,walk,attack}_N.png.
 // This animation system does not change any 2004 gameplay rules.
 const KNIGHT_FRAMES={
+ // P05 diagnostic: local sprite files have not been supplied; do not substitute unrelated art.
  base:'../assets/classanim',folder:'男騎士',weapon:'sword1',
  // Actual folder order must be visually verified with licensed sprite frames.
  // Mapping is configurable without changing movement or combat logic.
@@ -1141,7 +1142,7 @@ function spriteStatus(){
  const el=document.getElementById('spriteStatus');
  if(!el)return;
  el.textContent='騎士圖片：'+(knightReferencePreview?'參考預覽':'本地')+'｜成功 '+knightLoadedCount+'｜失敗 '+knightFailedCount+
- (knightLoadedCount===0?'｜尚未顯示圖片':'')+(knightFailedCount>0&&knightLoadedCount===0?'｜請截圖回報':'');
+ (knightLoadedCount===0?'｜尚未顯示圖片':'')+(knightFailedCount>0&&knightLoadedCount===0?'｜本地素材缺失：請先確認可使用的原版圖片':'');
 }
 // Start the diagnostic even when the character is outside the camera viewport.
 function initializeKnightPreview(){
