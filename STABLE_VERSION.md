@@ -1,7 +1,17 @@
 # 《天堂：天與地》穩定版本保護紀錄
 
 更新：2026-11-11
-## 目前經使用者實測通過
+## 最新穩定版本（2026-11-11）
+- **A45**：`v003-a45-test/index.html`，使用者已回報測試正常。
+- **Git commit**：`058a5dccc0303e562c14cd0ee046f26f741c4508`
+- **凍結分支**：`stable/a45-initial-vitals`
+- **測試網址**：https://kobeclub216-del.github.io/lineage-2004-test/v003-a45-test/index.html?spriteSource=reference&v=045
+- **新增通過功能**：各職業不同初始 HP、依職業及 WIS 決定初始 MP；原本角色選擇、刪除與名稱檢查維持正常。
+- **重要限制**：初始 HP 除騎士外仍屬歷史候選值；部分 WIS→MP 表格未完整核實。新角色才採用新數值，既有角色不追溯改寫。
+- **後續規則**：A46 以 A45 為基礎建立獨立目錄，不得覆寫 A45 或 A43。
+
+## 先前穩定基準（角色選擇）
+
 - **A43**：`v003-a43-test/index.html`
 - **Git commit**：`0256851a5e9d0c1935d24896bfb28059cea89cc7`
 - **凍結分支**：`stable/a43-character-selection`
