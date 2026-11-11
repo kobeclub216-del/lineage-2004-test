@@ -897,8 +897,8 @@ function p04MigrateSlot(slot){
  p.lv=Math.max(1,Math.min(99,Math.floor(Number(p.lv)||1)));
  p.xp=Math.max(0,Math.floor(Number(p.xp)||0));
  p.maxHp=Math.max(1,Number(p.maxHp)||1);p.maxMp=Math.max(0,Number(p.maxMp)||0);
- p.hp=Math.max(0,Math.min(p.maxHp,Number(p.hp)??p.maxHp));
- p.mp=Math.max(0,Math.min(p.maxMp,Number(p.mp)??p.maxMp));
+ p.hp=Math.max(0,Math.min(p.maxHp,Number.isFinite(Number(p.hp))?Number(p.hp):p.maxHp));
+ p.mp=Math.max(0,Math.min(p.maxMp,Number.isFinite(Number(p.mp))?Number(p.mp):p.maxMp));
  p.path=[];return copy;
 }
 function p04MakeBackup(){
