@@ -1,4 +1,4 @@
-<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><title>天堂 1.82｜P05 騎士八方向美術測試版</title><style>*{box-sizing:border-box}body{margin:0;background:#10130f;color:#e7dfc8;font-family:Arial,'Microsoft JhengHei',sans-serif}header{padding:12px 16px;background:#22291f;border-bottom:2px solid #8c7950}header b{font-size:20px;color:#f1d69a}header small{display:block;color:#b6b5a9;margin-top:4px}.layout{display:flex;gap:10px;padding:10px;max-width:1280px;margin:auto}.game{flex:1;min-width:0;position:relative}canvas{display:block;width:100%;background:#26372c;border:2px solid #66573a;cursor:crosshair;touch-action:none}aside{width:250px;background:#20271f;border:1px solid #62583c;padding:12px}h3{margin:8px 0;color:#e4c886}.stat{margin:8px 0}.meter{height:12px;background:#101510;border:1px solid #5a5a49}.meter i{display:block;height:100%;background:#a8403e}.meter.mp i{background:#3c75ad}.meter.xp i{background:#b7a04a}button,select,input{background:#343c2f;color:#f4e6c4;border:1px solid #85764f;padding:8px;border-radius:3px}button{cursor:pointer;margin:3px 2px}button:hover{background:#526047}.panel{margin-top:12px;padding:9px;background:#161c17;border:1px solid #4d513f;font-size:13px;line-height:1.6}#log{height:122px;overflow:auto;font-size:12px;color:#c6c1ab}#modal{position:absolute;inset:0;background:#000b;display:flex;align-items:center;justify-content:center;padding:12px}#modal .dialog{max-width:430px;width:100%;background:#252e24;border:2px solid #a58c54;padding:20px}#modal label{display:block;margin:12px 0}#modal input,#modal select{width:100%;margin-top:5px}#modal .hint{font-size:12px;color:#d0c5a6}#notice{position:absolute;left:12px;top:12px;background:#131c15cc;padding:6px 10px;font-size:12px;pointer-events:none}@media(max-width:800px){.layout{display:block}aside{width:auto;margin-top:10px}header b{font-size:17px}}
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><title>天堂 1.82｜P05 美術修正（回復 P04 畫面）</title><style>*{box-sizing:border-box}body{margin:0;background:#10130f;color:#e7dfc8;font-family:Arial,'Microsoft JhengHei',sans-serif}header{padding:12px 16px;background:#22291f;border-bottom:2px solid #8c7950}header b{font-size:20px;color:#f1d69a}header small{display:block;color:#b6b5a9;margin-top:4px}.layout{display:flex;gap:10px;padding:10px;max-width:1280px;margin:auto}.game{flex:1;min-width:0;position:relative}canvas{display:block;width:100%;background:#26372c;border:2px solid #66573a;cursor:crosshair;touch-action:none}aside{width:250px;background:#20271f;border:1px solid #62583c;padding:12px}h3{margin:8px 0;color:#e4c886}.stat{margin:8px 0}.meter{height:12px;background:#101510;border:1px solid #5a5a49}.meter i{display:block;height:100%;background:#a8403e}.meter.mp i{background:#3c75ad}.meter.xp i{background:#b7a04a}button,select,input{background:#343c2f;color:#f4e6c4;border:1px solid #85764f;padding:8px;border-radius:3px}button{cursor:pointer;margin:3px 2px}button:hover{background:#526047}.panel{margin-top:12px;padding:9px;background:#161c17;border:1px solid #4d513f;font-size:13px;line-height:1.6}#log{height:122px;overflow:auto;font-size:12px;color:#c6c1ab}#modal{position:absolute;inset:0;background:#000b;display:flex;align-items:center;justify-content:center;padding:12px}#modal .dialog{max-width:430px;width:100%;background:#252e24;border:2px solid #a58c54;padding:20px}#modal label{display:block;margin:12px 0}#modal input,#modal select{width:100%;margin-top:5px}#modal .hint{font-size:12px;color:#d0c5a6}#notice{position:absolute;left:12px;top:12px;background:#131c15cc;padding:6px 10px;font-size:12px;pointer-events:none}@media(max-width:800px){.layout{display:block}aside{width:auto;margin-top:10px}header b{font-size:17px}}
 /* v0.02: touch-first responsive UI, desktop preserved */
 html,body{overscroll-behavior:none}button{min-height:40px}#mobileBar{display:none}#notice{max-width:calc(100% - 20px)}
 @media(pointer:coarse){button,select,input{font-size:16px;min-height:44px}#notice{font-size:11px}canvas{touch-action:none}}
@@ -1157,33 +1157,6 @@ function initializeKnightPreview(){
   refresh();
  }
 }
-/* P05: original, code-drawn eight-direction knight fallback; no copyrighted sprite assets.
-   Kept separate from the A47 movement, collision, combat and save code. */
-function p05DrawKnightFallback(px,py,now){
- const moving=now<spriteMovingUntil,attacking=now<spriteAttackUntil;
- const theta=(spriteFacing%8)*Math.PI/4,dx=Math.sin(theta),dy=Math.cos(theta);
- const phase=moving?Math.sin(now/80):0,arm=attacking?Math.sin((spriteAttackUntil-now)/280*Math.PI):0;
- ctx.save();ctx.translate(Math.round(px),Math.round(py));
- ctx.fillStyle='#141a18a0';ctx.beginPath();ctx.ellipse(0,3,13,5,0,0,Math.PI*2);ctx.fill();
- ctx.translate(0,moving?-Math.abs(phase)*2:0);
- ctx.strokeStyle='#303238';ctx.lineWidth=5;ctx.lineCap='round';
- ctx.beginPath();ctx.moveTo(-4,-13);ctx.lineTo(-5+phase*3,-2);ctx.moveTo(4,-13);ctx.lineTo(5-phase*3,-2);ctx.stroke();
- ctx.fillStyle='#404c60';ctx.fillRect(-9,-34,18,22);
- ctx.fillStyle='#8995a0';ctx.fillRect(-8,-33,16,5);ctx.fillRect(-7,-24,14,3);
- ctx.fillStyle='#5c4333';ctx.fillRect(-9,-17,18,4);
- ctx.fillStyle='#c2a47b';ctx.beginPath();ctx.ellipse(0,-41,7,8,0,0,Math.PI*2);ctx.fill();
- ctx.fillStyle='#747d88';ctx.beginPath();ctx.moveTo(-9,-43);ctx.lineTo(-6,-51);ctx.lineTo(6,-51);ctx.lineTo(9,-43);ctx.closePath();ctx.fill();
- ctx.fillStyle='#c6cbd0';ctx.fillRect(-8,-45,16,3);
- ctx.fillStyle='#232a31';ctx.fillRect(-4+dx*2,-41+dy,3,2);ctx.fillRect(2+dx*2,-41+dy,3,2);
- ctx.strokeStyle='#8b949d';ctx.lineWidth=5;
- ctx.beginPath();ctx.moveTo(-8,-29);ctx.lineTo(-13+phase*2,-17);ctx.moveTo(8,-29);ctx.lineTo(13-phase*2,-18);ctx.stroke();
- ctx.save();ctx.translate(13,-18);ctx.rotate(-0.5+dx*0.8-arm*1.3);
- ctx.strokeStyle='#d4d9dc';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(0,-24);ctx.stroke();
- ctx.strokeStyle='#8e7041';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(-6,-2);ctx.lineTo(6,-2);ctx.stroke();ctx.restore();
- ctx.fillStyle='#5b6877';ctx.beginPath();ctx.ellipse(-14,-20,6,10,-0.3,0,Math.PI*2);ctx.fill();
- ctx.strokeStyle='#b0b7bc';ctx.lineWidth=2;ctx.stroke();
- ctx.restore();
-}
 function drawKnightSprite(px,py,now){
  const attack=now<spriteAttackUntil,pickup=now<spritePickupUntil,move=now<spriteMovingUntil;
  const action=attack?'attack':pickup?'idle':move?'walk':'idle',spec=KNIGHT_FRAMES.actions[action];
@@ -1208,7 +1181,7 @@ function drawKnightSprite(px,py,now){
  }
  if(!entry.ready){
   // Only use the silhouette before any valid sprite for this direction is available.
-  p05DrawKnightFallback(px,py,now);return;
+  drawTestSilhouette(px,py,'#a5a8b3');return;
  }
  knightLastReady.set(key,entry);
  knightPreload(sourceDir,action,frame);
@@ -1367,7 +1340,7 @@ window.addEventListener('keydown',e=>{if(!worldEntered)return;if(e.key==='Tab'&&
 #a47CreationReturn{position:fixed;z-index:2147483600;bottom:12px;left:12px;font-size:14px;padding:8px 12px}
 #a47CreationReturn[hidden]{display:none!important}
 </style>
-<div id="a47Home" role="dialog" aria-label="天堂登入首頁"><div class="a47-frame"><h1>天堂</h1><p>1.82 開發測試版 P05　｜　獨立角色存檔</p><button id="a47Login" type="button">開始遊戲</button></div></div>
+<div id="a47Home" role="dialog" aria-label="天堂登入首頁"><div class="a47-frame"><h1>天堂</h1><p>1.82 P05 美術修正：回復 P04 測試畫面　｜　正式素材待確認</p><button id="a47Login" type="button">開始遊戲</button></div></div>
 <button id="a47CreationReturn" type="button" hidden>返回角色選擇</button>
 <script>
 /* A47: Home -> character slots -> creation only after explicit empty-slot click. */
