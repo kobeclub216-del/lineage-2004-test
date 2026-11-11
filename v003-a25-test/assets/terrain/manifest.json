@@ -1,0 +1,26 @@
+{
+  "era": "2004-07-research",
+  "note": "Original artwork generated for this prototype, not extracted from Lineage; historical map layout remains unverified.",
+  "tiles": {
+    "grass": {
+      "file": "grass.svg",
+      "licenseVerified": true,
+      "provenance": "Original artwork created for this prototype; no third-party sprites or textures"
+    },
+    "dirt": {
+      "file": "dirt.svg",
+      "licenseVerified": true,
+      "provenance": "Original artwork created for this prototype; no third-party sprites or textures"
+    },
+    "water": {
+      "file": "water.svg",
+      "licenseVerified": true,
+      "provenance": "Original artwork created for this prototype; no third-party sprites or textures"
+    },
+    "bridge": {
+      "file": "bridge.svg",
+      "licenseVerified": true,
+      "provenance": "Original artwork created for this prototype; no third-party sprites or textures"
+    }
+  }
+}
