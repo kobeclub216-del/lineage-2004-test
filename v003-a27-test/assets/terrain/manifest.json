@@ -1,0 +1,41 @@
+{
+  "era": "2004-07-research",
+  "note": "Original visual prototypes, not Lineage original artwork. House positions are temporary and do not alter collision.",
+  "tiles": {
+    "grass": {
+      "file": "grass.svg",
+      "licenseVerified": true,
+      "provenance": "Original artwork created for this prototype"
+    },
+    "dirt": {
+      "file": "dirt.svg",
+      "licenseVerified": true,
+      "provenance": "Original artwork created for this prototype"
+    },
+    "water": {
+      "file": "water.svg",
+      "licenseVerified": true,
+      "provenance": "Original artwork created for this prototype"
+    },
+    "bridge": {
+      "file": "bridge.svg",
+      "licenseVerified": true,
+      "provenance": "Original artwork created for this prototype"
+    },
+    "tree": {
+      "file": "tree.svg",
+      "licenseVerified": true,
+      "provenance": "Original artwork created for this prototype"
+    },
+    "rock": {
+      "file": "rock.svg",
+      "licenseVerified": true,
+      "provenance": "Original artwork created for this prototype"
+    },
+    "house": {
+      "file": "house.svg",
+      "licenseVerified": true,
+      "provenance": "Original artwork created for this prototype"
+    }
+  }
+}
