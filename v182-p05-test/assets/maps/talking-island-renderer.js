@@ -23,7 +23,12 @@
     if(!Number.isFinite(layer.depth)||!Array.isArray(layer.images))throw new TypeError('Invalid layer');
     for(const item of layer.images){
      if(item.sourceRect&&(!['x','y','width','height'].every(k=>Number.isInteger(item.sourceRect[k]))||item.sourceRect.x<0||item.sourceRect.y<0||item.sourceRect.width<=0||item.sourceRect.height<=0))throw new TypeError('Invalid sprite source rectangle');
-     if(!item.image||!Number.isFinite(item.x)||!Number.isFinite(item.y)||!Number.isFinite(item.width)||!Number.isFinite(item.height)||item.width<=0||item.height<=0)throw new TypeError('Invalid image placement');
+     if(!item.image||!Number.isFinite(item.x)||!Number.isFinite(item.y)||!Number.isFinite(item.width)||!Number.isFinite(item.height)||item.width<=0||item.height<=0||
+      (item.footY!==undefined&&!Number.isFinite(item.footY)))throw new TypeError('Invalid image placement');
+     if(item.sourceRect&&item.image.naturalWidth&&item.image.naturalHeight&&
+      (item.sourceRect.x+item.sourceRect.width>item.image.naturalWidth||
+       item.sourceRect.y+item.sourceRect.height>item.image.naturalHeight))
+      throw new RangeError('Scene image crop exceeds atlas bounds');
     }
    }
    this.scene=scene;
