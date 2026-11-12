@@ -1108,7 +1108,7 @@ const knightAssetBase=knightReferencePreview?KNIGHT_REFERENCE_ROOT:KNIGHT_FRAMES
 const knightCache=new Map();
 const knightLastReady=new Map();
 let knightLoadedCount=0,knightFailedCount=0;
-const KNIGHT_MAX_CACHE=360;
+const KNIGHT_MAX_CACHE=1200;
 const CLASS_SPRITE_COUNTS={
  '王子':[11,4,5],'公主':[12,4,7],
  '男騎士':[13,4,6],'女騎士':[13,4,6],
@@ -1184,9 +1184,11 @@ function drawKnightSprite(px,py,now){
  const action=attack?'attack':pickup?'idle':move?'walk':'idle',spec=activeSpriteSpec(action);
  // Complete one full walk cycle per tile step and one attack cycle per attack.
  // The previous fixed-ms calculation skipped frames on short movement/attack windows.
- const duration=attack?280:move?SPRITE_STEP_MS:spec.count*spec.ms;
- const elapsed=attack?Math.max(0,280-(spriteAttackUntil-now)):move?Math.max(0,now-spriteMoveStart):now;
- const phase=attack||move?Math.min(0.999,elapsed/Math.max(1,duration)):((elapsed%duration)/duration);
+ // Walk animation must continue across adjacent map steps rather than
+ // restarting four frames every 170 ms (which caused a jerky 42 ms/frame).
+ const duration=attack?280:move?Math.max(300,spec.count*85):spec.count*spec.ms;
+ const elapsed=attack?Math.max(0,280-(spriteAttackUntil-now)):now;
+ const phase=attack?Math.min(0.999,elapsed/duration):((elapsed%duration)/duration);
  const frame=Math.min(spec.count-1,Math.floor(phase*spec.count));
  // One consistent source direction for idle, walk and attack.
  // No action-specific mirroring; calibration remains explicit and reversible.
@@ -1212,8 +1214,13 @@ function drawKnightSprite(px,py,now){
  }
  knightLastReady.set(key,entry);
  knightPreload(sourceDir,action,frame);
- // Warm all walk frames for the active facing; prevents first-step frame stalls.
- if(action==='walk'||action==='attack')for(let j=0;j<spec.count;j++)knightFrame(sourceDir,action,j);
+ // Warm every frame in the active direction, including the next action.
+ // Reusing these decoded images prevents stalls when switching from idle.
+ if(action==='walk'||action==='attack'){
+  for(let j=0;j<spec.count;j++)knightFrame(sourceDir,action,j);
+  const idleCount=activeSpriteSpec('idle').count;
+  for(let j=0;j<idleCount;j++)knightFrame(sourceDir,'idle',j);
+ }
  const img=entry.img,h=KNIGHT_FRAMES.drawHeight,w=Math.max(1,h*img.naturalWidth/img.naturalHeight);
  ctx.save();ctx.imageSmoothingEnabled=false;
  ctx.translate(Math.round(px),Math.round(py-KNIGHT_FRAMES.anchorY));
