@@ -1435,7 +1435,31 @@ function terrainDetails(x,y,p,type){
   ctx.fillStyle='#101c144d';ctx.beginPath();ctx.ellipse(p.x+5,p.y+TH/2+3,15,5,0,0,Math.PI*2);ctx.fill();
  }
 }
-function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#1a241c';ctx.fillRect(0,0,canvas.width,canvas.height);for(let y=0;y<H;y++)for(let x=0;x<W;x++){let p=screen(x,y);if(p.x<-TW||p.x>canvas.width+TW||p.y<-TH*3||p.y>canvas.height+TH)continue;let type=tile[y][x];diamond(p.x,p.y,{grass:'#42543a',dirt:'#655c42',water:'#2d5260',bridge:'#776348',tree:'#42543a',rock:'#42543a'}[type]);
+// P05-D27: opt-in, externally supplied map image. No invented map artwork.
+// Example: ?sceneImage=https%3A%2F%2F... (only use a source with permission).
+// The image is not bundled; missing/unapproved images do NOT silently become
+// an alleged historical Talking Island village.
+const sceneImageUrl=visualParams.get('sceneImage');
+const historicalSceneImage=sceneImageUrl&&/^https:\/\//i.test(sceneImageUrl)?new Image():null;
+let historicalSceneReady=false;
+if(historicalSceneImage){
+ historicalSceneImage.onload=()=>{historicalSceneReady=historicalSceneImage.naturalWidth>0&&historicalSceneImage.naturalHeight>0};
+ historicalSceneImage.onerror=()=>{historicalSceneReady=false;console.error('[P05-D27] Scene image unavailable; no historical map loaded')};
+ historicalSceneImage.src=sceneImageUrl;
+}
+function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);
+ if(historicalSceneImage){
+  ctx.fillStyle='#141414';ctx.fillRect(0,0,canvas.width,canvas.height);
+  if(historicalSceneReady){
+   // A single image is only a visual reference layer, NOT collision-ready
+   // world map. Do not claim that movement or coordinates are validated.
+   const scale=Math.min(canvas.width/historicalSceneImage.naturalWidth,canvas.height/historicalSceneImage.naturalHeight);
+   const w=historicalSceneImage.naturalWidth*scale,h=historicalSceneImage.naturalHeight*scale;
+   ctx.drawImage(historicalSceneImage,(canvas.width-w)/2,(canvas.height-h)/2,w,h);
+  }
+  return;
+ }
+ctx.fillStyle='#1a241c';ctx.fillRect(0,0,canvas.width,canvas.height);for(let y=0;y<H;y++)for(let x=0;x<W;x++){let p=screen(x,y);if(p.x<-TW||p.x>canvas.width+TW||p.y<-TH*3||p.y>canvas.height+TH)continue;let type=tile[y][x];diamond(p.x,p.y,{grass:'#42543a',dirt:'#655c42',water:'#2d5260',bridge:'#776348',tree:'#42543a',rock:'#42543a'}[type]);
 // P05-D10: terrain decorations share the map tile's scale, anchored at the
 // ground contact point. This keeps trees, rocks and textures in proportion
 // during visual calibration; no substitute artwork is introduced.
