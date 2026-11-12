@@ -18,13 +18,16 @@ class TalkingIslandMovementController {
   if(!this.position||!this.renderer.scene||!this.renderer.canWalk(x,y))return false;
   const start=this.position, key=(x,y)=>x+','+y;
   const visited=new Set([key(start.x,start.y)]),queue=[start],parents=new Map();
-  const directions=[[0,-1],[-1,0],[1,0],[0,1]];
+  // Eight-direction movement; diagonals must not cut through blocked corners.
+  const directions=[[0,-1],[-1,0],[1,0],[0,1],[-1,-1],[1,-1],[-1,1],[1,1]];
   let found=false,head=0;
   while(head<queue.length&&head<this.maxNodes){
    const p=queue[head++];
    if(p.x===x&&p.y===y){found=true;break}
    for(const [dx,dy] of directions){
     const nx=p.x+dx,ny=p.y+dy,k=key(nx,ny);
+    const diagonal=dx!==0&&dy!==0;
+    if(diagonal&&(!this.renderer.canWalk(p.x+dx,p.y)||!this.renderer.canWalk(p.x,p.y+dy)))continue;
     if(queue.length<this.maxNodes&&!visited.has(k)&&this.renderer.canWalk(nx,ny)){
      visited.add(k);parents.set(k,p);queue.push({x:nx,y:ny});
     }
