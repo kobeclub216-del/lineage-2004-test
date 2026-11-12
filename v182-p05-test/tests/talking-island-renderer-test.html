@@ -1,0 +1,20 @@
+<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><title>P05-D41 地圖渲染器自動測試</title><style>body{font:16px sans-serif;background:#171717;color:#eee;padding:24px}pre{white-space:pre-wrap}</style><h2>說話之島渲染器功能測試（不含原版美術）</h2><pre id="result">測試中…</pre><script src="../assets/maps/talking-island-renderer.js"></script><script>
+(function(){
+ const lines=[];let passed=0,failed=0;
+ function test(name,fn){try{fn();lines.push('PASS '+name);passed++}catch(e){lines.push('FAIL '+name+': '+e.message);failed++}}
+ function assert(x,msg){if(!x)throw Error(msg)}
+ const calls=[];
+ const ctx={clearRect(){},fillRect(){},drawImage(image,x,y,w,h){calls.push({image,x,y,w,h})},set fillStyle(x){}};
+ const canvas={width:800,height:600,getContext(){return ctx}};
+ const r=new TalkingIslandLayerRenderer(canvas);
+ const img={complete:true,naturalWidth:200,naturalHeight:100};
+ test('缺少碰撞資料禁止移動',()=>assert(!r.canWalk(1,1),'walkable without collision'));
+ test('碰撞格子與邊界',()=>{r.setCollision({bounds:{minX:0,minY:0,maxX:4,maxY:4},blockedCells:[[2,2]]});assert(r.canWalk(1,1),'valid tile blocked');assert(!r.canWalk(2,2),'blocked tile walkable');assert(!r.canWalk(4,1),'out of bounds walkable');assert(!r.canWalk(1.5,1),'fractional walkable')});
+ test('圖片等比例置中',()=>{calls.length=0;assert(r.renderReferenceImage(img),'reference not drawn');const d=calls[0];assert(d.x===0&&d.y===100&&d.w===800&&d.h===400,'wrong placement '+JSON.stringify(d))});
+ test('場景座標與鏡頭',()=>{const p=r.project(2,1,10,20);assert(p.x===418&&p.y===22,'wrong projected position '+JSON.stringify(p))});
+ test('建築前後深度排序',()=>{calls.length=0;const behind={...img,id:'behind'},front={...img,id:'front'},actor={...img,id:'actor'};r.setScene({bounds:{minX:0,minY:0,maxX:5,maxY:5},layers:[{id:'world',depth:1,images:[{image:behind,x:1,y:1,footY:0,width:30,height:30},{image:front,x:1,y:1,footY:3,width:30,height:30}]}]});r.render({player:{image:actor,x:1,y:1,footY:2,width:30,height:30}});assert(calls.length===3,'missing draw');assert(calls[0].image===behind&&calls[1].image===actor&&calls[2].image===front,'wrong occlusion order')});
+ test('無素材場景不冒充原版地圖',()=>{r.setScene({bounds:{minX:0,minY:0,maxX:5,maxY:5},layers:[]});calls.length=0;assert(r.render(),'render failed');assert(calls.length===0,'invented map art')});
+ document.getElementById('result').textContent=lines.join('\n')+'\n\n'+passed+' passed / '+failed+' failed';
+ window.talkingIslandRendererTestResult={passed,failed,lines};
+})();
+</script></html>
