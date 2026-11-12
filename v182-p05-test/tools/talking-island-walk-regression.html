@@ -17,6 +17,8 @@ test('八方向允許開放區域斜走',()=>{m.spawn(5,5);return m.moveTo(6,6)&
 test('斜走不得穿越障礙物角落',()=>{m.spawn(1,2);if(!m.moveTo(2,1))return false;return m.route.length>1&&!(m.route[0].x===2&&m.route[0].y===1)});
 m.spawn(5,5);
 test('人物移動面向與步伐同步',()=>{m.spawn(5,5);if(!m.moveTo(6,6)||!m.step())return false;const a=m.getAnimationState();return a.facing==='SE'&&!a.moving&&a.position.x===6&&a.position.y===6});
+test('等角地圖斜向座標正確轉換畫面方向',()=>{m.spawn(5,5);if(!m.moveTo(6,5)||!m.step())return false;return m.getAnimationState().facing==='E'&&m.getAnimationState().screenFacing==='SE'});
+test('八方向畫面面向對應正確',()=>{const expected={N:'NE',NE:'E',E:'SE',SE:'S',S:'SW',SW:'W',W:'NW',NW:'N'};return Object.entries(expected).every(([grid,screen])=>{m.facing=grid;return m.getScreenFacing()===screen})});
 test('取消移動保留最後面向',()=>{m.spawn(5,5);if(!m.moveTo(6,5)||!m.step())return false;m.moveTo(7,7);m.cancel();const a=m.getAnimationState();return a.facing==='E'&&!a.moving});
 m.spawn(5,5);
 test('新目的地替換舊路線',()=>m.moveTo(7,7)&&m.route.length>0&&m.moveTo(1,1)&&m.route.length>0);
