@@ -1441,9 +1441,19 @@ function terrainDetails(x,y,p,type){
 // an alleged historical Talking Island village.
 // P05-D30: load versioned map manifest without assuming candidate coordinates are verified.
 // Diagnostic only: this cannot activate a historical village until assets and rights are confirmed.
-const talkingIslandManifestState={status:'not-requested',manifest:null,error:null};
+const talkingIslandManifestState={status:'not-requested',manifest:null,error:null,playability:null};
 let verifiedTalkingIslandImage=null;
 let verifiedTalkingIslandImageReady=false;
+// P05-D35: a verified screenshot alone is not a playable map.
+function auditTalkingIslandPlayability(data){
+ const missing=[];
+ const b=data.coordinateSystem&&data.coordinateSystem.worldBounds;
+ if(!Array.isArray(b)||b.length!==4||!b.every(Number.isInteger)||b[0]>=b[2]||b[1]>=b[3])missing.push('worldBounds');
+ if(!Array.isArray(data.collisionLayers)||!data.collisionLayers.some(l=>l&&l.verified===true&&l.assetId&&data.assets.some(a=>a.id===l.assetId&&a.verified===true&&a.licenseVerified===true)))missing.push('collision');
+ if(!Array.isArray(data.occlusionLayers)||!data.occlusionLayers.some(l=>l&&l.verified===true&&l.assetId&&data.assets.some(a=>a.id===l.assetId&&a.verified===true&&a.licenseVerified===true)))missing.push('occlusion');
+ if(!data.playerSpawn||!Number.isInteger(data.playerSpawn.x)||!Number.isInteger(data.playerSpawn.y)||data.playerSpawn.verified!==true)missing.push('spawn');
+ return {playable:missing.length===0,missing};
+}
 function loadVerifiedTalkingIslandImage(data){
  const asset=data.assets.find(a=>a.kind==='background'&&a.verified===true&&a.licenseVerified===true);
  if(!asset){talkingIslandManifestState.status='awaiting-background-asset';return}
@@ -1460,6 +1470,7 @@ if(visualParams.get('historicalMode')==='1'){
   .then(data=>{
    if(data.schemaVersion!==1||data.mapId!=='talking-island-village'||!Array.isArray(data.assets)||!Array.isArray(data.landmarks))throw Error('Invalid Talking Island manifest');
    talkingIslandManifestState.manifest=data;
+   talkingIslandManifestState.playability=auditTalkingIslandPlayability(data);
    // A string flag alone must never unlock an unverified historical map.
    const verifiedAssets=data.assets.length>0&&data.assets.every(a=>a&&typeof a.path==='string'&&a.path.startsWith('./assets/maps/')&&a.verified===true&&a.licenseVerified===true&&typeof a.source==='string'&&a.source.length>0);
    const verifiedLandmarks=data.landmarks.length>0&&data.landmarks.every(p=>p&&p.verified===true);
