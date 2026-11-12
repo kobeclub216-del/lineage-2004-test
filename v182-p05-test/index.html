@@ -1245,6 +1245,46 @@ function auditSpriteFrames(){
  return result;
 }
 if(visualParams.get('auditSprites')==='1')window.auditSpriteFrames=auditSpriteFrames;
+// P05-D20: opt-in, non-visual browser smoke test. Run on the actual hosted
+// page with ?smokeTest=1 and inspect window.lineageSmokeTestResult.
+// This tests loaded sprite files, not historical artwork accuracy.
+if(visualParams.get('smokeTest')==='1'){
+ window.lineageSmokeTestResult={state:'pending'};
+ window.runLineageSmokeTest=async function(){
+  const failures=[],geometry=verifyVisualGeometry();
+  if(!geometry.pass)failures.push('geometry');
+  const dir=(spriteFacing+4)%8,folder=activeSpriteFolder();
+  const expected=[];
+  for(const action of ['idle','walk','attack']){
+   for(let f=0;f<activeSpriteSpec(action).count;f++){
+    expected.push({action,frame:f,entry:knightFrame(dir,action,f)});
+   }
+  }
+  const deadline=Date.now()+12000;
+  while(Date.now()<deadline&&expected.some(item=>!item.entry.ready&&!item.entry.failed)){
+   await new Promise(resolve=>setTimeout(resolve,100));
+  }
+  const sprite={folder,direction:dir,ready:0,failed:0,pending:0,failedFrames:[]};
+  for(const item of expected){
+   if(item.entry.ready)sprite.ready++;
+   else if(item.entry.failed){sprite.failed++;sprite.failedFrames.push(item.action+':'+item.frame)}
+   else sprite.pending++;
+  }
+  if(sprite.failed)failures.push('sprite files failed');
+  if(sprite.pending)failures.push('sprite files timed out');
+  if(!sprite.ready)failures.push('no decoded sprite frames');
+  const result={state:failures.length?'fail':'pass',geometry,sprite,failures,
+   note:'Only browser loading and geometry; not a historical visual comparison'};
+  window.lineageSmokeTestResult=result;
+  console[result.state==='pass'?'info':'error']('[P05-D20 smoke test]',result);
+  return result;
+ };
+ // Delay until the initial game script has completed and sprite functions exist.
+ setTimeout(()=>window.runLineageSmokeTest().catch(error=>{
+  window.lineageSmokeTestResult={state:'error',message:String(error)};
+  console.error('[P05-D20 smoke test]',error);
+ }),0);
+}
 function knightPreload(dir,action,frame){
  const spec=activeSpriteSpec(action);
  knightFrame(dir,action,(frame+1)%spec.count);
