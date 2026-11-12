@@ -1117,6 +1117,8 @@ const knightLastReady=new Map();
 // P05-D2: keep the most recently decoded sprite for each class/gender during direction changes.
 const knightLastReadyByFolder=new Map();
 let knightLoadedCount=0,knightFailedCount=0;
+// P05-D4: retain decoded sprites throughout the session. Evicting ready images
+// can cause fresh network requests and visible animation interruptions.
 const KNIGHT_MAX_CACHE=1200;
 const CLASS_SPRITE_COUNTS={
  '王子':[11,4,5],'公主':[12,4,7],
@@ -1148,10 +1150,7 @@ function knightFrame(dir,action,frame){
  const url=knightFrameUrl(dir,action,frame);
  if(!knightCache.has(url)){
   // Avoid unbounded image growth if future weapons or classes are added.
-  if(knightCache.size>=KNIGHT_MAX_CACHE){
-   // Keep in-flight requests cached; evict only completed entries.
-   for(const [key,item] of knightCache){if(item.ready||item.failed){knightCache.delete(key);break}}
-  }
+  // P05-D4: no eviction of successfully decoded frames during active gameplay.
   const img=new Image();const entry={img,ready:false,failed:false};
   img.onload=()=>{entry.ready=img.naturalWidth>0&&img.naturalHeight>0;if(entry.ready)knightLoadedCount++;spriteStatus()};
   img.onerror=()=>{
@@ -1251,8 +1250,9 @@ function drawTestSilhouette(x,y,color){
 }
 function drawCharacterSprite(p,now){
  if(['騎士','王族','妖精','法師','黑暗妖精'].includes(player.job)){drawKnightSprite(p.x,p.y,now);return}
- // Unchanged test silhouettes for other classes pending verified 2004 references.
- drawTestSilhouette(p.x,p.y,{'王族':'#a08c62','妖精':'#649c68','法師':'#607fb3','黑暗妖精':'#80609a'}[player.job]||'#a5a8b3');
+ // P05-D4: never substitute the old block-character prototype for an
+ // unknown class. Render only an approved/loaded sprite for supported classes.
+ return;
 }
 // v0.05-D decorative terrain transitions; collision and map data are untouched.
 function terrainDetails(x,y,p,type){
