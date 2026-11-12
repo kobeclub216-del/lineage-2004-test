@@ -1124,11 +1124,11 @@ function pathfind(sx,sy,gx,gy){if(!pass(gx,gy))return [];let start=sx+sy*W,goal=
   const movement=verifiedTalkingIslandMovement,c=movement.camera(),cell=movement.pick(sx,sy,c.cameraX,c.cameraY);
   if(cell)movement.moveTo(cell.x,cell.y);else movement.cancel();
   return;
- }if(!player)return;let t=unproject(sx,sy),m=monsters.find(m=>m.alive&&m.x===t.x&&m.y===t.y);if(m){target={type:'monster',ref:m};msg('鎖定 '+m.name);return}let d=drops.find(d=>d.x===t.x&&d.y===t.y);if(d){target={type:'drop',ref:d};return}target=null;player.path=pathfind(player.x,player.y,t.x,t.y);if(!player.path.length&&!pass(t.x,t.y))msg('該地形不可通行')}function centerCamera(){if(!player)return;cam.x=(player.x-player.y)*TW/2;cam.y=(player.x+player.y)*TH/2+90-canvas.height*.53}
+ }if(!player)return;let t=unproject(sx,sy),m=monsters.find(m=>m.alive&&m.x===t.x&&m.y===t.y);if(m){target={type:'monster',ref:m};msg('鎖定 '+m.name);return}let d=drops.find(d=>d.x===t.x&&d.y===t.y);if(d){target={type:'drop',ref:d};return}target=null;player.path=pathfind(player.x,player.y,t.x,t.y);if(!player.path.length&&!pass(t.x,t.y))msg('該地形不可通行')}function centerCamera(){if(visualParams.get('historicalMode')==='1')return;if(!player)return;cam.x=(player.x-player.y)*TW/2;cam.y=(player.x+player.y)*TH/2+90-canvas.height*.53}
 function pointerXY(e){let r=canvas.getBoundingClientRect();return {x:(e.clientX-r.left)*canvas.width/r.width,y:(e.clientY-r.top)*canvas.height/r.height}}
 let gesture=null;
-canvas.addEventListener('pointerdown',e=>{if(!player&&!verifiedTalkingIslandMovement)return;e.preventDefault();let p=pointerXY(e);gesture={id:e.pointerId,x:p.x,y:p.y,camX:cam.x,camY:cam.y,drag:false};canvas.setPointerCapture(e.pointerId)});
-canvas.addEventListener('pointermove',e=>{if(!gesture||gesture.id!==e.pointerId)return;let p=pointerXY(e);let dx=p.x-gesture.x,dy=p.y-gesture.y;if(Math.hypot(dx,dy)>12)gesture.drag=true;if(gesture.drag){cam.x=gesture.camX-dx;cam.y=gesture.camY-dy}});
+canvas.addEventListener('pointerdown',e=>{if(visualParams.get('historicalMode')==='1'&&!verifiedTalkingIslandMovement)return;if(visualParams.get('historicalMode')!=='1'&&!player)return;e.preventDefault();let p=pointerXY(e);gesture={id:e.pointerId,x:p.x,y:p.y,camX:cam.x,camY:cam.y,drag:false};canvas.setPointerCapture(e.pointerId)});
+canvas.addEventListener('pointermove',e=>{if(!gesture||gesture.id!==e.pointerId)return;let p=pointerXY(e);let dx=p.x-gesture.x,dy=p.y-gesture.y;if(Math.hypot(dx,dy)>12)gesture.drag=true;if(gesture.drag&&visualParams.get('historicalMode')!=='1'){cam.x=gesture.camX-dx;cam.y=gesture.camY-dy}});
 canvas.addEventListener('pointerup',e=>{if(!gesture||gesture.id!==e.pointerId)return;let g=gesture,p=pointerXY(e);gesture=null;if(!g.drag)clickAt(p.x,p.y)});
 canvas.addEventListener('pointercancel',()=>gesture=null);
 document.getElementById('centerCam').onclick=centerCamera;
@@ -1144,7 +1144,7 @@ window.addEventListener('keydown',e=>{
  if(e.key.toLowerCase()==='h'){document.getElementById('heal').click();e.preventDefault();}
  if(e.key.toLowerCase()==='s'){document.getElementById('save').click();e.preventDefault();}
  if(e.key.toLowerCase()==='c'){centerCamera();e.preventDefault();}
- if(e.key==='Escape'){target=null;if(player)player.path=[];msg('已取消目前的移動或追擊指令');e.preventDefault();}
+ if(e.key==='Escape'){if(visualParams.get('historicalMode')==='1'&&verifiedTalkingIslandMovement)verifiedTalkingIslandMovement.cancel();target=null;if(player)player.path=[];msg('已取消目前的移動或追擊指令');e.preventDefault();}
  if(e.key==='F1'||e.key==='?'){const help=document.getElementById('desktopGameHelp');help.hidden=!help.hidden;e.preventDefault();}
 });window.addEventListener('keyup',e=>keys[e.key]=false);function loop(ts){let dt=Math.min(.05,(ts-last)/1000||0);last=ts;if(visualParams.get('historicalMode')==='1'&&verifiedTalkingIslandMovement){
   if(ts-verifiedTalkingIslandLastStep>=170){verifiedTalkingIslandMovement.step();verifiedTalkingIslandLastStep=ts}
