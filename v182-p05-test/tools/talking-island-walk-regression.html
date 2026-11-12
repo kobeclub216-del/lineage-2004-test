@@ -2,8 +2,9 @@
 <script src="../assets/maps/talking-island-renderer.js"></script><script src="../assets/maps/talking-island-movement.js"></script><script>
 (()=>{
 'use strict';
-const results=document.getElementById('results');let pass=0,fail=0;
-function test(name,fn){try{if(fn()!==true)throw Error('Assertion failed');const li=document.createElement('li');li.className='ok';li.textContent='通過：'+name;results.append(li);pass++}catch(e){const li=document.createElement('li');li.className='bad';li.textContent='失敗：'+name+' — '+e.message;results.append(li);fail++}}
+const results=document.getElementById('results');let pass=0,fail=0;const pending=[];
+function record(name,ok,error){const li=document.createElement('li');li.className=ok?'ok':'bad';li.textContent=(ok?'通過：':'失敗：')+name+(error?' — '+error:'');results.append(li);if(ok)pass++;else fail++}
+function test(name,fn){try{const result=fn();if(result&&typeof result.then==='function'){pending.push(Promise.resolve(result).then(ok=>record(name,ok===true,ok===true?'':'Assertion failed'),e=>record(name,false,e.message)));return}record(name,result===true,result===true?'':'Assertion failed')}catch(e){record(name,false,e.message)}}
 const calls=[],ctx={clearRect(){},fillRect(){},drawImage(image,...args){calls.push({id:image.id,args})},set fillStyle(v){}},canvas={width:800,height:600,getContext(){return ctx}};
 const r=new TalkingIslandLayerRenderer(canvas),bounds={minX:0,minY:0,maxX:8,maxY:8},img=id=>({id,complete:true,naturalWidth:48,naturalHeight:72});
 r.setScene({bounds,layers:[{id:'ground',depth:0,images:[{image:img('ground'),x:0,y:0,width:500,height:300}]},{id:'buildings',depth:1,images:[{image:img('building'),x:3,y:3,width:100,height:120,footY:6}]}]});
@@ -63,8 +64,18 @@ test('移動過程每一步均保持在合法格位',()=>{
  while(m.route.length&&count++<60){if(!m.step()||!r.canWalk(m.position.x,m.position.y))return false;}
  return count<60&&m.position.x===7&&m.position.y===7;
 });
+test('場景圖集裁切資訊保留於載入結果',()=>{
+ const image={complete:true,naturalWidth:192,naturalHeight:576};
+ const descriptor={verified:true,bounds:{minX:0,minY:0,maxX:8,maxY:8},
+  layers:[{id:'foreground',verified:true,depth:2,images:[{
+   verified:true,licenseVerified:true,path:'./assets/maps/test-atlas.png',
+   x:4,y:4,width:48,height:72,sourceRect:{x:48,y:72,width:48,height:72}
+  }]}]};
+ return TalkingIslandLayerRenderer.loadSceneDescriptor(descriptor,()=>Promise.resolve(image))
+  .then(scene=>scene.layers[0].images[0].sourceRect.x===48);
+});
 test('鏡頭跟隨位置有效',()=>{const c=m.camera();return Number.isFinite(c.cameraX)&&Number.isFinite(c.cameraY)});
 test('停止移動清空路徑',()=>m.moveTo(7,7)&&(m.cancel(),m.route.length===0));
-const p=document.createElement('p');p.textContent='結果：'+pass+' 通過，'+fail+' 失敗';p.className=fail?'bad':'ok';results.after(p);
+Promise.all(pending).then(()=>{const p=document.createElement('p');p.textContent='結果：'+pass+' 通過，'+fail+' 失敗';p.className=fail?'bad':'ok';results.after(p)});
 })();
 </script></body></html>
