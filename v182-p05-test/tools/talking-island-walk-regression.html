@@ -133,6 +133,19 @@ test('明確設定腳底深度優先於預設等角深度',()=>{
  scene.render({player:{image:img('actor'),x:3,y:3,width:48,height:72,depth:1,footY:6}});
  return calls.map(c=>c.id).join(',')==='building,actor';
 });
+test('拒絕建築物非數值腳底深度',()=>{
+ const scene=new TalkingIslandLayerRenderer(canvas);
+ try{scene.setScene({bounds,layers:[{id:'bad',depth:1,images:[
+  {image:img('building'),x:1,y:1,width:48,height:72,footY:'front'}
+ ]}]});return false}catch(e){return e instanceof TypeError}
+});
+test('拒絕建築圖集裁切超出圖片邊界',()=>{
+ const scene=new TalkingIslandLayerRenderer(canvas);
+ try{scene.setScene({bounds,layers:[{id:'bad',depth:1,images:[
+  {image:img('building'),x:1,y:1,width:48,height:72,
+   sourceRect:{x:32,y:0,width:32,height:32}}
+ ]}]});return false}catch(e){return e instanceof RangeError}
+});
 test('鏡頭跟隨位置有效',()=>{const c=m.camera();return Number.isFinite(c.cameraX)&&Number.isFinite(c.cameraY)});
 test('停止移動清空路徑',()=>m.moveTo(7,7)&&(m.cancel(),m.route.length===0));
 Promise.all(pending).then(()=>{const p=document.createElement('p');p.textContent='結果：'+pass+' 通過，'+fail+' 失敗';p.className=fail?'bad':'ok';results.after(p)});
