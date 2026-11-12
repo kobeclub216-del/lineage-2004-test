@@ -28,6 +28,7 @@ document.getElementById('start').addEventListener('click',async()=>{
  if(!placement||!Number.isInteger(placement.x)||!Number.isInteger(placement.y)||!Number.isFinite(placement.width)||!Number.isFinite(placement.height)||placement.width<=0||placement.height<=0)throw Error('碰撞 JSON 必須包含經人工設定的 imagePlacement {x,y,width,height}');
  if(placement.x<b.minX||placement.x>=b.maxX||placement.y<b.minY||placement.y>=b.maxY)throw Error('場景圖片錨點超出地圖範圍');
  const [ground,character]=await Promise.all([readImage('ground'),readImage('actor')]);
+ if(!ground.naturalWidth||!ground.naturalHeight||!character.naturalWidth||!character.naturalHeight)throw Error('圖片沒有有效尺寸');
  const foreground=document.getElementById('foreground').files.length?await readImage('foreground'):null;
  const building=document.getElementById('building').files.length?await readImage('building'):null;
  const bx=Number(document.getElementById('buildingX').value),by=Number(document.getElementById('buildingY').value);
@@ -48,7 +49,22 @@ document.getElementById('start').addEventListener('click',async()=>{
  renderer.setCollision({bounds:b,blockedCells:blocked});movement.spawn(data.spawn.x,data.spawn.y);actor=character;active=true;render();status.textContent='已載入本機測試素材'+(building?'、建築物深度排序':'')+(foreground?'與固定前景遮擋圖':'')+'。點擊畫面移動；不代表原版地圖座標已驗證。';
  }catch(e){status.textContent='無法啟動：'+e.message}
 });
-canvas.addEventListener('click',e=>{if(!active)return;const rect=canvas.getBoundingClientRect(),c=movement.camera();const target=movement.pick((e.clientX-rect.left)*canvas.width/rect.width,(e.clientY-rect.top)*canvas.height/rect.height,c.cameraX,c.cameraY);if(!target){status.textContent='點擊位置不是可行走格';return}status.textContent=movement.moveTo(target.x,target.y)?'移動至 '+target.x+','+target.y:'無法抵達目標格'});
+// Pointer events work with mouse, touch and pen. Ignore multi-touch gestures.
+let pointerStart=null;
+canvas.addEventListener('pointerdown',e=>{
+ if(!active||!e.isPrimary)return;
+ pointerStart={id:e.pointerId,x:e.clientX,y:e.clientY};
+});
+canvas.addEventListener('pointercancel',()=>{pointerStart=null});
+canvas.addEventListener('pointerup',e=>{
+ if(!active||!pointerStart||pointerStart.id!==e.pointerId)return;
+ const start=pointerStart;pointerStart=null;
+ if(Math.hypot(e.clientX-start.x,e.clientY-start.y)>12)return;
+ const rect=canvas.getBoundingClientRect(),c=movement.camera();
+ const target=movement.pick((e.clientX-rect.left)*canvas.width/rect.width,(e.clientY-rect.top)*canvas.height/rect.height,c.cameraX,c.cameraY);
+ if(!target){movement.cancel();status.textContent='點擊位置不是可行走格，已取消移動';return}
+ status.textContent=movement.moveTo(target.x,target.y)?'移動至 '+target.x+','+target.y:'無法抵達目標格';
+});
 document.getElementById('cancel').addEventListener('click',()=>movement.cancel());
 let last=0;function tick(t){if(active&&t-last>=150){movement.step();last=t}requestAnimationFrame(tick)}requestAnimationFrame(tick);
 })();
