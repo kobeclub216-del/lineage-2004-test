@@ -22,6 +22,7 @@
    for(const layer of scene.layers){
     if(!Number.isFinite(layer.depth)||!Array.isArray(layer.images))throw new TypeError('Invalid layer');
     for(const item of layer.images){
+     if(item.sourceRect&&(!['x','y','width','height'].every(k=>Number.isInteger(item.sourceRect[k]))||item.sourceRect.x<0||item.sourceRect.y<0||item.sourceRect.width<=0||item.sourceRect.height<=0))throw new TypeError('Invalid sprite source rectangle');
      if(!item.image||!Number.isFinite(item.x)||!Number.isFinite(item.y)||!Number.isFinite(item.width)||!Number.isFinite(item.height)||item.width<=0||item.height<=0)throw new TypeError('Invalid image placement');
     }
    }
@@ -101,7 +102,8 @@
     const p=this.project(item.x,item.y,cameraX,cameraY);
     const left=p.x-item.width/2,top=p.y-item.height;
     if(left>this.canvas.width||left+item.width<0||top>this.canvas.height||top+item.height<0)continue;
-    ctx.drawImage(item.image,left,top,item.width,item.height);
+    if(item.sourceRect){const src=item.sourceRect;if(src.x+src.width>item.image.naturalWidth||src.y+src.height>item.image.naturalHeight)continue;ctx.drawImage(item.image,src.x,src.y,src.width,src.height,left,top,item.width,item.height)}
+    else ctx.drawImage(item.image,left,top,item.width,item.height);
    }
    return true;
   }
