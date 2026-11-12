@@ -13,6 +13,7 @@
    this.canvas=canvas;this.ctx=canvas.getContext('2d');
    this.tileWidth=options.tileWidth||56;this.tileHeight=options.tileHeight||28;
    this.scene=null;
+   this.collision=null;
   }
   setScene(scene){
    if(!scene||!scene.bounds||!Array.isArray(scene.layers))throw new TypeError('Invalid scene');
@@ -64,11 +65,15 @@
    ctx.clearRect(0,0,this.canvas.width,this.canvas.height);
    ctx.fillStyle='#141414';ctx.fillRect(0,0,this.canvas.width,this.canvas.height);
    if(!this.scene)return false;
+   if(!Number.isFinite(cameraX)||!Number.isFinite(cameraY))throw new TypeError('Invalid camera coordinates');
    const entries=[];
    for(const layer of this.scene.layers){
     for(const item of layer.images)entries.push({depth:layer.depth,footY:item.footY??item.y,item});
    }
    if(player&&player.image)entries.push({depth:player.depth??1,footY:player.footY??player.y,item:player});
+   // Ground is below actors; world objects at the SAME depth sort by
+   // foot position, so a character can pass in front of or behind buildings.
+   // Foreground overlays can use a higher explicit depth.
    entries.sort((a,b)=>a.depth-b.depth||a.footY-b.footY);
    for(const {item} of entries){
     if(!item.image.complete||!item.image.naturalWidth)continue;
