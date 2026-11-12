@@ -90,6 +90,30 @@ test('拒絕非數值的場景圖層深度',()=>{
  return TalkingIslandLayerRenderer.loadSceneDescriptor(descriptor,()=>Promise.resolve(null))
   .then(()=>false,e=>e instanceof TypeError);
 });
+test('鏡頭中心點與人物格位對齊',()=>{
+ m.spawn(4,5);
+ const c=m.camera(),p=r.project(4,5,c.cameraX,c.cameraY);
+ return Math.abs(p.x-canvas.width/2)<1e-8&&Math.abs(p.y-canvas.height/2)<1e-8;
+});
+test('鏡頭偏移時點擊格位仍正確',()=>{
+ m.spawn(4,5);
+ const c=m.camera(),target=r.project(6,3,c.cameraX,c.cameraY);
+ const picked=m.pick(target.x,target.y,c.cameraX,c.cameraY);
+ return !!picked&&picked.x===6&&picked.y===3;
+});
+test('連續指定同一格不會產生無效移動',()=>{
+ m.spawn(4,5);
+ return m.moveTo(4,5)&&m.route.length===0&&!m.getAnimationState().moving&&!m.step();
+});
+test('遮擋排序不依圖片輸入順序',()=>{
+ const a=new TalkingIslandLayerRenderer(canvas);
+ a.setScene({bounds,layers:[{id:'objects',depth:1,images:[
+  {image:img('front'),x:5,y:5,width:48,height:72,footY:9},
+  {image:img('back'),x:1,y:1,width:48,height:72,footY:1}
+ ]}]});
+ calls.length=0;a.render({player:{image:img('actor'),x:3,y:3,width:48,height:72,depth:1,footY:5}});
+ return calls.map(c=>c.id).join(',')==='back,actor,front';
+});
 test('鏡頭跟隨位置有效',()=>{const c=m.camera();return Number.isFinite(c.cameraX)&&Number.isFinite(c.cameraY)});
 test('停止移動清空路徑',()=>m.moveTo(7,7)&&(m.cancel(),m.route.length===0));
 Promise.all(pending).then(()=>{const p=document.createElement('p');p.textContent='結果：'+pass+' 通過，'+fail+' 失敗';p.className=fail?'bad':'ok';results.after(p)});
