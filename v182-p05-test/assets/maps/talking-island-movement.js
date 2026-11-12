@@ -48,7 +48,12 @@ class TalkingIslandMovementController {
   this.position={...next};this.moving=this.route.length>0;return true;
  }
  cancel(){this.route=[];this.moving=false}
- getAnimationState(){return {facing:this.facing,moving:this.moving,position:this.position?{...this.position}:null}}
+ // Isometric screen direction differs from the grid axes: +X points down-right,
+ // +Y points down-left. Sprite selection must use screenFacing, not grid facing.
+ getScreenFacing(){
+  return ({N:'NE',NE:'E',E:'SE',SE:'S',S:'SW',SW:'W',W:'NW',NW:'N'})[this.facing];
+ }
+ getAnimationState(){return {facing:this.facing,screenFacing:this.getScreenFacing(),moving:this.moving,position:this.position?{...this.position}:null}}
  camera(){if(!this.position)throw new Error('Spawn required');const p=this.renderer.project(this.position.x,this.position.y,0,0);return {cameraX:p.x-this.renderer.canvas.width/2,cameraY:p.y-this.renderer.canvas.height/2}}
  // Pixel click to isometric cell; returns null if outside verified walkable bounds.
  pick(screenX,screenY,cameraX,cameraY){
