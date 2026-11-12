@@ -8,7 +8,7 @@
 <p>使用滑鼠或手指拖曳移動畫面，點一下圖片查看原圖像素座標。此處的像素座標不是遊戲世界座標。</p>
 <canvas id="view" width="960" height="600" aria-label="本機原始素材檢視區"></canvas>
 <div id="info" role="status">尚未選擇圖片。圖片僅保留在此瀏覽器分頁記憶體，不會上傳至 GitHub。</div>
-<div class="bar"><label>標記名稱 <input id="pointName" placeholder="例如：村莊入口" maxlength="60"></label><button id="addPoint" type="button">記錄目前十字標記</button><button id="exportPoints" type="button">匯出標記 JSON</button><button id="clearPoints" type="button">清空標記</button></div>
+<div class="bar"><label>標記名稱 <input id="pointName" placeholder="例如：村莊入口" maxlength="60"></label><button id="addPoint" type="button">記錄目前十字標記</button><button id="exportPoints" type="button">匯出標記 JSON</button><label>匯入標記 JSON <input id="importPoints" type="file" accept=".json,application/json"></label><button id="clearPoints" type="button">清空標記</button></div>
 <pre id="points" aria-live="polite">尚無標記</pre>
 <p><small>檔案類型限制：PNG、JPEG、WebP；最大 25 MB。標記僅為原圖像素座標，不能直接當作世界座標。檢視結果不得自動標記為 verified 或 licenseVerified。</small></p>
 </main><script>
@@ -18,7 +18,7 @@ const canvas=document.getElementById('view'),ctx=canvas.getContext('2d');
 const file=document.getElementById('file'),zoom=document.getElementById('zoom'),zoomValue=document.getElementById('zoomValue'),info=document.getElementById('info');
 let image=null,url=null,scale=1,panX=0,panY=0,drag=null,mark=null,points=[],fileName='';
 function fit(){if(!image)return;scale=Math.min(canvas.width/image.naturalWidth,canvas.height/image.naturalHeight);panX=(canvas.width-image.naturalWidth*scale)/2;panY=(canvas.height-image.naturalHeight*scale)/2;zoom.value='100';zoomValue.textContent='100%';mark=null;draw()}
-function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#252525';ctx.fillRect(0,0,canvas.width,canvas.height);if(!image)return;ctx.drawImage(image,panX,panY,image.naturalWidth*scale,image.naturalHeight*scale);if(mark){ctx.strokeStyle='#ffe08a';ctx.lineWidth=1;const x=panX+mark.x*scale,y=panY+mark.y*scale;ctx.beginPath();ctx.moveTo(x-12,y);ctx.lineTo(x+12,y);ctx.moveTo(x,y-12);ctx.lineTo(x,y+12);ctx.stroke()}}
+function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#252525';ctx.fillRect(0,0,canvas.width,canvas.height);if(!image)return;ctx.drawImage(image,panX,panY,image.naturalWidth*scale,image.naturalHeight*scale);for(const point of points){const x=panX+point.pixelX*scale,y=panY+point.pixelY*scale;ctx.fillStyle='#ffe08a';ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.fill();ctx.font='12px sans-serif';ctx.fillText(point.label,x+8,y-8)}if(mark){ctx.strokeStyle='#ffe08a';ctx.lineWidth=1;const x=panX+mark.x*scale,y=panY+mark.y*scale;ctx.beginPath();ctx.moveTo(x-12,y);ctx.lineTo(x+12,y);ctx.moveTo(x,y-12);ctx.lineTo(x,y+12);ctx.stroke()}}
 function pixelPoint(e){const r=canvas.getBoundingClientRect();const sx=(e.clientX-r.left)*canvas.width/r.width,sy=(e.clientY-r.top)*canvas.height/r.height;return{x:(sx-panX)/scale,y:(sy-panY)/scale}}
 file.addEventListener('change',()=>{
  const f=file.files&&file.files[0];if(!f)return;
@@ -34,12 +34,25 @@ canvas.addEventListener('pointerdown',e=>{if(!image)return;canvas.setPointerCapt
 canvas.addEventListener('pointermove',e=>{if(!drag||drag.id!==e.pointerId)return;const r=canvas.getBoundingClientRect(),dx=(e.clientX-drag.x)*canvas.width/r.width,dy=(e.clientY-drag.y)*canvas.height/r.height;if(Math.abs(dx)+Math.abs(dy)>5)drag.moved=true;panX=drag.px+dx;panY=drag.py+dy;draw()});
 canvas.addEventListener('pointerup',e=>{if(!drag||drag.id!==e.pointerId)return;if(!drag.moved){const p=pixelPoint(e);if(p.x>=0&&p.y>=0&&p.x<image.naturalWidth&&p.y<image.naturalHeight){mark={x:Math.floor(p.x),y:Math.floor(p.y)};info.textContent='原圖像素：('+mark.x+', '+mark.y+')｜非遊戲世界座標';draw()}}drag=null});
 canvas.addEventListener('pointercancel',()=>drag=null);
-function refreshPoints(){document.getElementById('points').textContent=points.length?points.map((p,i)=>(i+1)+'. '+p.label+' ('+p.pixelX+', '+p.pixelY+')').join('\\n'):'尚無標記'}
+function refreshPoints(){document.getElementById('points').textContent=points.length?points.map((p,i)=>(i+1)+'. '+p.label+' ('+p.pixelX+', '+p.pixelY+')').join('\\n'):'尚無標記';draw()}
 document.getElementById('addPoint').addEventListener('click',()=>{
  if(!image||!mark){info.textContent='請先載入圖片並點擊圖片中的位置';return}
  const label=document.getElementById('pointName').value.trim();
  if(!label){info.textContent='請先輸入標記名稱';return}
  points.push({label,pixelX:mark.x,pixelY:mark.y});refreshPoints();
+});
+document.getElementById('importPoints').addEventListener('change',async e=>{
+ const f=e.target.files&&e.target.files[0];if(!f)return;
+ try{
+  if(!image)throw Error('請先載入與標記檔對應的原圖');
+  if(f.size>1024*1024)throw Error('標記檔不得超過 1 MB');
+  const d=JSON.parse(await f.text());
+  if(d.schemaVersion!==1||d.kind!=='unverified-image-pixel-annotations'||d.imageWidth!==image.naturalWidth||d.imageHeight!==image.naturalHeight||d.sourceFileName!==fileName||!Array.isArray(d.points)||d.points.length>500)throw Error('圖片尺寸、來源檔名或標記格式不符合');
+  if(!d.points.every(p=>typeof p.label==='string'&&p.label.length>0&&p.label.length<=60&&Number.isInteger(p.pixelX)&&Number.isInteger(p.pixelY)&&p.pixelX>=0&&p.pixelY>=0&&p.pixelX<image.naturalWidth&&p.pixelY<image.naturalHeight))throw Error('標記包含無效座標');
+  points=d.points.map(p=>({label:p.label,pixelX:p.pixelX,pixelY:p.pixelY}));
+  refreshPoints();info.textContent='已載入 '+points.length+' 個未驗證像素標記；不代表遊戲座標';
+ }catch(err){info.textContent='無法匯入：'+err.message}
+ e.target.value='';
 });
 document.getElementById('clearPoints').addEventListener('click',()=>{points=[];refreshPoints()});
 document.getElementById('exportPoints').addEventListener('click',()=>{
