@@ -1095,7 +1095,7 @@ const KNIGHT_FRAMES={
  // Actual folder order must be visually verified with licensed sprite frames.
  // Mapping is configurable without changing movement or combat logic.
  directionFolders:['','2','F','d3','d4','d5','d6','d7'],
- actions:{idle:{count:13,ms:150},walk:{count:4,ms:85},attack:{count:6,ms:47}},
+ actions:{idle:{count:13,ms:115},walk:{count:4,ms:65},attack:{count:6,ms:58}},
  drawHeight:58,anchorY:49
 };
 // Optional reference-only preview. No third-party artwork is committed to this repository.
@@ -1108,18 +1108,19 @@ const knightAssetBase=knightReferencePreview?KNIGHT_REFERENCE_ROOT:KNIGHT_FRAMES
 const knightCache=new Map();
 const knightLastReady=new Map();
 let knightLoadedCount=0,knightFailedCount=0;
-const KNIGHT_MAX_CACHE=150;
+const KNIGHT_MAX_CACHE=360;
 const CLASS_SPRITE_COUNTS={
  '王子':[11,4,5],'公主':[12,4,7],
  '男騎士':[13,4,6],'女騎士':[13,4,6],
  '男妖精':[8,4,7],'女妖精':[10,4,8],
- '男法師':[9,4,7],'女法師':[8,8,7]
+ '男法師':[9,4,7],'女法師':[8,8,7],
+ '男黑暗妖精':[13,4,5],'女黑暗妖精':[12,4,5]
 };
 function activeSpriteFolder(){
  const gender=player?.gender==='女'?'女':'男';
  if(player?.job==='騎士')return gender+'騎士';
  if(player?.job==='王族')return gender==='女'?'公主':'王子';
- if(['妖精','法師'].includes(player?.job))return gender+player.job;
+ if(['妖精','法師','黑暗妖精'].includes(player?.job))return gender+player.job;
  return '男騎士';
 }
 function knightFolder(dir){
@@ -1161,7 +1162,7 @@ function knightPreload(dir,action,frame){
 function spriteStatus(){
  const el=document.getElementById('spriteStatus');
  if(!el)return;
- el.textContent='騎士圖片：'+(knightReferencePreview?'參考預覽':'本地')+'｜成功 '+knightLoadedCount+'｜失敗 '+knightFailedCount+
+ el.textContent='人物圖片（'+(player?.job||'未選角色')+'／'+(player?.gender||'男')+'）：'+(knightReferencePreview?'參考預覽':'本地')+'｜成功 '+knightLoadedCount+'｜失敗 '+knightFailedCount+
  (knightLoadedCount===0?'｜尚未顯示圖片':'')+(knightFailedCount>0&&knightLoadedCount===0?'｜本地素材缺失：請先確認可使用的原版圖片':'');
 }
 // Start the diagnostic even when the character is outside the camera viewport.
@@ -1181,8 +1182,12 @@ function initializeKnightPreview(){
 function drawKnightSprite(px,py,now){
  const attack=now<spriteAttackUntil,pickup=now<spritePickupUntil,move=now<spriteMovingUntil;
  const action=attack?'attack':pickup?'idle':move?'walk':'idle',spec=activeSpriteSpec(action);
- const elapsed=attack?280-(spriteAttackUntil-now):move?now-spriteMoveStart:now;
- const frame=Math.floor(Math.max(0,elapsed)/spec.ms)%spec.count;
+ // Complete one full walk cycle per tile step and one attack cycle per attack.
+ // The previous fixed-ms calculation skipped frames on short movement/attack windows.
+ const duration=attack?280:move?SPRITE_STEP_MS:spec.count*spec.ms;
+ const elapsed=attack?Math.max(0,280-(spriteAttackUntil-now)):move?Math.max(0,now-spriteMoveStart):now;
+ const phase=attack||move?Math.min(0.999,elapsed/Math.max(1,duration)):((elapsed%duration)/duration);
+ const frame=Math.min(spec.count-1,Math.floor(phase*spec.count));
  // One consistent source direction for idle, walk and attack.
  // No action-specific mirroring; calibration remains explicit and reversible.
  // Source folders face 180 degrees opposite to the game's eight-direction indices.
@@ -1195,6 +1200,7 @@ function drawKnightSprite(px,py,now){
   const first=knightFrame(sourceDir,action,0);
   if(first.ready)entry=first;
   else if(knightLastReady.has(key))entry=knightLastReady.get(key);
+  else if(knightLastReady.has(activeSpriteFolder()+':'+sourceDir+':idle'))entry=knightLastReady.get(activeSpriteFolder()+':'+sourceDir+':idle');
   else{
    const idle=knightFrame(sourceDir,'idle',0);
    if(idle.ready)entry=idle;
@@ -1206,11 +1212,12 @@ function drawKnightSprite(px,py,now){
  }
  knightLastReady.set(key,entry);
  knightPreload(sourceDir,action,frame);
+ // Warm all walk frames for the active facing; prevents first-step frame stalls.
+ if(action==='walk'||action==='attack')for(let j=0;j<spec.count;j++)knightFrame(sourceDir,action,j);
  const img=entry.img,h=KNIGHT_FRAMES.drawHeight,w=Math.max(1,h*img.naturalWidth/img.naturalHeight);
  ctx.save();ctx.imageSmoothingEnabled=false;
  ctx.translate(Math.round(px),Math.round(py-KNIGHT_FRAMES.anchorY));
- // Temporary pickup crouch transform, pending a verified pickup animation asset.
- if(pickup){const progress=1-(spritePickupUntil-now)/340;const bend=Math.sin(Math.PI*Math.max(0,Math.min(1,progress)));ctx.translate(0,h*0.22*bend);ctx.scale(1,1-0.22*bend)}
+ // Pickup uses a normal idle pose until a verified pickup sprite sequence exists.
  if(mirrored)ctx.scale(-1,1);
  ctx.drawImage(img,-w/2,0,w,h);
  ctx.restore();
@@ -1223,7 +1230,7 @@ function drawTestSilhouette(x,y,color){
  ctx.fillStyle='#e0c49d';ctx.beginPath();ctx.arc(x,y-31,8,0,7);ctx.fill();
 }
 function drawCharacterSprite(p,now){
- if(['騎士','王族','妖精','法師'].includes(player.job)){drawKnightSprite(p.x,p.y,now);return}
+ if(['騎士','王族','妖精','法師','黑暗妖精'].includes(player.job)){drawKnightSprite(p.x,p.y,now);return}
  // Unchanged test silhouettes for other classes pending verified 2004 references.
  drawTestSilhouette(p.x,p.y,{'王族':'#a08c62','妖精':'#649c68','法師':'#607fb3','黑暗妖精':'#80609a'}[player.job]||'#a5a8b3');
 }
