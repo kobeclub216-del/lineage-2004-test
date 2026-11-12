@@ -1247,7 +1247,9 @@ function spriteStatus(){
 // Start the diagnostic even when the character is outside the camera viewport.
 function initializeKnightPreview(){
  spriteStatus();
- if(!knightReferencePreview)return;
+ // P05-D15: preloading must also work with approved local sprite assets.
+ // Previously the early return skipped all warm-up unless reference preview
+ // was explicitly enabled, even when local files were available.
  // P05-D8: warm the first decoded frame for every facing and action before
  // movement/attack requests them; retain the per-folder fallback while loading.
  // This is a preload only, not a new or substitute sprite asset.
@@ -1256,6 +1258,9 @@ function initializeKnightPreview(){
   knightFrame(d,'walk',0);
   knightFrame(d,'attack',0);
  }
+ // The separate reference-image preview remains opt-in; only frame preloading
+ // is shared with the local asset mode.
+ if(!knightReferencePreview)return;
  const preview=document.getElementById('spritePreview');
  // P05-D9: preview must use the same 180-degree source mapping as the
  // actual character renderer; otherwise the preview can face the wrong way.
