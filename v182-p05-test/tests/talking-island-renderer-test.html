@@ -14,6 +14,13 @@
  test('場景座標與鏡頭',()=>{const p=r.project(2,1,10,20);assert(p.x===418&&p.y===22,'wrong projected position '+JSON.stringify(p))});
  test('建築前後深度排序',()=>{calls.length=0;const behind={...img,id:'behind'},front={...img,id:'front'},actor={...img,id:'actor'};r.setScene({bounds:{minX:0,minY:0,maxX:5,maxY:5},layers:[{id:'world',depth:1,images:[{image:behind,x:1,y:1,footY:0,width:30,height:30},{image:front,x:1,y:1,footY:3,width:30,height:30}]}]});r.render({player:{image:actor,x:1,y:1,footY:2,width:30,height:30}});assert(calls.length===3,'missing draw');assert(calls[0].image===behind&&calls[1].image===actor&&calls[2].image===front,'wrong occlusion order')});
  test('無素材場景不冒充原版地圖',()=>{r.setScene({bounds:{minX:0,minY:0,maxX:5,maxY:5},layers:[]});calls.length=0;assert(r.render(),'render failed');assert(calls.length===0,'invented map art')});
+ // P05-D43: async scene validation tests (separate from synchronous suite).
+ (async()=>{
+  try{await TalkingIslandLayerRenderer.loadSceneDescriptor({verified:false,bounds:{},layers:[]},async()=>img);lines.push('FAIL 未驗證場景被接受');failed++}catch(e){lines.push('PASS 拒絕未驗證場景');passed++}
+  try{await TalkingIslandLayerRenderer.loadSceneDescriptor({verified:true,bounds:{minX:0,minY:0,maxX:1,maxY:1},layers:[{id:'x',depth:0,verified:true,images:[{verified:true,licenseVerified:false,path:'./assets/maps/x.png'}]}]},async()=>img);lines.push('FAIL 未授權圖片被接受');failed++}catch(e){lines.push('PASS 拒絕未授權圖片');passed++}
+  document.getElementById('result').textContent=lines.join('\\n')+'\\n\\n'+passed+' passed / '+failed+' failed';
+  window.talkingIslandRendererTestResult={passed,failed,lines};
+ })();
  document.getElementById('result').textContent=lines.join('\n')+'\n\n'+passed+' passed / '+failed+' failed';
  window.talkingIslandRendererTestResult={passed,failed,lines};
 })();
