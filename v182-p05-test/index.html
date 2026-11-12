@@ -1442,6 +1442,17 @@ function terrainDetails(x,y,p,type){
 // P05-D30: load versioned map manifest without assuming candidate coordinates are verified.
 // Diagnostic only: this cannot activate a historical village until assets and rights are confirmed.
 const talkingIslandManifestState={status:'not-requested',manifest:null,error:null};
+let verifiedTalkingIslandImage=null;
+let verifiedTalkingIslandImageReady=false;
+function loadVerifiedTalkingIslandImage(data){
+ const asset=data.assets.find(a=>a.kind==='background'&&a.verified===true&&a.licenseVerified===true);
+ if(!asset){talkingIslandManifestState.status='awaiting-background-asset';return}
+ const img=new Image();
+ img.onload=()=>{verifiedTalkingIslandImage=img;verifiedTalkingIslandImageReady=true;talkingIslandManifestState.status='image-ready'};
+ img.onerror=()=>{talkingIslandManifestState.status='image-error';talkingIslandManifestState.error='Verified background failed to load'};
+ img.src=asset.path;
+}
+
 if(visualParams.get('historicalMode')==='1'){
  talkingIslandManifestState.status='loading';
  fetch('./assets/maps/talking-island-182.manifest.json',{cache:'no-store'})
@@ -1453,6 +1464,7 @@ if(visualParams.get('historicalMode')==='1'){
    const verifiedAssets=data.assets.length>0&&data.assets.every(a=>a&&typeof a.path==='string'&&a.path.startsWith('./assets/maps/')&&a.verified===true&&a.licenseVerified===true&&typeof a.source==='string'&&a.source.length>0);
    const verifiedLandmarks=data.landmarks.length>0&&data.landmarks.every(p=>p&&p.verified===true);
    talkingIslandManifestState.status=data.status==='ready'&&verifiedAssets&&verifiedLandmarks?'ready':'awaiting-verified-assets';
+   if(talkingIslandManifestState.status==='ready')loadVerifiedTalkingIslandImage(data);
    console.info('[P05-D30] Talking Island manifest',talkingIslandManifestState.status,data.landmarks.length+' candidate landmarks');
   })
   .catch(err=>{talkingIslandManifestState.status='error';talkingIslandManifestState.error=String(err);console.error('[P05-D30] Manifest load failed',err)});
@@ -1467,6 +1479,16 @@ if(historicalSceneImage){
  historicalSceneImage.src=sceneImageUrl;
 }
 function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);
+ if(visualParams.get('historicalMode')==='1'&&!historicalSceneImage&&verifiedTalkingIslandImageReady){
+  ctx.fillStyle='#141414';ctx.fillRect(0,0,canvas.width,canvas.height);
+  const im=verifiedTalkingIslandImage;
+  const scale=Math.min(canvas.width/im.naturalWidth,canvas.height/im.naturalHeight);
+  const w=im.naturalWidth*scale,h=im.naturalHeight*scale;
+  ctx.drawImage(im,(canvas.width-w)/2,(canvas.height-h)/2,w,h);
+  ctx.textAlign='center';ctx.fillStyle='#f3dba2';ctx.font='12px Arial';
+  ctx.fillText('已核實場景圖片預覽｜碰撞及人物遮擋尚未完成',canvas.width/2,canvas.height-20);
+  return;
+ }
  if(visualParams.get('historicalMode')==='1'&&!historicalSceneImage){
   ctx.fillStyle='#141414';ctx.fillRect(0,0,canvas.width,canvas.height);
   ctx.textAlign='center';ctx.font='16px Arial';ctx.fillStyle='#f3dba2';
