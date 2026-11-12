@@ -30,6 +30,24 @@
    return {x:(x-y)*this.tileWidth/2+this.canvas.width/2-cameraX,
            y:(x+y)*this.tileHeight/2-cameraY};
   }
+  // P05-D38: data-driven collision; missing collision data is NOT treated as walkable.
+  setCollision({bounds,blockedCells}){
+   if(!bounds||![bounds.minX,bounds.minY,bounds.maxX,bounds.maxY].every(Number.isInteger))throw new TypeError('Integer collision bounds required');
+   if(bounds.minX>=bounds.maxX||bounds.minY>=bounds.maxY)throw new RangeError('Invalid collision bounds');
+   if(!Array.isArray(blockedCells))throw new TypeError('Blocked cell list required');
+   const blocked=new Set();
+   for(const cell of blockedCells){
+    if(!Array.isArray(cell)||cell.length!==2||!cell.every(Number.isInteger))throw new TypeError('Invalid blocked cell');
+    if(cell[0]<bounds.minX||cell[0]>=bounds.maxX||cell[1]<bounds.minY||cell[1]>=bounds.maxY)throw new RangeError('Blocked cell outside bounds');
+    blocked.add(cell[0]+','+cell[1]);
+   }
+   this.collision={bounds,blocked};
+  }
+  canWalk(x,y){
+   if(!this.collision||!Number.isInteger(x)||!Number.isInteger(y))return false;
+   const {bounds:b,blocked}=this.collision;
+   return x>=b.minX&&x<b.maxX&&y>=b.minY&&y<b.maxY&&!blocked.has(x+','+y);
+  }
   render({cameraX=0,cameraY=0,player=null}={}){
    const ctx=this.ctx;
    ctx.clearRect(0,0,this.canvas.width,this.canvas.height);
