@@ -886,7 +886,7 @@ const lineage182Data=Object.freeze({
  },
  provenance:{creation:'A47 test values; historical 1.82 verification pending',vitals:'A45 placeholders',growth:'A46 placeholders',experience:'P03 progressive test formula, not original 1.82'}
 });
-const jobs=Object.fromEntries(Object.entries(lineage182Data.classes).map(([name,v])=>[name,[...v.base,v.points]]));let player=null,monsters=[],drops=[],cam={x:0,y:0},target=null,keys={},last=0,attackTimer=0;let spriteFacing=4,spriteMovingUntil=0,spriteAttackUntil=0,spritePickupUntil=0,spriteHitUntil=0,spriteMoveFrom=null,spriteMoveTo=null,spriteMoveStart=0;const SPRITE_STEP_MS=170;const tile=[];let seed=7412;function rand(){seed=(seed*1664525+1013904223)>>>0;return seed/4294967296}for(let y=0;y<H;y++){tile[y]=[];for(let x=0;x<W;x++){let r=rand();tile[y][x]=(x>15&&x<19&&y>3&&y<32)?'water':r<.07?'tree':r<.10?'rock':r<.14?'dirt':'grass'}}for(let y=17;y<=19;y++)for(let x=15;x<=18;x++)tile[y][x]='bridge';for(let y=7;y<14;y++)for(let x=7;x<14;x++)tile[y][x]='grass';function pass(x,y){return x>=0&&y>=0&&x<W&&y<H&&!['water','tree','rock'].includes(tile[y][x])}function msg(s){let p=document.createElement('div');p.textContent='• '+s;let l=document.getElementById('log');l.prepend(p);while(l.children.length>25)l.lastChild.remove()}function spawn(){monsters=[];for(let i=0;i<22;i++){let x=3+Math.floor(rand()*34),y=3+Math.floor(rand()*34);if(pass(x,y)&&Math.hypot(x-10,y-10)>5)monsters.push({x,y,hp:30,max:30,alive:true,name:i%3===0?'獸人':'哥布林',cool:0})}}/* A43: browser-local character-name uniqueness, including Unicode width and case variants. */
+const jobs=Object.fromEntries(Object.entries(lineage182Data.classes).map(([name,v])=>[name,[...v.base,v.points]]));let player=null,monsters=[],drops=[],cam={x:0,y:0},target=null,keys={},last=0,attackTimer=0;let spriteFacing=4,spriteMovingUntil=0,spriteAttackUntil=0,spritePickupUntil=0,spriteHitUntil=0,spriteMoveFrom=null,spriteMoveTo=null,spriteMoveStart=0;const SPRITE_STEP_MS=170;const tile=[];let seed=7412;function rand(){seed=(seed*1664525+1013904223)>>>0;return seed/4294967296}for(let y=0;y<H;y++){tile[y]=[];for(let x=0;x<W;x++){let r=rand();tile[y][x]=(x>15&&x<19&&y>3&&y<32)?'water':r<.07?'tree':r<.10?'rock':r<.14?'dirt':'grass'}}for(let y=17;y<=19;y++)for(let x=15;x<=18;x++)tile[y][x]='bridge';for(let y=7;y<14;y++)for(let x=7;x<14;x++)tile[y][x]='grass';function pass(x,y){if(visualParams.get('historicalMode')==='1'){const st=talkingIslandManifestState;if(!st.playability||!st.playability.playable||!st.collision)return false;const b=st.collision.bounds;return Number.isInteger(x)&&Number.isInteger(y)&&x>=b.minX&&x<b.maxX&&y>=b.minY&&y<b.maxY&&!st.collision.blocked.has(x+','+y)}return x>=0&&y>=0&&x<W&&y<H&&!['water','tree','rock'].includes(tile[y][x])}function msg(s){let p=document.createElement('div');p.textContent='• '+s;let l=document.getElementById('log');l.prepend(p);while(l.children.length>25)l.lastChild.remove()}function spawn(){monsters=[];for(let i=0;i<22;i++){let x=3+Math.floor(rand()*34),y=3+Math.floor(rand()*34);if(pass(x,y)&&Math.hypot(x-10,y-10)>5)monsters.push({x,y,hp:30,max:30,alive:true,name:i%3===0?'獸人':'哥布林',cool:0})}}/* A43: browser-local character-name uniqueness, including Unicode width and case variants. */
 function a43NameKey(value){return String(value||'').normalize('NFKC').trim().toLocaleLowerCase()}
 function a43NameTaken(name,exceptSlot){const key=a43NameKey(name);return a37Slots.some((slot,index)=>index!==exceptSlot&&slot?.player&&a43NameKey(slot.player.name)===key)}
 /* A45: early-Lineage candidate values. Initial HP except knight remains provisional. */
@@ -1441,7 +1441,7 @@ function terrainDetails(x,y,p,type){
 // an alleged historical Talking Island village.
 // P05-D30: load versioned map manifest without assuming candidate coordinates are verified.
 // Diagnostic only: this cannot activate a historical village until assets and rights are confirmed.
-const talkingIslandManifestState={status:'not-requested',manifest:null,error:null,playability:null};
+const talkingIslandManifestState={status:'not-requested',manifest:null,error:null,playability:null,collision:null};
 let verifiedTalkingIslandImage=null;
 let verifiedTalkingIslandImageReady=false;
 // P05-D35: a verified screenshot alone is not a playable map.
@@ -1471,6 +1471,16 @@ if(visualParams.get('historicalMode')==='1'){
    if(data.schemaVersion!==1||data.mapId!=='talking-island-village'||!Array.isArray(data.assets)||!Array.isArray(data.landmarks))throw Error('Invalid Talking Island manifest');
    talkingIslandManifestState.manifest=data;
    talkingIslandManifestState.playability=auditTalkingIslandPlayability(data);
+   if(talkingIslandManifestState.playability.playable){
+    const layer=data.collisionLayers.find(l=>l.verified===true);
+    const b=data.coordinateSystem.worldBounds;
+    const cells=layer&&layer.blockedCells;
+    if(!Array.isArray(cells)||!cells.every(c=>Array.isArray(c)&&c.length===2&&c.every(Number.isInteger))){
+     talkingIslandManifestState.playability={playable:false,missing:['collision-cells']};
+    }else{
+     talkingIslandManifestState.collision={bounds:{minX:b[0],minY:b[1],maxX:b[2],maxY:b[3]},blocked:new Set(cells.map(c=>c[0]+','+c[1]))};
+    }
+   }
    // A string flag alone must never unlock an unverified historical map.
    const verifiedAssets=data.assets.length>0&&data.assets.every(a=>a&&typeof a.path==='string'&&a.path.startsWith('./assets/maps/')&&a.verified===true&&a.licenseVerified===true&&typeof a.source==='string'&&a.source.length>0);
    const verifiedLandmarks=data.landmarks.length>0&&data.landmarks.every(p=>p&&p.verified===true);
