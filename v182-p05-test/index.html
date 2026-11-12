@@ -1212,7 +1212,14 @@ function spriteStatus(){
 function initializeKnightPreview(){
  spriteStatus();
  if(!knightReferencePreview)return;
- for(let d=0;d<8;d++)knightFrame(d,'idle',0);
+ // P05-D8: warm the first decoded frame for every facing and action before
+ // movement/attack requests them; retain the per-folder fallback while loading.
+ // This is a preload only, not a new or substitute sprite asset.
+ for(let d=0;d<8;d++){
+  knightFrame(d,'idle',0);
+  knightFrame(d,'walk',0);
+  knightFrame(d,'attack',0);
+ }
  const preview=document.getElementById('spritePreview');
  const entry=knightFrame(spriteFacing,'idle',0);
  if(preview&&entry){
