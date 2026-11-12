@@ -1448,6 +1448,14 @@ if(historicalSceneImage){
  historicalSceneImage.src=sceneImageUrl;
 }
 function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);
+ if(visualParams.get('historicalMode')==='1'&&!historicalSceneImage){
+  ctx.fillStyle='#141414';ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.textAlign='center';ctx.font='16px Arial';ctx.fillStyle='#f3dba2';
+  ctx.fillText('說話之島：正式地圖素材尚未載入',canvas.width/2,canvas.height/2);
+  ctx.font='12px Arial';ctx.fillStyle='#d0c5aa';
+  ctx.fillText('此模式不會將隨機測試地形冒充原版場景',canvas.width/2,canvas.height/2+26);
+  return;
+ }
  if(historicalSceneImage){
   ctx.fillStyle='#141414';ctx.fillRect(0,0,canvas.width,canvas.height);
   if(historicalSceneReady){
@@ -1457,6 +1465,8 @@ function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);
    const w=historicalSceneImage.naturalWidth*scale,h=historicalSceneImage.naturalHeight*scale;
    ctx.drawImage(historicalSceneImage,(canvas.width-w)/2,(canvas.height-h)/2,w,h);
   }
+  ctx.textAlign='center';ctx.fillStyle='#f3dba2';ctx.font='12px Arial';
+  ctx.fillText(historicalSceneReady?'歷史圖片比對模式｜非可行走地圖':'圖片載入中或來源不可用｜非可行走地圖',canvas.width/2,canvas.height-20);
   return;
  }
 ctx.fillStyle='#1a241c';ctx.fillRect(0,0,canvas.width,canvas.height);for(let y=0;y<H;y++)for(let x=0;x<W;x++){let p=screen(x,y);if(p.x<-TW||p.x>canvas.width+TW||p.y<-TH*3||p.y>canvas.height+TH)continue;let type=tile[y][x];diamond(p.x,p.y,{grass:'#42543a',dirt:'#655c42',water:'#2d5260',bridge:'#776348',tree:'#42543a',rock:'#42543a'}[type]);
