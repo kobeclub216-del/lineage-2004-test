@@ -59,6 +59,18 @@
   "notes": [
     "Candidate coordinates are from post-2004 records and are not accepted as original 1.82 positions.",
     "No map imagery or copyrighted assets are bundled.",
-    "Do not mark this manifest ready until dated original-era screenshots and rights are verified."
+    "Do not mark this manifest ready until dated original-era screenshots and rights are verified.",
+    "The historical overview shows Training Grounds and Dueling Arena: this conflicts with claims of 2002 removals; version reconciliation required before rendering."
+  ],
+  "referenceMaps": [
+    {
+      "id": "lineage-gazetteer-talking-island",
+      "indexUrl": "https://briel.net/lineage3d/map/map.html",
+      "imageUrl": "https://briel.net/lineage3d/map/talkingisland_2.jpg",
+      "type": "annotated-whole-island-overview",
+      "verifiedForTargetVersion": false,
+      "permissionToRedistribute": false,
+      "notes": "Image visibly labels Talking Island Town, Dock, Pandora, Gereng's House, Dueling Arena, Training Grounds and other landmarks. Training Grounds may reflect a pre-2002 layout; must not be assumed valid for 2004 1.82. Site credits third-party source and requests no hotlinking."
+    }
   ]
 }
