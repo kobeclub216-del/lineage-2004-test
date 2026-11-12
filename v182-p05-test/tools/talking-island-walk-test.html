@@ -1,0 +1,22 @@
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>說話之島｜地圖行走整合測試</title><style>body{background:#171717;color:#eee;font:15px system-ui;margin:16px}main{max-width:1050px;margin:auto}canvas{max-width:100%;border:1px solid #555;touch-action:none}input,button{font:inherit;margin:5px}p{line-height:1.6;color:#d3d3d3}#status{white-space:pre-wrap}</style></head><body><main><h2>說話之島｜場景行走整合測試</h2><p>這是獨立測試頁，不是已還原的 2004 年村莊。僅載入使用者本機提供、具使用權的場景及人物圖片；不產生任何假冒原版的地圖。</p><label>場景圖片 <input id="ground" type="file" accept="image/png,image/jpeg,image/webp"></label><label>人物圖片 <input id="actor" type="file" accept="image/png,image/jpeg,image/webp"></label><label>碰撞 JSON <input id="collision" type="file" accept=".json,application/json"></label><button id="start">開始測試</button><button id="cancel">停止行走</button><canvas id="c" width="960" height="600"></canvas><p id="status">請先選擇場景、人物及碰撞資料。資料不會上傳。</p><p>碰撞 JSON 格式：<code>{"bounds":{"minX":0,"minY":0,"maxX":10,"maxY":10},"blockedCells":[[1,2]],"spawn":{"x":2,"y":2}}</code>。座標必須自行核對；本工具不會推定原版世界座標。</p></main>
+<script src="../assets/maps/talking-island-renderer.js"></script><script src="../assets/maps/talking-island-movement.js"></script><script>
+(()=>{'use strict';
+const canvas=document.getElementById('c'),status=document.getElementById('status'),renderer=new TalkingIslandLayerRenderer(canvas),movement=new TalkingIslandMovementController(renderer);
+let actor=null,active=false,frame=0;
+const readImage=async id=>{const f=document.getElementById(id).files[0];if(!f||!['image/png','image/jpeg','image/webp'].includes(f.type)||f.size>25*1024*1024)throw Error('請提供 25MB 以下的有效圖片：'+id);const url=URL.createObjectURL(f);try{const img=new Image();await new Promise((ok,fail)=>{img.onload=ok;img.onerror=fail;img.src=url});return img}finally{URL.revokeObjectURL(url)}};
+function render(){if(!active)return;const p=movement.position,c=movement.camera();renderer.render({cameraX:c.cameraX,cameraY:c.cameraY,player:{image:actor,x:p.x,y:p.y,width:48,height:72,depth:1,footY:p.x+p.y}});frame=requestAnimationFrame(render)}
+document.getElementById('start').addEventListener('click',async()=>{
+ active=false;cancelAnimationFrame(frame);try{
+ const f=document.getElementById('collision').files[0];if(!f||f.size>1024*1024)throw Error('請選擇 1MB 以下的碰撞 JSON');
+ const data=JSON.parse(await f.text()),b=data.bounds;
+ if(!b||![b.minX,b.minY,b.maxX,b.maxY].every(Number.isInteger)||!Array.isArray(data.blockedCells)||!data.spawn||!Number.isInteger(data.spawn.x)||!Number.isInteger(data.spawn.y))throw Error('碰撞或出生點格式無效');
+ const [ground,character]=await Promise.all([readImage('ground'),readImage('actor')]);
+ renderer.setScene({bounds:b,layers:[{id:'local-ground',depth:0,images:[{image:ground,x:data.spawn.x,y:data.spawn.y,width:ground.naturalWidth,height:ground.naturalHeight,footY:-Infinity}]}]});
+ renderer.setCollision({bounds:b,blockedCells:data.blockedCells});movement.spawn(data.spawn.x,data.spawn.y);actor=character;active=true;render();status.textContent='已載入本機測試素材。點擊畫面移動；不代表原版地圖座標已驗證。';
+ }catch(e){status.textContent='無法啟動：'+e.message}
+});
+canvas.addEventListener('click',e=>{if(!active)return;const rect=canvas.getBoundingClientRect(),c=movement.camera();const target=movement.pick((e.clientX-rect.left)*canvas.width/rect.width,(e.clientY-rect.top)*canvas.height/rect.height,c.cameraX,c.cameraY);if(!target){status.textContent='點擊位置不是可行走格';return}status.textContent=movement.moveTo(target.x,target.y)?'移動至 '+target.x+','+target.y:'無法抵達目標格'});
+document.getElementById('cancel').addEventListener('click',()=>movement.cancel());
+let last=0;function tick(t){if(active&&t-last>=150){movement.step();last=t}requestAnimationFrame(tick)}requestAnimationFrame(tick);
+})();
+</script></body></html>
