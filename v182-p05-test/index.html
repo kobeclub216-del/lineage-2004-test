@@ -1147,7 +1147,18 @@ window.addEventListener('keydown',e=>{
  if(e.key==='Escape'){if(visualParams.get('historicalMode')==='1'&&verifiedTalkingIslandMovement)verifiedTalkingIslandMovement.cancel();target=null;if(player)player.path=[];msg('已取消目前的移動或追擊指令');e.preventDefault();}
  if(e.key==='F1'||e.key==='?'){const help=document.getElementById('desktopGameHelp');help.hidden=!help.hidden;e.preventDefault();}
 });window.addEventListener('keyup',e=>keys[e.key]=false);function loop(ts){let dt=Math.min(.05,(ts-last)/1000||0);last=ts;if(visualParams.get('historicalMode')==='1'&&verifiedTalkingIslandMovement){
-  if(ts-verifiedTalkingIslandLastStep>=170){verifiedTalkingIslandMovement.step();verifiedTalkingIslandLastStep=ts}
+  if(!verifiedTalkingIslandLastStep)verifiedTalkingIslandLastStep=ts;
+  if(ts-verifiedTalkingIslandLastStep>=VERIFIED_SCENE_STEP_MS){
+   const before={...verifiedTalkingIslandMovement.position};
+   if(verifiedTalkingIslandMovement.step()){
+    verifiedTalkingIslandStepFrom=before;
+    verifiedTalkingIslandStepTo={...verifiedTalkingIslandMovement.position};
+   }else{
+    verifiedTalkingIslandStepFrom=null;
+    verifiedTalkingIslandStepTo=null;
+   }
+   verifiedTalkingIslandLastStep=ts;
+  }
   draw();requestAnimationFrame(loop);return;
  }if(!player||!worldEntered){if(worldEntered)draw();requestAnimationFrame(loop);return;}if(player){if(keys.ArrowLeft)cam.x-=350*dt;if(keys.ArrowRight)cam.x+=350*dt;if(keys.ArrowUp)cam.y-=350*dt;if(keys.ArrowDown)cam.y+=350*dt;player.step+=dt;if(target){let o=target.ref;if(target.type==='monster'&&!o.alive)target=null;else{let distance=Math.max(Math.abs(player.x-o.x),Math.abs(player.y-o.y));if(distance<=1){player.path=[];if(target.type==='drop'){spriteFacing=direction8(o.x-player.x,o.y-player.y);spritePickupUntil=ts+340;drops=drops.filter(v=>v!==o);player.pots++;msg('拾取治癒藥水（測試掉落）');target=null;update()}else if(ts>attackTimer){attackTimer=ts+700;spriteFacing=direction8(o.x-player.x,o.y-player.y);spriteAttackUntil=ts+280;o.hp-=8+Math.floor(rand()*9);msg('攻擊 '+o.name+'，造成測試傷害');if(o.hp<=0){o.alive=false;if(rand()<.45)drops.push({x:o.x,y:o.y});p03AwardExp(o);target=null}update()}}else if(player.path.length===0||player.path[player.path.length-1].x!==o.x||player.path[player.path.length-1].y!==o.y)player.path=pathfind(player.x,player.y,o.x,o.y)}}}if(player.step>.17&&player.path.length){player.step=0;let p=player.path.shift();if(pass(p.x,p.y)){spriteFacing=direction8(p.x-player.x,p.y-player.y);spriteMoveFrom={x:player.x,y:player.y};spriteMoveTo={x:p.x,y:p.y};spriteMoveStart=ts;player.x=p.x;player.y=p.y;spriteMovingUntil=ts+SPRITE_STEP_MS;update()}}for(let m of monsters){if(!m.alive)continue;m.cool-=dt;if(Math.max(Math.abs(m.x-player.x),Math.abs(m.y-player.y))<=1&&m.cool<=0){m.cool=2.3;spriteHitUntil=ts+240;player.hp=Math.max(0,player.hp-3);if(player.hp===0){player.hp=player.maxHp;player.x=10;player.y=10;player.path=[];target=null;msg('角色倒下，返回起點（測試規則）')}update()}}draw();requestAnimationFrame(loop)}function diamond(x,y,fill){ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+TW/2,y+TH/2);ctx.lineTo(x,y+TH);ctx.lineTo(x-TW/2,y+TH/2);ctx.closePath();ctx.fillStyle=fill;ctx.fill();/* No visible diamond grid borders; coordinates and collision remain unchanged. */}
 // v0.03 knight animation study: original canvas-drawn sprite, no extracted game assets.
@@ -1455,6 +1466,9 @@ let verifiedTalkingIslandImageReady=false;
 let verifiedTalkingIslandScene=null;
 let verifiedTalkingIslandMovement=null;
 let verifiedTalkingIslandLastStep=0;
+let verifiedTalkingIslandStepFrom=null;
+let verifiedTalkingIslandStepTo=null;
+const VERIFIED_SCENE_STEP_MS=170;
 let verifiedTalkingIslandWalkStart=0;
 let verifiedTalkingIslandWasMoving=false;
 let verifiedTalkingIslandSceneError=null;
@@ -1544,6 +1558,8 @@ if(visualParams.get('historicalMode')==='1'){
      verifiedTalkingIslandScene=scene;
      verifiedTalkingIslandMovement=scene.movement;
      verifiedTalkingIslandLastStep=0;
+     verifiedTalkingIslandStepFrom=null;
+     verifiedTalkingIslandStepTo=null;
      verifiedTalkingIslandWasMoving=false;
      talkingIslandManifestState.status='scene-ready';
     }).catch(err=>{
@@ -1568,12 +1584,21 @@ if(historicalSceneImage){
 function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);
  if(visualParams.get('historicalMode')==='1'&&verifiedTalkingIslandScene){
   const {renderer,actor,movement,spriteConfig}=verifiedTalkingIslandScene;
-  const p=movement.position,c=movement.camera(),animation=movement.getAnimationState();
-  if(animation.moving&&!verifiedTalkingIslandWasMoving)verifiedTalkingIslandWalkStart=performance.now();
-  verifiedTalkingIslandWasMoving=animation.moving;
+  const animation=movement.getAnimationState(),now=performance.now();
+  const fraction=verifiedTalkingIslandStepFrom&&verifiedTalkingIslandStepTo?
+   Math.min(1,Math.max(0,(now-verifiedTalkingIslandLastStep)/VERIFIED_SCENE_STEP_MS)):1;
+  const p=fraction<1?{
+   x:verifiedTalkingIslandStepFrom.x+(verifiedTalkingIslandStepTo.x-verifiedTalkingIslandStepFrom.x)*fraction,
+   y:verifiedTalkingIslandStepFrom.y+(verifiedTalkingIslandStepTo.y-verifiedTalkingIslandStepFrom.y)*fraction
+  }:movement.position;
+  const projected=renderer.project(p.x,p.y);
+  const c={cameraX:projected.x-canvas.width/2,cameraY:projected.y-canvas.height/2};
+  const visuallyMoving=animation.moving||fraction<1;
+  if(visuallyMoving&&!verifiedTalkingIslandWasMoving)verifiedTalkingIslandWalkStart=now;
+  verifiedTalkingIslandWasMoving=visuallyMoving;
   let sourceRect;
   if(spriteConfig){
-   const col=animation.moving?Math.floor((performance.now()-verifiedTalkingIslandWalkStart)/spriteConfig.frameDuration)%spriteConfig.columns:0;
+   const col=visuallyMoving?Math.floor((now-verifiedTalkingIslandWalkStart)/spriteConfig.frameDuration)%spriteConfig.columns:0;
    const row=spriteConfig.directions.indexOf(animation.screenFacing);
    sourceRect={x:col*actor.naturalWidth/spriteConfig.columns,y:row*actor.naturalHeight/8,width:actor.naturalWidth/spriteConfig.columns,height:actor.naturalHeight/8};
   }
