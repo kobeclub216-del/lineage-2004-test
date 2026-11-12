@@ -16,6 +16,9 @@ test('自動繞開建築佔地',()=>{if(!m.moveTo(5,5))return false;let n=0;whil
 test('八方向允許開放區域斜走',()=>{m.spawn(5,5);return m.moveTo(6,6)&&m.route.length===1&&m.route[0].x===6&&m.route[0].y===6});
 test('斜走不得穿越障礙物角落',()=>{m.spawn(1,2);if(!m.moveTo(2,1))return false;return m.route.length>1&&!(m.route[0].x===2&&m.route[0].y===1)});
 m.spawn(5,5);
+test('人物移動面向與步伐同步',()=>{m.spawn(5,5);if(!m.moveTo(6,6)||!m.step())return false;const a=m.getAnimationState();return a.facing==='SE'&&!a.moving&&a.position.x===6&&a.position.y===6});
+test('取消移動保留最後面向',()=>{m.spawn(5,5);if(!m.moveTo(6,5)||!m.step())return false;m.moveTo(7,7);m.cancel();const a=m.getAnimationState();return a.facing==='E'&&!a.moving});
+m.spawn(5,5);
 test('新目的地替換舊路線',()=>m.moveTo(7,7)&&m.route.length>0&&m.moveTo(1,1)&&m.route.length>0);
 test('點擊不可行走位置清除舊路線',()=>!m.moveTo(2,2)&&m.route.length===0);
 test('畫面與世界座標互轉',()=>{const p=r.project(4,1);const c=m.pick(p.x,p.y,0,0);return c&&c.x===4&&c.y===1});
