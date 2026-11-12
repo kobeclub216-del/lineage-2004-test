@@ -60,6 +60,25 @@
    ctx.drawImage(image,(w-dw)/2,(h-dh)/2,dw,dh);
    return true;
   }
+  // P05-D42: turn verified scene descriptors into image objects without
+  // inventing artwork, geometry, or historical coordinates.
+  static async loadSceneDescriptor(descriptor,loadImage){
+   if(!descriptor||descriptor.verified!==true||!descriptor.bounds||!Array.isArray(descriptor.layers))throw new TypeError('Verified scene descriptor required');
+   if(typeof loadImage!=='function')throw new TypeError('Image loader required');
+   const layers=[];
+   for(const layer of descriptor.layers){
+    if(layer.verified!==true||!Array.isArray(layer.images))throw new TypeError('Unverified scene layer');
+    const images=[];
+    for(const item of layer.images){
+     if(item.verified!==true||item.licenseVerified!==true||typeof item.path!=='string'||!item.path.startsWith('./assets/maps/')||item.path.includes('..'))throw new TypeError('Unverified or unsafe scene image path');
+     const image=await loadImage(item.path);
+     if(!image||!image.naturalWidth)throw new Error('Scene image failed: '+item.path);
+     images.push({image,x:item.x,y:item.y,width:item.width,height:item.height,footY:item.footY});
+    }
+    layers.push({id:layer.id,depth:layer.depth,images});
+   }
+   return {bounds:descriptor.bounds,layers};
+  }
   render({cameraX=0,cameraY=0,player=null}={}){
    const ctx=this.ctx;
    ctx.clearRect(0,0,this.canvas.width,this.canvas.height);
