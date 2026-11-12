@@ -70,13 +70,15 @@
     if(layer.verified!==true||!Array.isArray(layer.images))throw new TypeError('Unverified scene layer');
     const images=[];
     for(const item of layer.images){
-     if(item.verified!==true||item.licenseVerified!==true||typeof item.path!=='string'||!item.path.startsWith('./assets/maps/')||item.path.includes('..'))throw new TypeError('Unverified or unsafe scene image path');
+     if(item.verified!==true||item.licenseVerified!==true||typeof item.path!=='string'||!/^\.\/assets\/maps\/[a-zA-Z0-9_/-]+\.(?:png|webp|jpg|jpeg)$/.test(item.path)||item.path.split('/').some(part=>part==='..'))throw new TypeError('Unverified or unsafe scene image path');
      const image=await loadImage(item.path);
-     if(!image||!image.naturalWidth)throw new Error('Scene image failed: '+item.path);
+     if(!image||!image.complete||!image.naturalWidth||!image.naturalHeight)throw new Error('Scene image failed: '+item.path);
+     if(![item.x,item.y,item.width,item.height].every(Number.isFinite)||item.width<=0||item.height<=0||(item.footY!==undefined&&!Number.isFinite(item.footY)))throw new TypeError('Invalid scene image placement');
      images.push({image,x:item.x,y:item.y,width:item.width,height:item.height,footY:item.footY});
     }
     layers.push({id:layer.id,depth:layer.depth,images});
    }
+   if(![descriptor.bounds.minX,descriptor.bounds.minY,descriptor.bounds.maxX,descriptor.bounds.maxY].every(Number.isFinite)||descriptor.bounds.minX>=descriptor.bounds.maxX||descriptor.bounds.minY>=descriptor.bounds.maxY)throw new TypeError('Invalid verified scene bounds');
    return {bounds:descriptor.bounds,layers};
   }
   render({cameraX=0,cameraY=0,player=null}={}){
