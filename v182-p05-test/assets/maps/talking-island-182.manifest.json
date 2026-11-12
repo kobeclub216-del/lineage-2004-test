@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "mapId": "talking-island-village",
+  "targetVersion": "Lineage 1 1.82 (2004-07)",
+  "status": "awaiting-verified-assets",
+  "coordinateSystem": {
+    "projection": "isometric",
+    "origin": "unverified",
+    "worldBounds": null
+  },
+  "assets": [],
+  "landmarks": [
+    {
+      "id": "village",
+      "name": "說話之島村莊",
+      "candidateCoordinate": [
+        32576,
+        32945
+      ],
+      "verified": false
+    },
+    {
+      "id": "harbor",
+      "name": "港口",
+      "candidateCoordinate": [
+        32632,
+        32966
+      ],
+      "verified": false
+    },
+    {
+      "id": "pandora",
+      "name": "潘朵拉",
+      "candidateCoordinate": [
+        32652,
+        32963
+      ],
+      "verified": false
+    },
+    {
+      "id": "training",
+      "name": "訓練場",
+      "candidateCoordinate": [
+        32492,
+        32865
+      ],
+      "verified": false
+    },
+    {
+      "id": "gereng",
+      "name": "吉倫之屋",
+      "candidateCoordinate": [
+        32559,
+        33082
+      ],
+      "verified": false
+    }
+  ],
+  "notes": [
+    "Candidate coordinates are from post-2004 records and are not accepted as original 1.82 positions.",
+    "No map imagery or copyrighted assets are bundled.",
+    "Do not mark this manifest ready until dated original-era screenshots and rights are verified."
+  ]
+}
