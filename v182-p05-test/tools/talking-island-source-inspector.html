@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>天堂 I 1.82｜說話之島素材檢視工作台</title>
+<style>body{font:15px system-ui,sans-serif;background:#151515;color:#eee;margin:0;padding:16px;line-height:1.6}main{max-width:1100px;margin:auto}h1{font-size:22px}p{color:#c8c8c8}label{display:inline-block;margin:8px 12px 8px 0}input,button,select{font:inherit}button{padding:7px 12px;cursor:pointer}canvas{max-width:100%;border:1px solid #666;background:#252525;touch-action:none}#info{white-space:pre-wrap;font-family:monospace}small{color:#c4c4c4}.bar{display:flex;gap:12px;flex-wrap:wrap;align-items:center}.warning{color:#f0d395}</style></head><body><main>
+<h1>說話之島｜原始素材檢視工作台</h1>
+<p class="warning">僅用於核對您有權使用的《天堂 I》原始素材。本工具不提供、下載或生成遊戲美術；也不會把參考截圖當作 2004 年已驗證的地圖。</p>
+<div class="bar"><label>本機圖片 <input id="file" type="file" accept="image/png,image/jpeg,image/webp"></label><label>顯示比例 <input id="zoom" type="range" min="25" max="400" value="100"> <span id="zoomValue">100%</span></label><button id="reset" type="button">重設視角</button></div>
+<p>使用滑鼠或手指拖曳移動畫面，點一下圖片查看原圖像素座標。此處的像素座標不是遊戲世界座標。</p>
+<canvas id="view" width="960" height="600" aria-label="本機原始素材檢視區"></canvas>
+<div id="info" role="status">尚未選擇圖片。圖片僅保留在此瀏覽器分頁記憶體，不會上傳至 GitHub。</div>
+<p><small>檔案類型限制：PNG、JPEG、WebP；最大 25 MB。檢視結果不得自動標記為 verified 或 licenseVerified。無原始資料時維持等待狀態。</small></p>
+</main><script>
+(()=>{
+'use strict';
+const canvas=document.getElementById('view'),ctx=canvas.getContext('2d');
+const file=document.getElementById('file'),zoom=document.getElementById('zoom'),zoomValue=document.getElementById('zoomValue'),info=document.getElementById('info');
+let image=null,url=null,scale=1,panX=0,panY=0,drag=null,mark=null;
+function fit(){if(!image)return;scale=Math.min(canvas.width/image.naturalWidth,canvas.height/image.naturalHeight);panX=(canvas.width-image.naturalWidth*scale)/2;panY=(canvas.height-image.naturalHeight*scale)/2;zoom.value='100';zoomValue.textContent='100%';mark=null;draw()}
+function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#252525';ctx.fillRect(0,0,canvas.width,canvas.height);if(!image)return;ctx.drawImage(image,panX,panY,image.naturalWidth*scale,image.naturalHeight*scale);if(mark){ctx.strokeStyle='#ffe08a';ctx.lineWidth=1;const x=panX+mark.x*scale,y=panY+mark.y*scale;ctx.beginPath();ctx.moveTo(x-12,y);ctx.lineTo(x+12,y);ctx.moveTo(x,y-12);ctx.lineTo(x,y+12);ctx.stroke()}}
+function pixelPoint(e){const r=canvas.getBoundingClientRect();const sx=(e.clientX-r.left)*canvas.width/r.width,sy=(e.clientY-r.top)*canvas.height/r.height;return{x:(sx-panX)/scale,y:(sy-panY)/scale}}
+file.addEventListener('change',()=>{
+ const f=file.files&&file.files[0];if(!f)return;
+ if(!['image/png','image/jpeg','image/webp'].includes(f.type)||f.size>25*1024*1024){info.textContent='檔案格式不支援或超過 25 MB';file.value='';return}
+ const next=URL.createObjectURL(f),candidate=new Image();
+ candidate.onload=()=>{if(url)URL.revokeObjectURL(url);url=next;image=candidate;fit();info.textContent='圖片：'+f.name+'｜'+image.naturalWidth+' × '+image.naturalHeight+' px｜僅供來源核對，尚未驗證年代或授權'};
+ candidate.onerror=()=>{URL.revokeObjectURL(next);info.textContent='圖片解碼失敗'};
+ candidate.src=next;
+});
+zoom.addEventListener('input',()=>{if(!image)return;const factor=Number(zoom.value)/100;const old=scale;scale=Math.min(canvas.width/image.naturalWidth,canvas.height/image.naturalHeight)*factor;panX=canvas.width/2-(canvas.width/2-panX)*scale/old;panY=canvas.height/2-(canvas.height/2-panY)*scale/old;zoomValue.textContent=zoom.value+'%';draw()});
+document.getElementById('reset').addEventListener('click',fit);
+canvas.addEventListener('pointerdown',e=>{if(!image)return;canvas.setPointerCapture(e.pointerId);drag={id:e.pointerId,x:e.clientX,y:e.clientY,px:panX,py:panY,moved:false}});
+canvas.addEventListener('pointermove',e=>{if(!drag||drag.id!==e.pointerId)return;const r=canvas.getBoundingClientRect(),dx=(e.clientX-drag.x)*canvas.width/r.width,dy=(e.clientY-drag.y)*canvas.height/r.height;if(Math.abs(dx)+Math.abs(dy)>5)drag.moved=true;panX=drag.px+dx;panY=drag.py+dy;draw()});
+canvas.addEventListener('pointerup',e=>{if(!drag||drag.id!==e.pointerId)return;if(!drag.moved){const p=pixelPoint(e);if(p.x>=0&&p.y>=0&&p.x<image.naturalWidth&&p.y<image.naturalHeight){mark={x:Math.floor(p.x),y:Math.floor(p.y)};info.textContent='原圖像素：('+mark.x+', '+mark.y+')｜非遊戲世界座標';draw()}}drag=null});
+canvas.addEventListener('pointercancel',()=>drag=null);
+window.addEventListener('pagehide',()=>{if(url)URL.revokeObjectURL(url)});
+draw();
+})();
+</script></body></html>
