@@ -9,7 +9,7 @@ document.getElementById('start').addEventListener('click',async()=>{
  active=false;cancelAnimationFrame(frame);try{
  const f=document.getElementById('collision').files[0];if(!f||f.size>1024*1024)throw Error('請選擇 1MB 以下的碰撞 JSON');
  const data=JSON.parse(await f.text()),b=data.bounds;
- if(!b||![b.minX,b.minY,b.maxX,b.maxY].every(Number.isInteger)||!Array.isArray(data.blockedCells)||!data.spawn||!Number.isInteger(data.spawn.x)||!Number.isInteger(data.spawn.y))throw Error('碰撞或出生點格式無效');
+ if(!b||![b.minX,b.minY,b.maxX,b.maxY].every(Number.isInteger)||b.minX>=b.maxX||b.minY>=b.maxY||!Array.isArray(data.blockedCells)||!data.spawn||!Number.isInteger(data.spawn.x)||!Number.isInteger(data.spawn.y))throw Error('碰撞或出生點格式無效');
  // Image placement is explicit and independent of the player's spawn.
  // Never silently treat a spawn point as the image's geographical anchor.
  const placement=data.imagePlacement;
@@ -23,11 +23,15 @@ document.getElementById('start').addEventListener('click',async()=>{
  const bw=Number(document.getElementById('buildingW').value),bh=Number(document.getElementById('buildingH').value);
  if(building&&(!Number.isInteger(bw)||!Number.isInteger(bh)||bw<1||bh<1||bx+bw>b.maxX||by+bh>b.maxY))throw Error('建築佔地範圍超出地圖或尺寸無效');
  if(building&&data.spawn.x>=bx&&data.spawn.x<bx+bw&&data.spawn.y>=by&&data.spawn.y<by+bh)throw Error('人物出生點不能位於建築物佔地內');
+ // Ground is drawn in screen space at the same isometric anchor as all other layers.
+ // The reference scene has no automatic historical calibration.
  const layers=[{id:'local-ground',depth:0,images:[{image:ground,x:placement.x,y:placement.y,width:placement.width,height:placement.height,footY:-Infinity}]}];
  if(building)layers.push({id:'local-building',depth:1,images:[{image:building,x:bx,y:by,width:building.naturalWidth,height:building.naturalHeight,footY:bx+by+bw+bh-2}]});
  if(foreground)layers.push({id:'local-foreground',depth:2,images:[{image:foreground,x:placement.x,y:placement.y,width:placement.width,height:placement.height,footY:Infinity}]});
  renderer.setScene({bounds:b,layers});
  const blocked=data.blockedCells.slice();
+ if(blocked.length>100000)throw Error('碰撞格數量過多');
+ if(!blocked.every(p=>Array.isArray(p)&&p.length===2&&p.every(Number.isInteger)))throw Error('碰撞格資料無效');
  if(building){for(let y=by;y<by+bh;y++)for(let x=bx;x<bx+bw;x++)blocked.push([x,y])}
  renderer.setCollision({bounds:b,blockedCells:blocked});movement.spawn(data.spawn.x,data.spawn.y);actor=character;active=true;render();status.textContent='已載入本機測試素材'+(building?'、建築物深度排序':'')+(foreground?'與固定前景遮擋圖':'')+'。點擊畫面移動；不代表原版地圖座標已驗證。';
  }catch(e){status.textContent='無法啟動：'+e.message}
