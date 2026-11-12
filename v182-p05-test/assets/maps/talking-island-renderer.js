@@ -98,7 +98,7 @@
    if(!Number.isFinite(cameraX)||!Number.isFinite(cameraY))throw new TypeError('Invalid camera coordinates');
    const entries=[];
    for(const layer of this.scene.layers){
-    for(const item of layer.images)entries.push({depth:layer.depth,footY:item.footY??item.y,item});
+    for(const item of layer.images)entries.push({depth:layer.depth,footY:item.footY??(item.x+item.y),item});
    }
    if(player&&player.image)entries.push({depth:player.depth??1,footY:player.footY??player.y,item:player});
    // Ground is below actors; world objects at the SAME depth sort by
