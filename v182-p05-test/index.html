@@ -1109,7 +1109,11 @@ const knightCache=new Map();
 const knightLastReady=new Map();
 let knightLoadedCount=0,knightFailedCount=0;
 const KNIGHT_MAX_CACHE=150;
-function knightFolder(dir){return KNIGHT_FRAMES.folder+KNIGHT_FRAMES.directionFolders[((dir%8)+8)%8]}
+function knightFolder(dir){
+ // Use the selected character's gender for all eight knight animation directions.
+ const folder=player?.gender==='女'?'女騎士':'男騎士';
+ return folder+KNIGHT_FRAMES.directionFolders[((dir%8)+8)%8];
+}
 function knightFrameUrl(dir,action,frame){
  const k=KNIGHT_FRAMES;
  return knightAssetBase+'/'+encodeURIComponent(knightFolder(dir))+'/'+k.weapon+'_'+action+'_'+frame+'.png';
