@@ -981,6 +981,10 @@ function showCharacterSelection(){
 }
 function enterSelectedCharacter(){
  if(!player)return;
+ // P05-D14: preload the *selected* class/gender before entering the world.
+ // Initial page load may have warmed only the default male-knight frames.
+ // Do not alter sprites or substitute any placeholder image.
+ initializeKnightPreview();
  worldEntered=true;a17rRefresh();
  // A13: explicitly close creation modal before revealing the world (desktop and mobile).
  document.getElementById('modal').style.setProperty('display','none','important');
