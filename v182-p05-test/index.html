@@ -1439,6 +1439,22 @@ function terrainDetails(x,y,p,type){
 // Example: ?sceneImage=https%3A%2F%2F... (only use a source with permission).
 // The image is not bundled; missing/unapproved images do NOT silently become
 // an alleged historical Talking Island village.
+// P05-D30: load versioned map manifest without assuming candidate coordinates are verified.
+// Diagnostic only: this cannot activate a historical village until assets and rights are confirmed.
+const talkingIslandManifestState={status:'not-requested',manifest:null,error:null};
+if(visualParams.get('historicalMode')==='1'){
+ talkingIslandManifestState.status='loading';
+ fetch('./assets/maps/talking-island-182.manifest.json',{cache:'no-store'})
+  .then(r=>{if(!r.ok)throw Error('HTTP '+r.status);return r.json()})
+  .then(data=>{
+   if(data.schemaVersion!==1||data.mapId!=='talking-island-village'||!Array.isArray(data.assets)||!Array.isArray(data.landmarks))throw Error('Invalid Talking Island manifest');
+   talkingIslandManifestState.manifest=data;
+   talkingIslandManifestState.status=data.status==='ready'&&data.assets.length>0?'ready':'awaiting-verified-assets';
+   console.info('[P05-D30] Talking Island manifest',talkingIslandManifestState.status,data.landmarks.length+' candidate landmarks');
+  })
+  .catch(err=>{talkingIslandManifestState.status='error';talkingIslandManifestState.error=String(err);console.error('[P05-D30] Manifest load failed',err)});
+}
+window.talkingIslandManifestState=talkingIslandManifestState;
 const sceneImageUrl=visualParams.get('sceneImage');
 const historicalSceneImage=sceneImageUrl&&/^https:\/\//i.test(sceneImageUrl)?new Image():null;
 let historicalSceneReady=false;
