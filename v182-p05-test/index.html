@@ -10,7 +10,7 @@ html,body{overscroll-behavior:none}button{min-height:40px}#mobileBar{display:non
 @media(min-width:951px){
  .layout{max-width:1500px;width:100%;gap:12px;padding:12px;align-items:flex-start}
  .game{flex:1 1 auto;min-width:0}
- .game canvas{width:100%;height:auto;aspect-ratio:960/620;object-fit:contain}
+ .game canvas{width:100%;height:auto;aspect-ratio:4/3;object-fit:contain}
  aside{flex:0 0 264px;width:264px;position:sticky;top:12px;max-height:calc(100dvh - 24px);overflow-y:auto}
  #mobileBar{display:none}
 }
@@ -18,7 +18,7 @@ html,body{overscroll-behavior:none}button{min-height:40px}#mobileBar{display:non
 @media(max-width:950px) and (orientation:landscape){
  .layout{align-items:stretch}
  .game{min-width:0;justify-content:center}
- .game canvas{width:auto;max-width:100%;height:auto;max-height:100%;aspect-ratio:960/620;object-fit:contain}
+ .game canvas{width:auto;max-width:100%;height:auto;max-height:100%;aspect-ratio:4/3;object-fit:contain}
  aside{flex:0 0 205px;width:205px}
 }
 
@@ -780,9 +780,9 @@ body.a17r-world #a17rBar .a17rTools button{font-size:11px;min-width:0}
 body>header{display:none}
 #notice{display:none}
 aside>.panel:last-child{display:none}
-.game canvas{aspect-ratio:960 / 620;object-fit:contain}
+.game canvas{aspect-ratio:4 / 3;object-fit:contain}
 @media(min-width:951px){.layout{max-width:1500px;margin:0 auto}}
-</style></head><body><header><b>天與地 · 2004 歷史研究原型</b><small>A18｜遊戲視窗比例調整｜雙平台｜獨立技術原型・非官方・非原版客戶端・未使用原版圖像音效</small></header><div class="layout"><div class="game"><canvas id="c" width="960" height="620"></canvas><div id="notice">點地面移動｜點怪物攻擊｜點物品拾取｜拖曳移動畫面<div id="spriteStatus" style="color:#f3da93;margin-top:4px">騎士圖片：檢查中</div><img id="spritePreview" alt="騎士圖片預覽" style="display:none;max-height:70px;max-width:90px;image-rendering:pixelated" /></div><div id="mobileBar"><div><button id="centerCam" title="回到角色">定位</button><button id="mobileHeal">藥水</button></div><div><button id="mobileSave">儲存</button><button id="mobileInfo">資訊</button></div></div><button type="button" id="returnToCharacterSelect" hidden>返回角色選擇</button><div id="desktopGameHelp" hidden role="dialog" aria-label="操作說明"><b>Windows 測試操作</b><p>滑鼠點地面：自動尋路<br>點怪物：追擊與攻擊<br>點掉落物：拾取<br>方向鍵：移動畫面<br>C：鏡頭回到角色<br>H：使用治癒藥水<br>S：儲存進度<br>Esc：取消移動／追擊<br>F1 或 ?：開關說明</p><button type="button" id="closeDesktopHelp">關閉說明</button><small>地圖、掉落與戰鬥數值仍為測試資料，非 2004 年原版數據。</small></div><div id="characterSelect" hidden role="dialog" aria-label="選擇角色"><div class="character-select-panel">
+</style></head><body><header><b>天與地 · 2004 歷史研究原型</b><small>A18｜遊戲視窗比例調整｜雙平台｜獨立技術原型・非官方・非原版客戶端・未使用原版圖像音效</small></header><div class="layout"><div class="game"><canvas id="c" width="800" height="600"></canvas><div id="notice">點地面移動｜點怪物攻擊｜點物品拾取｜拖曳移動畫面<div id="spriteStatus" style="color:#f3da93;margin-top:4px">騎士圖片：檢查中</div><img id="spritePreview" alt="騎士圖片預覽" style="display:none;max-height:70px;max-width:90px;image-rendering:pixelated" /></div><div id="mobileBar"><div><button id="centerCam" title="回到角色">定位</button><button id="mobileHeal">藥水</button></div><div><button id="mobileSave">儲存</button><button id="mobileInfo">資訊</button></div></div><button type="button" id="returnToCharacterSelect" hidden>返回角色選擇</button><div id="desktopGameHelp" hidden role="dialog" aria-label="操作說明"><b>Windows 測試操作</b><p>滑鼠點地面：自動尋路<br>點怪物：追擊與攻擊<br>點掉落物：拾取<br>方向鍵：移動畫面<br>C：鏡頭回到角色<br>H：使用治癒藥水<br>S：儲存進度<br>Esc：取消移動／追擊<br>F1 或 ?：開關說明</p><button type="button" id="closeDesktopHelp">關閉說明</button><small>地圖、掉落與戰鬥數值仍為測試資料，非 2004 年原版數據。</small></div><div id="characterSelect" hidden role="dialog" aria-label="選擇角色"><div class="character-select-panel">
 <div class="selection-arch-grid" aria-label="角色展示欄"><button type="button" id="characterSlot" class="character-slot" aria-pressed="true"><img id="characterSelectPortrait" alt="角色外觀" loading="eager"><span class="slot-selected">選擇角色</span></button><button type="button" class="character-slot a37-slot" data-slot="1" aria-label="第2角色欄位"><span class="slot-selected">＋ 建立角色</span></button><button type="button" class="character-slot a37-slot" data-slot="2" aria-label="第3角色欄位"><span class="slot-selected">＋ 建立角色</span></button><button type="button" class="character-slot a37-slot" data-slot="3" aria-label="第4角色欄位"><span class="slot-selected">＋ 建立角色</span></button></div>
 <img class="selection-decor" src="https://shines871.github.io/idle-lineage-class/public/assets/login/load1.png" alt="" aria-hidden="true">
 <div class="selection-pages"><button type="button" data-page="0" class="active">1</button><button type="button" data-page="1">2</button></div>
