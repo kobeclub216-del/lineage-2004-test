@@ -1444,6 +1444,23 @@ function terrainDetails(x,y,p,type){
 const talkingIslandManifestState={status:'not-requested',manifest:null,error:null,playability:null,collision:null};
 let verifiedTalkingIslandImage=null;
 let verifiedTalkingIslandImageReady=false;
+let verifiedTalkingIslandScene=null;
+let verifiedTalkingIslandActor=null;
+let verifiedTalkingIslandSceneError=null;
+const verifiedImageLoader=path=>new Promise((resolve,reject)=>{const image=new Image();image.onload=()=>resolve(image);image.onerror=()=>reject(new Error('無法讀取核實素材：'+path));image.src=path});
+async function prepareVerifiedTalkingIslandScene(data){
+ const scene=await TalkingIslandLayerRenderer.loadSceneDescriptor(data.sceneDescriptor,verifiedImageLoader);
+ const actor=await verifiedImageLoader(data.playerSprite.path);
+ if(!actor.complete||!actor.naturalWidth)throw new Error('人物素材無效');
+ const renderer=new TalkingIslandLayerRenderer(canvas);
+ renderer.setScene(scene);
+ const b=data.coordinateSystem.worldBounds;
+ const collisionLayer=data.collisionLayers.find(l=>l.verified===true);
+ renderer.setCollision({bounds:{minX:b[0],minY:b[1],maxX:b[2],maxY:b[3]},blockedCells:collisionLayer.blockedCells});
+ if(!renderer.canWalk(data.playerSpawn.x,data.playerSpawn.y))throw new Error('核實出生點不可行走');
+ return {renderer,actor,spawn:{x:data.playerSpawn.x,y:data.playerSpawn.y}};
+}
+
 // P05-D35: a verified screenshot alone is not a playable map.
 function auditTalkingIslandPlayability(data){
  const missing=[];
@@ -1497,7 +1514,16 @@ if(visualParams.get('historicalMode')==='1'){
    const verifiedAssets=data.assets.length>0&&data.assets.some(a=>a&&a.kind==='background'&&a.verified===true&&a.licenseVerified===true)&&data.assets.every(a=>a&&typeof a.path==='string'&&a.path.startsWith('./assets/maps/')&&!a.path.includes('..')&&a.verified===true&&a.licenseVerified===true&&typeof a.source==='string'&&a.source.length>0);
    const verifiedLandmarks=data.landmarks.length>0&&data.landmarks.every(p=>p&&p.verified===true);
    talkingIslandManifestState.status=data.status==='ready'&&verifiedAssets&&verifiedLandmarks&&talkingIslandManifestState.playability.playable?'ready':'awaiting-verified-assets';
-   if(talkingIslandManifestState.status==='ready')loadVerifiedTalkingIslandImage(data);
+   if(talkingIslandManifestState.status==='ready'){
+    prepareVerifiedTalkingIslandScene(data).then(scene=>{
+     verifiedTalkingIslandScene=scene;
+     talkingIslandManifestState.status='scene-ready';
+    }).catch(err=>{
+     verifiedTalkingIslandSceneError=String(err);
+     talkingIslandManifestState.status='scene-error';
+     talkingIslandManifestState.error=String(err);
+    });
+   }
    console.info('[P05-D30] Talking Island manifest',talkingIslandManifestState.status,data.landmarks.length+' candidate landmarks');
   })
   .catch(err=>{talkingIslandManifestState.status='error';talkingIslandManifestState.error=String(err);console.error('[P05-D30] Manifest load failed',err)});
@@ -1512,6 +1538,14 @@ if(historicalSceneImage){
  historicalSceneImage.src=sceneImageUrl;
 }
 function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);
+ if(visualParams.get('historicalMode')==='1'&&verifiedTalkingIslandScene){
+  const {renderer,actor,spawn}=verifiedTalkingIslandScene;
+  const projected=renderer.project(spawn.x,spawn.y);
+  renderer.render({cameraX:projected.x-canvas.width/2,cameraY:projected.y-canvas.height/2,player:{image:actor,x:spawn.x,y:spawn.y,width:48,height:72,depth:1,footY:spawn.x+spawn.y}});
+  ctx.textAlign='center';ctx.fillStyle='#f3dba2';ctx.font='12px Arial';
+  ctx.fillText('已核實圖層及人物出生點預覽｜尚未啟用歷史場景行走',canvas.width/2,canvas.height-20);
+  return;
+ }
  if(visualParams.get('historicalMode')==='1'&&!historicalSceneImage&&verifiedTalkingIslandImageReady){
   ctx.fillStyle='#141414';ctx.fillRect(0,0,canvas.width,canvas.height);
   const im=verifiedTalkingIslandImage;
@@ -1535,7 +1569,7 @@ function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);
   ctx.font='12px Arial';ctx.fillStyle='#d0c5aa';
   ctx.fillText('此模式不會將隨機測試地形冒充原版場景',canvas.width/2,canvas.height/2+26);
   const st=talkingIslandManifestState;
-  const detail=st.status==='loading'?'正在讀取地圖資料…':st.status==='error'?'地圖資料載入失敗':st.status==='awaiting-verified-assets'?'地圖資料已載入；原版素材與地標尚未驗證':st.status==='ready'?'地圖資料驗證完成，等待場景渲染':'尚未要求載入地圖資料';
+  const detail=st.status==='loading'?'正在讀取地圖資料…':st.status==='error'?'地圖資料載入失敗':st.status==='awaiting-verified-assets'?'地圖資料已載入；原版素材與地標尚未驗證':st.status==='scene-error'?'核實場景載入失敗：'+(verifiedTalkingIslandSceneError||'未知錯誤'):st.status==='ready'?'地圖資料驗證完成，正在載入圖層':'尚未要求載入地圖資料';
   ctx.fillText(detail,canvas.width/2,canvas.height/2+52);
   if(st.manifest)ctx.fillText('候選地標：'+st.manifest.landmarks.length+'｜已核實：'+st.manifest.landmarks.filter(p=>p.verified===true).length,canvas.width/2,canvas.height/2+75);
   return;
