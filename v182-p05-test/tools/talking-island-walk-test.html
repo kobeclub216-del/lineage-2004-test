@@ -2,7 +2,7 @@
 <script src="../assets/maps/talking-island-renderer.js"></script><script src="../assets/maps/talking-island-movement.js"></script><script>
 (()=>{'use strict';
 const canvas=document.getElementById('c'),status=document.getElementById('status'),renderer=new TalkingIslandLayerRenderer(canvas),movement=new TalkingIslandMovementController(renderer);
-let actor=null,active=false,frame=0;
+let actor=null,active=false,frame=0,loadGeneration=0;
 const readImage=async id=>{const f=document.getElementById(id).files[0];if(!f||!['image/png','image/jpeg','image/webp'].includes(f.type)||f.size>25*1024*1024)throw Error('請提供 25MB 以下的有效圖片：'+id);const url=URL.createObjectURL(f);try{const img=new Image();await new Promise((ok,fail)=>{img.onload=ok;img.onerror=fail;img.src=url});return img}finally{URL.revokeObjectURL(url)}};
 function render(){if(!active)return;const p=movement.position,c=movement.camera();renderer.render({cameraX:c.cameraX,cameraY:c.cameraY,player:{image:actor,x:p.x,y:p.y,width:48,height:72,depth:1,footY:p.x+p.y}});
  if(document.getElementById('debug').checked){
@@ -18,7 +18,8 @@ function render(){if(!active)return;const p=movement.position,c=movement.camera(
  }
  frame=requestAnimationFrame(render)}
 document.getElementById('start').addEventListener('click',async()=>{
- active=false;cancelAnimationFrame(frame);try{
+ const generation=++loadGeneration;
+ active=false;cancelAnimationFrame(frame);status.textContent='正在讀取本機測試素材…';try{
  const f=document.getElementById('collision').files[0];if(!f||f.size>1024*1024)throw Error('請選擇 1MB 以下的碰撞 JSON');
  const data=JSON.parse(await f.text()),b=data.bounds;
  if(!b||![b.minX,b.minY,b.maxX,b.maxY].every(Number.isInteger)||b.minX>=b.maxX||b.minY>=b.maxY||!Array.isArray(data.blockedCells)||!data.spawn||!Number.isInteger(data.spawn.x)||!Number.isInteger(data.spawn.y))throw Error('碰撞或出生點格式無效');
@@ -29,8 +30,10 @@ document.getElementById('start').addEventListener('click',async()=>{
  if(placement.x<b.minX||placement.x>=b.maxX||placement.y<b.minY||placement.y>=b.maxY)throw Error('場景圖片錨點超出地圖範圍');
  const [ground,character]=await Promise.all([readImage('ground'),readImage('actor')]);
  if(!ground.naturalWidth||!ground.naturalHeight||!character.naturalWidth||!character.naturalHeight)throw Error('圖片沒有有效尺寸');
+ if(generation!==loadGeneration)return;
  const foreground=document.getElementById('foreground').files.length?await readImage('foreground'):null;
  const building=document.getElementById('building').files.length?await readImage('building'):null;
+ if(generation!==loadGeneration)return;
  const bx=Number(document.getElementById('buildingX').value),by=Number(document.getElementById('buildingY').value);
  if(building&&(!Number.isInteger(bx)||!Number.isInteger(by)||bx<b.minX||bx>=b.maxX||by<b.minY||by>=b.maxY))throw Error('建築物格位必須位於地圖範圍內');
  const bw=Number(document.getElementById('buildingW').value),bh=Number(document.getElementById('buildingH').value);
@@ -41,13 +44,14 @@ document.getElementById('start').addEventListener('click',async()=>{
  const layers=[{id:'local-ground',depth:0,images:[{image:ground,x:placement.x,y:placement.y,width:placement.width,height:placement.height,footY:-Infinity}]}];
  if(building)layers.push({id:'local-building',depth:1,images:[{image:building,x:bx,y:by,width:building.naturalWidth,height:building.naturalHeight,footY:bx+by+bw+bh-2}]});
  if(foreground)layers.push({id:'local-foreground',depth:2,images:[{image:foreground,x:placement.x,y:placement.y,width:placement.width,height:placement.height,footY:Infinity}]});
+ if(generation!==loadGeneration)return;
  renderer.setScene({bounds:b,layers});
  const blocked=data.blockedCells.slice();
  if(blocked.length>100000)throw Error('碰撞格數量過多');
  if(!blocked.every(p=>Array.isArray(p)&&p.length===2&&p.every(Number.isInteger)))throw Error('碰撞格資料無效');
  if(building){for(let y=by;y<by+bh;y++)for(let x=bx;x<bx+bw;x++)blocked.push([x,y])}
  renderer.setCollision({bounds:b,blockedCells:blocked});movement.spawn(data.spawn.x,data.spawn.y);actor=character;active=true;render();status.textContent='已載入本機測試素材'+(building?'、建築物深度排序':'')+(foreground?'與固定前景遮擋圖':'')+'。點擊畫面移動；不代表原版地圖座標已驗證。';
- }catch(e){status.textContent='無法啟動：'+e.message}
+ }catch(e){if(generation===loadGeneration)status.textContent='無法啟動：'+e.message}
 });
 // Pointer events work with mouse, touch and pen. Ignore multi-touch gestures.
 let pointerStart=null;
