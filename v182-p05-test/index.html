@@ -1258,6 +1258,14 @@ function initializeKnightPreview(){
   knightFrame(d,'walk',0);
   knightFrame(d,'attack',0);
  }
+ // P05-D16: the first frames alone are insufficient for a smooth initial
+ // animation. Warm every frame of the selected character's current facing,
+ // while keeping other directions to their first frames to limit requests.
+ const initialSourceDir=(spriteFacing+4)%8;
+ for(const action of ['idle','walk','attack']){
+  const count=activeSpriteSpec(action).count;
+  for(let f=1;f<count;f++)knightFrame(initialSourceDir,action,f);
+ }
  // The separate reference-image preview remains opt-in; only frame preloading
  // is shared with the local asset mode.
  if(!knightReferencePreview)return;
