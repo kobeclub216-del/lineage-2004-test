@@ -1449,8 +1449,20 @@ function auditTalkingIslandPlayability(data){
  const missing=[];
  const b=data.coordinateSystem&&data.coordinateSystem.worldBounds;
  if(!Array.isArray(b)||b.length!==4||!b.every(Number.isInteger)||b[0]>=b[2]||b[1]>=b[3])missing.push('worldBounds');
+ if(!Array.isArray(data.assets))return {playable:false,missing:[...missing,'assets']};
  if(!Array.isArray(data.collisionLayers)||!data.collisionLayers.some(l=>l&&l.verified===true&&l.assetId&&data.assets.some(a=>a.id===l.assetId&&a.verified===true&&a.licenseVerified===true)))missing.push('collision');
  if(!Array.isArray(data.occlusionLayers)||!data.occlusionLayers.some(l=>l&&l.verified===true&&l.assetId&&data.assets.some(a=>a.id===l.assetId&&a.verified===true&&a.licenseVerified===true)))missing.push('occlusion');
+ // A verified screenshot is insufficient for a playable isometric scene.
+ // Require an explicitly placed, licensed world-image layer and a player sprite.
+ const scene=data.sceneDescriptor;
+ const allowedAssets=new Map((Array.isArray(data.assets)?data.assets:[]).filter(a=>a&&a.verified===true&&a.licenseVerified===true).map(a=>[a.path,a]));
+ const validScene=scene&&scene.verified===true&&scene.bounds&&Array.isArray(scene.layers)&&scene.layers.length>0&&
+  scene.layers.every(layer=>layer&&layer.verified===true&&Number.isFinite(layer.depth)&&Array.isArray(layer.images)&&layer.images.every(item=>
+   item&&item.verified===true&&item.licenseVerified===true&&allowedAssets.has(item.path)&&
+   [item.x,item.y,item.width,item.height].every(Number.isFinite)&&item.width>0&&item.height>0));
+ if(!validScene)missing.push('sceneDescriptor');
+ const sprite=data.playerSprite;
+ if(!sprite||sprite.verified!==true||sprite.licenseVerified!==true||!allowedAssets.has(sprite.path))missing.push('playerSprite');
  if(!data.playerSpawn||!Number.isInteger(data.playerSpawn.x)||!Number.isInteger(data.playerSpawn.y)||data.playerSpawn.verified!==true||!Array.isArray(b)||b.length!==4||data.playerSpawn.x<b[0]||data.playerSpawn.x>=b[2]||data.playerSpawn.y<b[1]||data.playerSpawn.y>=b[3])missing.push('spawn');
  return {playable:missing.length===0,missing};
 }
