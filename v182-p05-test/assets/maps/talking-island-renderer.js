@@ -68,14 +68,22 @@
    if(typeof loadImage!=='function')throw new TypeError('Image loader required');
    const layers=[];
    for(const layer of descriptor.layers){
-    if(layer.verified!==true||!Array.isArray(layer.images))throw new TypeError('Unverified scene layer');
+    if(layer.verified!==true||!Number.isFinite(layer.depth)||!Array.isArray(layer.images))throw new TypeError('Unverified or invalid scene layer');
     const images=[];
     for(const item of layer.images){
      if(item.verified!==true||item.licenseVerified!==true||typeof item.path!=='string'||!/^\.\/assets\/maps\/[a-zA-Z0-9_/-]+\.(?:png|webp|jpg|jpeg)$/.test(item.path)||item.path.split('/').some(part=>part==='..'))throw new TypeError('Unverified or unsafe scene image path');
      const image=await loadImage(item.path);
      if(!image||!image.complete||!image.naturalWidth||!image.naturalHeight)throw new Error('Scene image failed: '+item.path);
      if(![item.x,item.y,item.width,item.height].every(Number.isFinite)||item.width<=0||item.height<=0||(item.footY!==undefined&&!Number.isFinite(item.footY)))throw new TypeError('Invalid scene image placement');
-     images.push({image,x:item.x,y:item.y,width:item.width,height:item.height,footY:item.footY});
+     if(item.sourceRect){
+      const sr=item.sourceRect;
+      if(!['x','y','width','height'].every(k=>Number.isInteger(sr[k]))||
+       sr.x<0||sr.y<0||sr.width<=0||sr.height<=0||
+       sr.x+sr.width>image.naturalWidth||sr.y+sr.height>image.naturalHeight)
+       throw new TypeError('Scene sprite crop outside image bounds');
+     }
+     images.push({image,x:item.x,y:item.y,width:item.width,height:item.height,
+      footY:item.footY,...(item.sourceRect?{sourceRect:{...item.sourceRect}}:{})});
     }
     layers.push({id:layer.id,depth:layer.depth,images});
    }
