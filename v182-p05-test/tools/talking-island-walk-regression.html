@@ -28,6 +28,41 @@ test('人物在建築前方時覆蓋建築',()=>{calls.length=0;r.render({player
 test('人物在建築後方時被建築覆蓋',()=>{calls.length=0;r.render({player:{image:img('actor'),x:1,y:1,width:48,height:72,depth:1,footY:2}});return calls.map(c=>c.id).join(',')==='ground,actor,building'});
 test('Sprite 圖集依來源矩形裁切',()=>{calls.length=0;r.render({player:{image:img('actor'),x:5,y:5,width:48,height:72,depth:1,sourceRect:{x:0,y:0,width:24,height:36}}});const actor=calls.find(c=>c.id==='actor');return !!actor&&actor.args.length===8&&actor.args[2]===24&&actor.args[3]===36});
 test('超出圖片範圍的 Sprite 影格不繪製',()=>{calls.length=0;r.render({player:{image:img('actor'),x:5,y:5,width:48,height:72,depth:1,sourceRect:{x:40,y:0,width:24,height:36}}});return !calls.some(c=>c.id==='actor')});
+test('每個畫面方向對應的圖集列均可裁切',()=>{
+ const atlas={id:'atlas',complete:true,naturalWidth:192,naturalHeight:576};
+ const directions=['N','NE','E','SE','S','SW','W','NW'];
+ return directions.every((direction,row)=>{
+  calls.length=0;
+  r.render({player:{image:atlas,x:5,y:5,width:48,height:72,depth:1,
+   sourceRect:{x:48,y:row*72,width:48,height:72}}});
+  const drawn=calls.find(c=>c.id==='atlas');
+  return drawn&&drawn.args.length===8&&drawn.args[0]===48&&drawn.args[1]===row*72;
+ });
+});
+test('人物與建築同深度時依腳底位置排序',()=>{
+ calls.length=0;
+ r.render({player:{image:img('actor'),x:5,y:4,width:48,height:72,depth:1,footY:5}});
+ return calls.map(c=>c.id).join(',')==='ground,actor,building';
+});
+test('移動途中再次指定目標後不沿用舊路徑',()=>{
+ m.spawn(1,1);
+ if(!m.moveTo(6,6)||!m.step())return false;
+ const previousDestination=m.route[m.route.length-1];
+ if(!previousDestination||!m.moveTo(0,0))return false;
+ const next=m.getAnimationState();
+ return next.destination.x===0&&next.destination.y===0&&next.remainingSteps>0;
+});
+test('不可行走點擊不會建立路徑',()=>{
+ m.spawn(1,1);
+ const blocked=r.project(2,2);
+ return m.pick(blocked.x,blocked.y,0,0)===null&&!m.moveTo(2,2);
+});
+test('移動過程每一步均保持在合法格位',()=>{
+ m.spawn(0,0);if(!m.moveTo(7,7))return false;
+ let count=0;
+ while(m.route.length&&count++<60){if(!m.step()||!r.canWalk(m.position.x,m.position.y))return false;}
+ return count<60&&m.position.x===7&&m.position.y===7;
+});
 test('鏡頭跟隨位置有效',()=>{const c=m.camera();return Number.isFinite(c.cameraX)&&Number.isFinite(c.cameraY)});
 test('停止移動清空路徑',()=>m.moveTo(7,7)&&(m.cancel(),m.route.length===0));
 const p=document.createElement('p');p.textContent='結果：'+pass+' 通過，'+fail+' 失敗';p.className=fail?'bad':'ok';results.after(p);
