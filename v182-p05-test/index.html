@@ -1198,6 +1198,26 @@ function knightFrame(dir,action,frame){
  }
  return knightCache.get(url);
 }
+// P05-D9: optional read-only sprite availability audit for the selected class.
+// Reports missing/loaded frames; does not claim historical artwork fidelity.
+function auditSpriteFrames(){
+ const folder=activeSpriteFolder(),result={folder,ready:0,loading:0,failed:0,byAction:{}};
+ for(const action of ['idle','walk','attack']){
+  const count=activeSpriteSpec(action).count;
+  const stat={ready:0,loading:0,failed:0,total:count*8};
+  for(let d=0;d<8;d++)for(let f=0;f<count;f++){
+   const key=knightFrameUrl(d,action,f),entry=knightCache.get(key);
+   if(entry?.ready)stat.ready++;
+   else if(entry?.failed)stat.failed++;
+   else stat.loading++;
+  }
+  result.byAction[action]=stat;
+  result.ready+=stat.ready;result.failed+=stat.failed;result.loading+=stat.loading;
+ }
+ console.info('[P05-D9 sprite audit]',result);
+ return result;
+}
+if(visualParams.get('auditSprites')==='1')window.auditSpriteFrames=auditSpriteFrames;
 function knightPreload(dir,action,frame){
  const spec=activeSpriteSpec(action);
  knightFrame(dir,action,(frame+1)%spec.count);
@@ -1221,7 +1241,9 @@ function initializeKnightPreview(){
   knightFrame(d,'attack',0);
  }
  const preview=document.getElementById('spritePreview');
- const entry=knightFrame(spriteFacing,'idle',0);
+ // P05-D9: preview must use the same 180-degree source mapping as the
+ // actual character renderer; otherwise the preview can face the wrong way.
+ const entry=knightFrame((spriteFacing+4)%8,'idle',0);
  if(preview&&entry){
   const refresh=()=>{if(entry.ready){preview.src=entry.img.src;preview.style.display='inline-block'}else if(entry.failed){preview.alt='圖片載入失敗'}};
   entry.img.addEventListener('load',refresh);
