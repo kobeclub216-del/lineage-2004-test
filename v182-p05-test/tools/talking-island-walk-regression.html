@@ -4,7 +4,7 @@
 'use strict';
 const results=document.getElementById('results');let pass=0,fail=0;
 function test(name,fn){try{if(fn()!==true)throw Error('Assertion failed');const li=document.createElement('li');li.className='ok';li.textContent='通過：'+name;results.append(li);pass++}catch(e){const li=document.createElement('li');li.className='bad';li.textContent='失敗：'+name+' — '+e.message;results.append(li);fail++}}
-const calls=[],ctx={clearRect(){},fillRect(){},drawImage(image){calls.push(image.id)},set fillStyle(v){}},canvas={width:800,height:600,getContext(){return ctx}};
+const calls=[],ctx={clearRect(){},fillRect(){},drawImage(image,...args){calls.push({id:image.id,args})},set fillStyle(v){}},canvas={width:800,height:600,getContext(){return ctx}};
 const r=new TalkingIslandLayerRenderer(canvas),bounds={minX:0,minY:0,maxX:8,maxY:8},img=id=>({id,complete:true,naturalWidth:48,naturalHeight:72});
 r.setScene({bounds,layers:[{id:'ground',depth:0,images:[{image:img('ground'),x:0,y:0,width:500,height:300}]},{id:'buildings',depth:1,images:[{image:img('building'),x:3,y:3,width:100,height:120,footY:6}]}]});
 r.setCollision({bounds,blockedCells:[[2,2],[2,3],[2,4],[3,3]]});
@@ -24,8 +24,10 @@ m.spawn(5,5);
 test('新目的地替換舊路線',()=>m.moveTo(7,7)&&m.route.length>0&&m.moveTo(1,1)&&m.route.length>0);
 test('點擊不可行走位置清除舊路線',()=>!m.moveTo(2,2)&&m.route.length===0);
 test('畫面與世界座標互轉',()=>{const p=r.project(4,1);const c=m.pick(p.x,p.y,0,0);return c&&c.x===4&&c.y===1});
-test('人物在建築前方時覆蓋建築',()=>{calls.length=0;r.render({player:{image:img('actor'),x:5,y:4,width:48,height:72,depth:1,footY:9}});return calls.join(',')==='ground,building,actor'});
-test('人物在建築後方時被建築覆蓋',()=>{calls.length=0;r.render({player:{image:img('actor'),x:1,y:1,width:48,height:72,depth:1,footY:2}});return calls.join(',')==='ground,actor,building'});
+test('人物在建築前方時覆蓋建築',()=>{calls.length=0;r.render({player:{image:img('actor'),x:5,y:4,width:48,height:72,depth:1,footY:9}});return calls.map(c=>c.id).join(',')==='ground,building,actor'});
+test('人物在建築後方時被建築覆蓋',()=>{calls.length=0;r.render({player:{image:img('actor'),x:1,y:1,width:48,height:72,depth:1,footY:2}});return calls.map(c=>c.id).join(',')==='ground,actor,building'});
+test('Sprite 圖集依來源矩形裁切',()=>{calls.length=0;r.render({player:{image:img('actor'),x:5,y:5,width:48,height:72,depth:1,sourceRect:{x:0,y:0,width:24,height:36}}});const actor=calls.find(c=>c.id==='actor');return !!actor&&actor.args.length===8&&actor.args[2]===24&&actor.args[3]===36});
+test('超出圖片範圍的 Sprite 影格不繪製',()=>{calls.length=0;r.render({player:{image:img('actor'),x:5,y:5,width:48,height:72,depth:1,sourceRect:{x:40,y:0,width:24,height:36}}});return !calls.some(c=>c.id==='actor')});
 test('鏡頭跟隨位置有效',()=>{const c=m.camera();return Number.isFinite(c.cameraX)&&Number.isFinite(c.cameraY)});
 test('停止移動清空路徑',()=>m.moveTo(7,7)&&(m.cancel(),m.route.length===0));
 const p=document.createElement('p');p.textContent='結果：'+pass+' 通過，'+fail+' 失敗';p.className=fail?'bad':'ok';results.after(p);
