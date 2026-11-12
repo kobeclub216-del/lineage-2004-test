@@ -1202,14 +1202,24 @@ function knightFrame(dir,action,frame){
  if(!knightCache.has(url)){
   // Avoid unbounded image growth if future weapons or classes are added.
   // P05-D4: no eviction of successfully decoded frames during active gameplay.
-  const img=new Image();const entry={img,ready:false,failed:false};
-  img.onload=()=>{entry.ready=img.naturalWidth>0&&img.naturalHeight>0;if(entry.ready)knightLoadedCount++;spriteStatus()};
-  img.onerror=()=>{
+  const img=new Image();const entry={img,ready:false,failed:false,triedBackup:false};
+  // P05-D19: a successful HTTP response can still contain an invalid image.
+  // Treat undecodable/zero-size images as failures and try the reference
+  // backup exactly once, without counting one frame twice.
+  const tryBackupOrFail=()=>{
+   if(entry.ready||entry.failed)return;
    if(knightReferencePreview&&!entry.triedBackup){
     entry.triedBackup=true;
     img.src=url.replace(KNIGHT_REFERENCE_ROOT,KNIGHT_REFERENCE_BACKUP);
    }else{entry.failed=true;knightFailedCount++;spriteStatus()}
   };
+  img.onload=()=>{
+   if(entry.ready||entry.failed)return;
+   if(img.naturalWidth>0&&img.naturalHeight>0){
+    entry.ready=true;knightLoadedCount++;spriteStatus();
+   }else tryBackupOrFail();
+  };
+  img.onerror=tryBackupOrFail;
   knightCache.set(url,entry);img.src=url;
  }
  return knightCache.get(url);
