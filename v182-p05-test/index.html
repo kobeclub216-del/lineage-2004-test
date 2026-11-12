@@ -1114,6 +1114,8 @@ const knightReferencePreview=new URLSearchParams(location.search).get('spriteSou
 const knightAssetBase=knightReferencePreview?KNIGHT_REFERENCE_ROOT:KNIGHT_FRAMES.base;
 const knightCache=new Map();
 const knightLastReady=new Map();
+// P05-D2: keep the most recently decoded sprite for each class/gender during direction changes.
+const knightLastReadyByFolder=new Map();
 let knightLoadedCount=0,knightFailedCount=0;
 const KNIGHT_MAX_CACHE=1200;
 const CLASS_SPRITE_COUNTS={
@@ -1216,10 +1218,14 @@ function drawKnightSprite(px,py,now){
   }
  }
  if(!entry.ready){
-  // Only use the silhouette before any valid sprite for this direction is available.
-  drawTestSilhouette(px,py,'#a5a8b3');return;
+  // P05-D2: a newly requested direction may still be loading. Reuse the last
+  // decoded frame of this SAME class/gender instead of flashing a block figure.
+  const previous=knightLastReadyByFolder.get(activeSpriteFolder());
+  if(previous&&previous.ready)entry=previous;
+  else return; // No approved frame has loaded yet: never invent a silhouette.
  }
  knightLastReady.set(key,entry);
+ knightLastReadyByFolder.set(activeSpriteFolder(),entry);
  knightPreload(sourceDir,action,frame);
  // Warm every frame in the active direction, including the next action.
  // Reusing these decoded images prevents stalls when switching from idle.
