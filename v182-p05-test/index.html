@@ -1257,10 +1257,14 @@ if(visualParams.get('smokeTest')==='1'){
   const failures=[],geometry=verifyVisualGeometry();
   if(!geometry.pass)failures.push('geometry');
   const dir=(spriteFacing+4)%8,folder=activeSpriteFolder();
+  // P05-D22: test frame zero for every facing, plus complete sequences
+  // for the current facing. This catches missing direction folders without
+  // fetching every frame of every direction during one smoke test.
   const expected=[];
-  for(const action of ['idle','walk','attack']){
-   for(let f=0;f<activeSpriteSpec(action).count;f++){
-    expected.push({action,frame:f,entry:knightFrame(dir,action,f)});
+  for(let d=0;d<8;d++)for(const action of ['idle','walk','attack']){
+   const count=d===dir?activeSpriteSpec(action).count:1;
+   for(let f=0;f<count;f++){
+    expected.push({direction:d,action,frame:f,entry:knightFrame(d,action,f)});
    }
   }
   const deadline=Date.now()+12000;
@@ -1270,7 +1274,7 @@ if(visualParams.get('smokeTest')==='1'){
   const sprite={folder,direction:dir,ready:0,failed:0,pending:0,failedFrames:[]};
   for(const item of expected){
    if(item.entry.ready)sprite.ready++;
-   else if(item.entry.failed){sprite.failed++;sprite.failedFrames.push(item.action+':'+item.frame)}
+   else if(item.entry.failed){sprite.failed++;sprite.failedFrames.push(item.direction+':'+item.action+':'+item.frame)}
    else sprite.pending++;
   }
   if(sprite.failed)failures.push('sprite files failed');
@@ -1279,7 +1283,7 @@ if(visualParams.get('smokeTest')==='1'){
   const result={state:failures.length?'fail':'pass',geometry,sprite,failures,
    note:'Only browser loading and geometry; not a historical visual comparison'};
   window.lineageSmokeTestResult=result;
-  console[result.state==='pass'?'info':'error']('[P05-D20 smoke test]',result);
+  console[result.state==='pass'?'info':'error']('[P05-D22 smoke test]',result);
   return result;
  };
  // P05-D21: do not test the default knight before character selection.
