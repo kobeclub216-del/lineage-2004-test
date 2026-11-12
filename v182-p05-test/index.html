@@ -1121,7 +1121,7 @@ function verifyVisualGeometry(){
 if(visualParams.get('verifyGeometry')==='1')setTimeout(verifyVisualGeometry,0);
 function pathfind(sx,sy,gx,gy){if(!pass(gx,gy))return [];let start=sx+sy*W,goal=gx+gy*W,q=[start],prev=new Int32Array(W*H).fill(-1);prev[start]=start;for(let head=0;head<q.length;head++){let u=q[head];if(u===goal)break;let x=u%W,y=Math.floor(u/W);for(let [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,1],[1,-1],[-1,-1]]){let nx=x+dx,ny=y+dy,v=nx+ny*W;if(!pass(nx,ny)||prev[v]!==-1)continue;if(dx&&dy&&(!pass(x+dx,y)||!pass(x,y+dy)))continue;prev[v]=u;q.push(v)}}if(prev[goal]===-1)return [];let out=[];for(let v=goal;v!==start;v=prev[v])out.push({x:v%W,y:Math.floor(v/W)});return out.reverse()}function clickAt(sx,sy){if(visualParams.get('historicalMode')==='1'){
   if(!verifiedTalkingIslandMovement)return;
-  const movement=verifiedTalkingIslandMovement,c=movement.camera(),cell=movement.pick(sx,sy,c.cameraX,c.cameraY);
+  const movement=verifiedTalkingIslandMovement,c=historicalVisualCamera()||movement.camera(),cell=movement.pick(sx,sy,c.cameraX,c.cameraY);
   if(cell)movement.moveTo(cell.x,cell.y);else movement.cancel();
   return;
  }if(!player)return;let t=unproject(sx,sy),m=monsters.find(m=>m.alive&&m.x===t.x&&m.y===t.y);if(m){target={type:'monster',ref:m};msg('鎖定 '+m.name);return}let d=drops.find(d=>d.x===t.x&&d.y===t.y);if(d){target={type:'drop',ref:d};return}target=null;player.path=pathfind(player.x,player.y,t.x,t.y);if(!player.path.length&&!pass(t.x,t.y))msg('該地形不可通行')}function centerCamera(){if(visualParams.get('historicalMode')==='1')return;if(!player)return;cam.x=(player.x-player.y)*TW/2;cam.y=(player.x+player.y)*TH/2+90-canvas.height*.53}
@@ -1469,6 +1469,21 @@ let verifiedTalkingIslandLastStep=0;
 let verifiedTalkingIslandStepFrom=null;
 let verifiedTalkingIslandStepTo=null;
 const VERIFIED_SCENE_STEP_MS=170;
+function historicalVisualPosition(now=performance.now()){
+ const movement=verifiedTalkingIslandMovement;
+ if(!movement||!movement.position)return null;
+ if(!verifiedTalkingIslandStepFrom||!verifiedTalkingIslandStepTo)return {...movement.position};
+ const t=Math.min(1,Math.max(0,(now-verifiedTalkingIslandLastStep)/VERIFIED_SCENE_STEP_MS));
+ return {x:verifiedTalkingIslandStepFrom.x+(verifiedTalkingIslandStepTo.x-verifiedTalkingIslandStepFrom.x)*t,
+         y:verifiedTalkingIslandStepFrom.y+(verifiedTalkingIslandStepTo.y-verifiedTalkingIslandStepFrom.y)*t};
+}
+function historicalVisualCamera(now=performance.now()){
+ if(!verifiedTalkingIslandScene)return null;
+ const p=historicalVisualPosition(now);
+ if(!p)return null;
+ const projected=verifiedTalkingIslandScene.renderer.project(p.x,p.y);
+ return {cameraX:projected.x-canvas.width/2,cameraY:projected.y-canvas.height/2};
+}
 let verifiedTalkingIslandWalkStart=0;
 let verifiedTalkingIslandWasMoving=false;
 let verifiedTalkingIslandSceneError=null;
@@ -1585,15 +1600,9 @@ function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);
  if(visualParams.get('historicalMode')==='1'&&verifiedTalkingIslandScene){
   const {renderer,actor,movement,spriteConfig}=verifiedTalkingIslandScene;
   const animation=movement.getAnimationState(),now=performance.now();
-  const fraction=verifiedTalkingIslandStepFrom&&verifiedTalkingIslandStepTo?
-   Math.min(1,Math.max(0,(now-verifiedTalkingIslandLastStep)/VERIFIED_SCENE_STEP_MS)):1;
-  const p=fraction<1?{
-   x:verifiedTalkingIslandStepFrom.x+(verifiedTalkingIslandStepTo.x-verifiedTalkingIslandStepFrom.x)*fraction,
-   y:verifiedTalkingIslandStepFrom.y+(verifiedTalkingIslandStepTo.y-verifiedTalkingIslandStepFrom.y)*fraction
-  }:movement.position;
-  const projected=renderer.project(p.x,p.y);
-  const c={cameraX:projected.x-canvas.width/2,cameraY:projected.y-canvas.height/2};
-  const visuallyMoving=animation.moving||fraction<1;
+  const p=historicalVisualPosition(now),c=historicalVisualCamera(now);
+  const visuallyMoving=animation.moving||Boolean(verifiedTalkingIslandStepFrom&&
+    now-verifiedTalkingIslandLastStep<VERIFIED_SCENE_STEP_MS);
   if(visuallyMoving&&!verifiedTalkingIslandWasMoving)verifiedTalkingIslandWalkStart=now;
   verifiedTalkingIslandWasMoving=visuallyMoving;
   let sourceRect;
