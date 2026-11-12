@@ -1083,10 +1083,22 @@ document.getElementById('start').onclick=()=>newPlayer(document.getElementById('
 function verifyVisualGeometry(){
  const failures=[];
  if(!(TW>0&&TH>0&&KNIGHT_FRAMES.drawHeight*CHARACTER_VISUAL_SCALE>0))failures.push('invalid dimensions');
- for(let y=0;y<H;y++)for(let x=0;x<W;x++){
-  const p=screen(x,y),q=unproject(p.x,p.y);
-  if(q.x!==x||q.y!==y){failures.push('projection '+x+','+y);break}
- }
+ // P05-D13: verify all tile centers at multiple camera offsets, including
+ // negative offsets, and ensure nearby clicks resolve to the intended tile.
+ const originalCam={x:cam.x,y:cam.y};
+ try{
+  for(const [cx,cy] of [[0,0],[137,-91],[-233,177]]){
+   cam.x=cx;cam.y=cy;
+   for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+    const p=screen(x,y),q=unproject(p.x,p.y);
+    if(q.x!==x||q.y!==y)failures.push('projection '+x+','+y+' camera '+cx+','+cy);
+    const inside=unproject(p.x+TW*0.1,p.y+TH*0.1);
+    if(inside.x!==x||inside.y!==y)failures.push('tile hit '+x+','+y+' camera '+cx+','+cy);
+    if(failures.length>=10)break;
+   }
+   if(failures.length>=10)break;
+  }
+ }finally{cam.x=originalCam.x;cam.y=originalCam.y}
  const before={x:cam.x,y:cam.y};
  try{
   const sample={x:Math.floor(W/2),y:Math.floor(H/2)};
@@ -1095,7 +1107,7 @@ function verifyVisualGeometry(){
   const projected=screen(sample.x,sample.y);
   if(Math.abs(projected.x-canvas.width/2)>0.001||Math.abs(projected.y-canvas.height*.53)>0.001)failures.push('camera centering');
  }finally{cam.x=before.x;cam.y=before.y}
- const result={pass:failures.length===0,tilesChecked:W*H,mapScale:MAP_VISUAL_SCALE,characterScale:CHARACTER_VISUAL_SCALE,failures};
+ const result={pass:failures.length===0,tilesChecked:W*H*3,mapScale:MAP_VISUAL_SCALE,characterScale:CHARACTER_VISUAL_SCALE,failures};
  console[result.pass?'info':'error']('[P05-D7 geometry]',result);
  return result;
 }
