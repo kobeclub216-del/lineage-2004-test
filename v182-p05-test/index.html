@@ -1505,12 +1505,10 @@ function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);
   const im=verifiedTalkingIslandImage;
   const scale=Math.min(canvas.width/im.naturalWidth,canvas.height/im.naturalHeight);
   const w=im.naturalWidth*scale,h=im.naturalHeight*scale;
-  // P05-D37: use the shared scene renderer for verified, image-backed layers.
-  // One background layer is only a preview; it does not enable movement.
+  // P05-D40: display source imagery in screen space; no invented world geometry.
   if(typeof TalkingIslandLayerRenderer==='function'){
    const renderer=new TalkingIslandLayerRenderer(canvas);
-   renderer.setScene({bounds:{minX:0,minY:0,maxX:1,maxY:1},layers:[{id:'verified-background',depth:0,images:[{image:im,x:0,y:0,width:w,height:h,footY:0}]}]});
-   renderer.render({cameraX:0,cameraY:-(canvas.height+h)/2});
+   renderer.renderReferenceImage(im);
   }else{
    ctx.drawImage(im,(canvas.width-w)/2,(canvas.height-h)/2,w,h);
   }
