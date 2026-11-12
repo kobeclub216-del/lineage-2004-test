@@ -1182,8 +1182,12 @@ function initializeKnightPreview(){
 function drawKnightSprite(px,py,now){
  const attack=now<spriteAttackUntil,pickup=now<spritePickupUntil,move=now<spriteMovingUntil;
  const action=attack?'attack':pickup?'idle':move?'walk':'idle',spec=activeSpriteSpec(action);
- const elapsed=attack?280-(spriteAttackUntil-now):move?now-spriteMoveStart:now;
- const frame=Math.floor(Math.max(0,elapsed)/spec.ms)%spec.count;
+ // Complete one full walk cycle per tile step and one attack cycle per attack.
+ // The previous fixed-ms calculation skipped frames on short movement/attack windows.
+ const duration=attack?280:move?SPRITE_STEP_MS:spec.count*spec.ms;
+ const elapsed=attack?Math.max(0,280-(spriteAttackUntil-now)):move?Math.max(0,now-spriteMoveStart):now;
+ const phase=attack||move?Math.min(0.999,elapsed/Math.max(1,duration)):((elapsed%duration)/duration);
+ const frame=Math.min(spec.count-1,Math.floor(phase*spec.count));
  // One consistent source direction for idle, walk and attack.
  // No action-specific mirroring; calibration remains explicit and reversible.
  // Source folders face 180 degrees opposite to the game's eight-direction indices.
@@ -1209,7 +1213,7 @@ function drawKnightSprite(px,py,now){
  knightLastReady.set(key,entry);
  knightPreload(sourceDir,action,frame);
  // Warm all walk frames for the active facing; prevents first-step frame stalls.
- if(action==='walk')for(let j=0;j<spec.count;j++)knightFrame(sourceDir,'walk',j);
+ if(action==='walk'||action==='attack')for(let j=0;j<spec.count;j++)knightFrame(sourceDir,action,j);
  const img=entry.img,h=KNIGHT_FRAMES.drawHeight,w=Math.max(1,h*img.naturalWidth/img.naturalHeight);
  ctx.save();ctx.imageSmoothingEnabled=false;
  ctx.translate(Math.round(px),Math.round(py-KNIGHT_FRAMES.anchorY));
