@@ -1109,10 +1109,26 @@ const knightCache=new Map();
 const knightLastReady=new Map();
 let knightLoadedCount=0,knightFailedCount=0;
 const KNIGHT_MAX_CACHE=150;
+const CLASS_SPRITE_COUNTS={
+ '王子':[11,4,5],'公主':[12,4,7],
+ '男騎士':[13,4,6],'女騎士':[13,4,6],
+ '男妖精':[8,4,7],'女妖精':[10,4,8],
+ '男法師':[9,4,7],'女法師':[8,8,7]
+};
+function activeSpriteFolder(){
+ const gender=player?.gender==='女'?'女':'男';
+ if(player?.job==='騎士')return gender+'騎士';
+ if(player?.job==='王族')return gender==='女'?'公主':'王子';
+ if(['妖精','法師'].includes(player?.job))return gender+player.job;
+ return '男騎士';
+}
 function knightFolder(dir){
- // Use the selected character's gender for all eight knight animation directions.
- const folder=player?.gender==='女'?'女騎士':'男騎士';
- return folder+KNIGHT_FRAMES.directionFolders[((dir%8)+8)%8];
+ return activeSpriteFolder()+KNIGHT_FRAMES.directionFolders[((dir%8)+8)%8];
+}
+function activeSpriteSpec(action){
+ const counts=CLASS_SPRITE_COUNTS[activeSpriteFolder()]||CLASS_SPRITE_COUNTS['男騎士'];
+ const n={idle:counts[0],walk:counts[1],attack:counts[2]}[action]||counts[0];
+ return {count:n,ms:KNIGHT_FRAMES.actions[action].ms};
 }
 function knightFrameUrl(dir,action,frame){
  const k=KNIGHT_FRAMES;
@@ -1139,7 +1155,7 @@ function knightFrame(dir,action,frame){
  return knightCache.get(url);
 }
 function knightPreload(dir,action,frame){
- const spec=KNIGHT_FRAMES.actions[action];
+ const spec=activeSpriteSpec(action);
  knightFrame(dir,action,(frame+1)%spec.count);
 }
 function spriteStatus(){
@@ -1164,7 +1180,7 @@ function initializeKnightPreview(){
 }
 function drawKnightSprite(px,py,now){
  const attack=now<spriteAttackUntil,pickup=now<spritePickupUntil,move=now<spriteMovingUntil;
- const action=attack?'attack':pickup?'idle':move?'walk':'idle',spec=KNIGHT_FRAMES.actions[action];
+ const action=attack?'attack':pickup?'idle':move?'walk':'idle',spec=activeSpriteSpec(action);
  const elapsed=attack?280-(spriteAttackUntil-now):move?now-spriteMoveStart:now;
  const frame=Math.floor(Math.max(0,elapsed)/spec.ms)%spec.count;
  // One consistent source direction for idle, walk and attack.
@@ -1173,7 +1189,7 @@ function drawKnightSprite(px,py,now){
  // Apply the same half-turn to idle, walk and attack; do not mirror individual actions.
  const sourceDir=(spriteFacing+4)%8;
  const mirrored=false;
- const key=sourceDir+':'+action;
+ const key=activeSpriteFolder()+':'+sourceDir+':'+action;
  let entry=knightFrame(sourceDir,action,frame);
  if(!entry.ready){
   const first=knightFrame(sourceDir,action,0);
@@ -1207,7 +1223,7 @@ function drawTestSilhouette(x,y,color){
  ctx.fillStyle='#e0c49d';ctx.beginPath();ctx.arc(x,y-31,8,0,7);ctx.fill();
 }
 function drawCharacterSprite(p,now){
- if(player.job==='騎士'){drawKnightSprite(p.x,p.y,now);return}
+ if(['騎士','王族','妖精','法師'].includes(player.job)){drawKnightSprite(p.x,p.y,now);return}
  // Unchanged test silhouettes for other classes pending verified 2004 references.
  drawTestSilhouette(p.x,p.y,{'王族':'#a08c62','妖精':'#649c68','法師':'#607fb3','黑暗妖精':'#80609a'}[player.job]||'#a5a8b3');
 }
