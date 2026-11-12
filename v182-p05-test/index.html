@@ -1472,17 +1472,17 @@ if(visualParams.get('historicalMode')==='1'){
    talkingIslandManifestState.manifest=data;
    talkingIslandManifestState.playability=auditTalkingIslandPlayability(data);
    if(talkingIslandManifestState.playability.playable){
-    const layer=data.collisionLayers.find(l=>l.verified===true);
+    const layer=data.collisionLayers.find(l=>l&&l.verified===true&&l.assetId&&data.assets.some(a=>a.id===l.assetId&&a.verified===true&&a.licenseVerified===true));
     const b=data.coordinateSystem.worldBounds;
     const cells=layer&&layer.blockedCells;
-    if(!Array.isArray(cells)||!cells.every(c=>Array.isArray(c)&&c.length===2&&c.every(Number.isInteger)&&c[0]>=b[0]&&c[0]<b[2]&&c[1]>=b[1]&&c[1]<b[3])){
+    if(!Array.isArray(cells)||!cells.every(c=>Array.isArray(c)&&c.length===2&&c.every(Number.isInteger)&&c[0]>=b[0]&&c[0]<b[2]&&c[1]>=b[1]&&c[1]<b[3])||cells.some(c=>c[0]===data.playerSpawn.x&&c[1]===data.playerSpawn.y)){
      talkingIslandManifestState.playability={playable:false,missing:['collision-cells']};
     }else{
      talkingIslandManifestState.collision={bounds:{minX:b[0],minY:b[1],maxX:b[2],maxY:b[3]},blocked:new Set(cells.map(c=>c[0]+','+c[1]))};
     }
    }
    // A string flag alone must never unlock an unverified historical map.
-   const verifiedAssets=data.assets.length>0&&data.assets.every(a=>a&&typeof a.path==='string'&&a.path.startsWith('./assets/maps/')&&a.verified===true&&a.licenseVerified===true&&typeof a.source==='string'&&a.source.length>0);
+   const verifiedAssets=data.assets.length>0&&data.assets.some(a=>a&&a.kind==='background'&&a.verified===true&&a.licenseVerified===true)&&data.assets.every(a=>a&&typeof a.path==='string'&&a.path.startsWith('./assets/maps/')&&!a.path.includes('..')&&a.verified===true&&a.licenseVerified===true&&typeof a.source==='string'&&a.source.length>0);
    const verifiedLandmarks=data.landmarks.length>0&&data.landmarks.every(p=>p&&p.verified===true);
    talkingIslandManifestState.status=data.status==='ready'&&verifiedAssets&&verifiedLandmarks&&talkingIslandManifestState.playability.playable?'ready':'awaiting-verified-assets';
    if(talkingIslandManifestState.status==='ready')loadVerifiedTalkingIslandImage(data);
