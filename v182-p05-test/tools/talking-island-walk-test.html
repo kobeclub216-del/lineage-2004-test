@@ -2,12 +2,14 @@
 <script src="../assets/maps/talking-island-renderer.js"></script><script src="../assets/maps/talking-island-movement.js"></script><script>
 (()=>{'use strict';
 const canvas=document.getElementById('c'),status=document.getElementById('status'),renderer=new TalkingIslandLayerRenderer(canvas),movement=new TalkingIslandMovementController(renderer);
-let actor=null,spriteSheet=null,spriteConfig=null,active=false,frame=0,loadGeneration=0;
+let actor=null,spriteSheet=null,spriteConfig=null,active=false,frame=0,loadGeneration=0,walkAnimationStart=0,wasMoving=false;
 const readImage=async id=>{const f=document.getElementById(id).files[0];if(!f||!['image/png','image/jpeg','image/webp'].includes(f.type)||f.size>25*1024*1024)throw Error('請提供 25MB 以下的有效圖片：'+id);const url=URL.createObjectURL(f);try{const img=new Image();await new Promise((ok,fail)=>{img.onload=ok;img.onerror=fail;img.src=url});return img}finally{URL.revokeObjectURL(url)}};
 function render(){if(!active)return;const p=movement.position,c=movement.camera(),anim=movement.getAnimationState();
+ if(anim.moving&&!wasMoving)walkAnimationStart=performance.now();
+ wasMoving=anim.moving;
  const config=spriteConfig;
  const sprite=spriteSheet?{image:spriteSheet,sourceRect:{
- x:(anim.moving?Math.floor(performance.now()/config.frameDuration)%config.columns:0)*(spriteSheet.naturalWidth/config.columns),
+ x:(anim.moving?Math.floor((performance.now()-walkAnimationStart)/config.frameDuration)%config.columns:0)*(spriteSheet.naturalWidth/config.columns),
  y:config.directions.indexOf(anim.screenFacing)*(spriteSheet.naturalHeight/8),
  width:spriteSheet.naturalWidth/config.columns,height:spriteSheet.naturalHeight/8}}:{image:actor};
  renderer.render({cameraX:c.cameraX,cameraY:c.cameraY,player:{...sprite,x:p.x,y:p.y,width:48,height:72,depth:1,footY:p.x+p.y}});
@@ -70,7 +72,7 @@ document.getElementById('start').addEventListener('click',async()=>{
  if(blocked.length>100000)throw Error('碰撞格數量過多');
  if(!blocked.every(p=>Array.isArray(p)&&p.length===2&&p.every(Number.isInteger)))throw Error('碰撞格資料無效');
  if(building){for(let y=by;y<by+bh;y++)for(let x=bx;x<bx+bw;x++)blocked.push([x,y])}
- renderer.setCollision({bounds:b,blockedCells:blocked});movement.spawn(data.spawn.x,data.spawn.y);actor=character;spriteSheet=sheet;spriteConfig=config;active=true;render();status.textContent='已載入本機測試素材'+(building?'、建築物深度排序':'')+(foreground?'與固定前景遮擋圖':'')+'。點擊畫面移動；不代表原版地圖座標已驗證。';
+ renderer.setCollision({bounds:b,blockedCells:blocked});movement.spawn(data.spawn.x,data.spawn.y);actor=character;spriteSheet=sheet;spriteConfig=config;wasMoving=false;active=true;render();status.textContent='已載入本機測試素材'+(building?'、建築物深度排序':'')+(foreground?'與固定前景遮擋圖':'')+'。點擊畫面移動；不代表原版地圖座標已驗證。';
  }catch(e){if(generation===loadGeneration)status.textContent='無法啟動：'+e.message}
 });
 // Pointer events work with mouse, touch and pen. Ignore multi-touch gestures.
