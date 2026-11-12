@@ -74,6 +74,22 @@ test('場景圖集裁切資訊保留於載入結果',()=>{
  return TalkingIslandLayerRenderer.loadSceneDescriptor(descriptor,()=>Promise.resolve(image))
   .then(scene=>scene.layers[0].images[0].sourceRect.x===48);
 });
+test('拒絕超出原圖邊界的場景圖集裁切',()=>{
+ const descriptor={verified:true,bounds:{minX:0,minY:0,maxX:8,maxY:8},
+  layers:[{id:'foreground',verified:true,depth:2,images:[{
+   verified:true,licenseVerified:true,path:'./assets/maps/test-atlas.png',
+   x:4,y:4,width:48,height:72,sourceRect:{x:170,y:0,width:48,height:72}
+  }]}]};
+ return TalkingIslandLayerRenderer.loadSceneDescriptor(descriptor,
+  ()=>Promise.resolve({complete:true,naturalWidth:192,naturalHeight:576}))
+  .then(()=>false,e=>e instanceof TypeError);
+});
+test('拒絕非數值的場景圖層深度',()=>{
+ const descriptor={verified:true,bounds:{minX:0,minY:0,maxX:8,maxY:8},
+  layers:[{id:'foreground',verified:true,depth:'front',images:[]}]};
+ return TalkingIslandLayerRenderer.loadSceneDescriptor(descriptor,()=>Promise.resolve(null))
+  .then(()=>false,e=>e instanceof TypeError);
+});
 test('鏡頭跟隨位置有效',()=>{const c=m.camera();return Number.isFinite(c.cameraX)&&Number.isFinite(c.cameraY)});
 test('停止移動清空路徑',()=>m.moveTo(7,7)&&(m.cancel(),m.route.length===0));
 Promise.all(pending).then(()=>{const p=document.createElement('p');p.textContent='結果：'+pass+' 通過，'+fail+' 失敗';p.className=fail?'bad':'ok';results.after(p)});
