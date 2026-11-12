@@ -114,6 +114,25 @@ test('遮擋排序不依圖片輸入順序',()=>{
  calls.length=0;a.render({player:{image:img('actor'),x:3,y:3,width:48,height:72,depth:1,footY:5}});
  return calls.map(c=>c.id).join(',')==='back,actor,front';
 });
+test('未指定腳底深度的建築依等角座標排序',()=>{
+ const scene=new TalkingIslandLayerRenderer(canvas);
+ scene.setScene({bounds,layers:[{id:'buildings',depth:1,images:[
+  {image:img('front'),x:5,y:5,width:48,height:72},
+  {image:img('back'),x:1,y:1,width:48,height:72}
+ ]}]});
+ calls.length=0;
+ scene.render({player:{image:img('actor'),x:3,y:3,width:48,height:72,depth:1,footY:6}});
+ return calls.map(c=>c.id).join(',')==='back,actor,front';
+});
+test('明確設定腳底深度優先於預設等角深度',()=>{
+ const scene=new TalkingIslandLayerRenderer(canvas);
+ scene.setScene({bounds,layers:[{id:'buildings',depth:1,images:[
+  {image:img('building'),x:7,y:7,width:48,height:72,footY:2}
+ ]}]});
+ calls.length=0;
+ scene.render({player:{image:img('actor'),x:3,y:3,width:48,height:72,depth:1,footY:6}});
+ return calls.map(c=>c.id).join(',')==='building,actor';
+});
 test('鏡頭跟隨位置有效',()=>{const c=m.camera();return Number.isFinite(c.cameraX)&&Number.isFinite(c.cameraY)});
 test('停止移動清空路徑',()=>m.moveTo(7,7)&&(m.cancel(),m.route.length===0));
 Promise.all(pending).then(()=>{const p=document.createElement('p');p.textContent='結果：'+pass+' 通過，'+fail+' 失敗';p.className=fail?'bad':'ok';results.after(p)});
