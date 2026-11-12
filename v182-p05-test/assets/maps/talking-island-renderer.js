@@ -48,6 +48,17 @@
    const {bounds:b,blocked}=this.collision;
    return x>=b.minX&&x<b.maxX&&y>=b.minY&&y<b.maxY&&!blocked.has(x+','+y);
   }
+  // P05-D40: a reference photograph/map is a screen-space image, not a world tile.
+  // Keep its original aspect ratio and never fabricate world coordinates for it.
+  renderReferenceImage(image){
+   if(!image||!image.complete||!image.naturalWidth||!image.naturalHeight)return false;
+   const ctx=this.ctx,w=this.canvas.width,h=this.canvas.height;
+   ctx.clearRect(0,0,w,h);ctx.fillStyle='#141414';ctx.fillRect(0,0,w,h);
+   const scale=Math.min(w/image.naturalWidth,h/image.naturalHeight);
+   const dw=image.naturalWidth*scale,dh=image.naturalHeight*scale;
+   ctx.drawImage(image,(w-dw)/2,(h-dh)/2,dw,dh);
+   return true;
+  }
   render({cameraX=0,cameraY=0,player=null}={}){
    const ctx=this.ctx;
    ctx.clearRect(0,0,this.canvas.width,this.canvas.height);
