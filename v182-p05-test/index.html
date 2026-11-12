@@ -1449,7 +1449,10 @@ if(visualParams.get('historicalMode')==='1'){
   .then(data=>{
    if(data.schemaVersion!==1||data.mapId!=='talking-island-village'||!Array.isArray(data.assets)||!Array.isArray(data.landmarks))throw Error('Invalid Talking Island manifest');
    talkingIslandManifestState.manifest=data;
-   talkingIslandManifestState.status=data.status==='ready'&&data.assets.length>0?'ready':'awaiting-verified-assets';
+   // A string flag alone must never unlock an unverified historical map.
+   const verifiedAssets=data.assets.length>0&&data.assets.every(a=>a&&typeof a.path==='string'&&a.path.startsWith('./assets/maps/')&&a.verified===true&&a.licenseVerified===true&&typeof a.source==='string'&&a.source.length>0);
+   const verifiedLandmarks=data.landmarks.length>0&&data.landmarks.every(p=>p&&p.verified===true);
+   talkingIslandManifestState.status=data.status==='ready'&&verifiedAssets&&verifiedLandmarks?'ready':'awaiting-verified-assets';
    console.info('[P05-D30] Talking Island manifest',talkingIslandManifestState.status,data.landmarks.length+' candidate landmarks');
   })
   .catch(err=>{talkingIslandManifestState.status='error';talkingIslandManifestState.error=String(err);console.error('[P05-D30] Manifest load failed',err)});
