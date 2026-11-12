@@ -1473,6 +1473,10 @@ function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);
   ctx.fillText('說話之島：正式地圖素材尚未載入',canvas.width/2,canvas.height/2);
   ctx.font='12px Arial';ctx.fillStyle='#d0c5aa';
   ctx.fillText('此模式不會將隨機測試地形冒充原版場景',canvas.width/2,canvas.height/2+26);
+  const st=talkingIslandManifestState;
+  const detail=st.status==='loading'?'正在讀取地圖資料…':st.status==='error'?'地圖資料載入失敗':st.status==='awaiting-verified-assets'?'地圖資料已載入；原版素材與地標尚未驗證':st.status==='ready'?'地圖資料驗證完成，等待場景渲染':'尚未要求載入地圖資料';
+  ctx.fillText(detail,canvas.width/2,canvas.height/2+52);
+  if(st.manifest)ctx.fillText('候選地標：'+st.manifest.landmarks.length+'｜已核實：'+st.manifest.landmarks.filter(p=>p.verified===true).length,canvas.width/2,canvas.height/2+75);
   return;
  }
  if(historicalSceneImage){
