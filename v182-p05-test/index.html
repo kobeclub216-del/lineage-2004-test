@@ -986,6 +986,9 @@ function enterSelectedCharacter(){
  // Do not alter sprites or substitute any placeholder image.
  initializeKnightPreview();
  worldEntered=true;a17rRefresh();
+ if(visualParams.get('smokeTest')==='1'&&window.startLineageSmokeTest){
+  window.startLineageSmokeTest();
+ }
  // A13: explicitly close creation modal before revealing the world (desktop and mobile).
  document.getElementById('modal').style.setProperty('display','none','important');
  document.getElementById('characterSelect').hidden=true;
@@ -1279,11 +1282,15 @@ if(visualParams.get('smokeTest')==='1'){
   console[result.state==='pass'?'info':'error']('[P05-D20 smoke test]',result);
   return result;
  };
- // Delay until the initial game script has completed and sprite functions exist.
- setTimeout(()=>window.runLineageSmokeTest().catch(error=>{
-  window.lineageSmokeTestResult={state:'error',message:String(error)};
-  console.error('[P05-D20 smoke test]',error);
- }),0);
+ // P05-D21: do not test the default knight before character selection.
+ // Run after entering the world, so the report uses the actual class/gender.
+ window.startLineageSmokeTest=()=>{
+  window.lineageSmokeTestResult={state:'running'};
+  return window.runLineageSmokeTest().catch(error=>{
+   window.lineageSmokeTestResult={state:'error',message:String(error)};
+   console.error('[P05-D21 smoke test]',error);
+  });
+ };
 }
 function knightPreload(dir,action,frame){
  const spec=activeSpriteSpec(action);
