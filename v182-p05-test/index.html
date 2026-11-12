@@ -1486,6 +1486,7 @@ function historicalVisualCamera(now=performance.now()){
 }
 let verifiedTalkingIslandWalkStart=0;
 let verifiedTalkingIslandWasMoving=false;
+let verifiedTalkingIslandLastScreenFacing=null;
 let verifiedTalkingIslandSceneError=null;
 const verifiedImageLoader=path=>new Promise((resolve,reject)=>{const image=new Image();image.onload=()=>resolve(image);image.onerror=()=>reject(new Error('無法讀取核實素材：'+path));image.src=path});
 async function prepareVerifiedTalkingIslandScene(data){
@@ -1603,7 +1604,13 @@ function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);
   const p=historicalVisualPosition(now),c=historicalVisualCamera(now);
   const visuallyMoving=animation.moving||Boolean(verifiedTalkingIslandStepFrom&&
     now-verifiedTalkingIslandLastStep<VERIFIED_SCENE_STEP_MS);
-  if(visuallyMoving&&!verifiedTalkingIslandWasMoving)verifiedTalkingIslandWalkStart=now;
+  // A turn begins on the first frame of the new direction, not an arbitrary
+  // frame from the previous direction's walking cycle.
+  if((visuallyMoving&&!verifiedTalkingIslandWasMoving)||
+     (visuallyMoving&&verifiedTalkingIslandLastScreenFacing!==null&&
+      animation.screenFacing!==verifiedTalkingIslandLastScreenFacing))
+   verifiedTalkingIslandWalkStart=now;
+  verifiedTalkingIslandLastScreenFacing=animation.screenFacing;
   verifiedTalkingIslandWasMoving=visuallyMoving;
   let sourceRect;
   if(spriteConfig){
