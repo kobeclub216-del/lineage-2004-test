@@ -1217,8 +1217,7 @@ function drawKnightSprite(px,py,now){
  const img=entry.img,h=KNIGHT_FRAMES.drawHeight,w=Math.max(1,h*img.naturalWidth/img.naturalHeight);
  ctx.save();ctx.imageSmoothingEnabled=false;
  ctx.translate(Math.round(px),Math.round(py-KNIGHT_FRAMES.anchorY));
- // Temporary pickup crouch transform, pending a verified pickup animation asset.
- if(pickup){const progress=1-(spritePickupUntil-now)/340;const bend=Math.sin(Math.PI*Math.max(0,Math.min(1,progress)));ctx.translate(0,h*0.22*bend);ctx.scale(1,1-0.22*bend)}
+ // Pickup uses a normal idle pose until a verified pickup sprite sequence exists.
  if(mirrored)ctx.scale(-1,1);
  ctx.drawImage(img,-w/2,0,w,h);
  ctx.restore();
