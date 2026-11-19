@@ -146,6 +146,34 @@ test('拒絕建築圖集裁切超出圖片邊界',()=>{
    sourceRect:{x:32,y:0,width:32,height:32}}
  ]}]});return false}catch(e){return e instanceof RangeError}
 });
+test('碰撞更新後停止穿越新障礙角落',()=>{
+ const scene=new TalkingIslandLayerRenderer(canvas);
+ scene.setScene({bounds,layers:[]});
+ scene.setCollision({bounds,blockedCells:[]});
+ const movement=new TalkingIslandMovementController(scene);
+ movement.spawn(1,1);
+ if(!movement.moveTo(2,2)||movement.route.length!==1)return false;
+ scene.setCollision({bounds,blockedCells:[[2,1]]});
+ return !movement.step()&&!movement.moving&&movement.route.length===0&&
+  movement.position.x===1&&movement.position.y===1&&movement.lastStepAt===null;
+});
+test('畫布外的座標不觸發移動選點',()=>{
+ const scene=new TalkingIslandLayerRenderer(canvas);
+ scene.setScene({bounds,layers:[]});
+ scene.setCollision({bounds,blockedCells:[]});
+ const movement=new TalkingIslandMovementController(scene);
+ return movement.pick(399,0,-27,42)?.x===1&&movement.pick(399,-1,-27,43)===null&&
+  movement.pick(800,600,-428,-558)===null;
+});
+test('角色和物件預設使用相同的等角深度',()=>{
+ const scene=new TalkingIslandLayerRenderer(canvas);
+ scene.setScene({bounds,layers:[{id:'world',depth:1,images:[
+  {image:img('building'),x:1,y:2,width:48,height:72}
+ ]}]});
+ calls.length=0;
+ scene.render({player:{image:img('actor'),x:4,y:1,width:48,height:72}});
+ return calls.map(call=>call.id).join(',')==='building,actor';
+});
 test('鏡頭跟隨位置有效',()=>{const c=m.camera();return Number.isFinite(c.cameraX)&&Number.isFinite(c.cameraY)});
 test('停止移動清空路徑',()=>m.moveTo(7,7)&&(m.cancel(),m.route.length===0));
 Promise.all(pending).then(()=>{const p=document.createElement('p');p.textContent='結果：'+pass+' 通過，'+fail+' 失敗';p.className=fail?'bad':'ok';results.after(p)});

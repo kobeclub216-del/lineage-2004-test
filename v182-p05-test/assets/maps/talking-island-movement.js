@@ -13,6 +13,10 @@ class TalkingIslandMovementController {
   if(!this.renderer.scene||!this.renderer.canWalk(x,y))throw new RangeError('Spawn requires verified walkable scene cell');
   this.position={x,y};this.route=[];this.moving=false;this.lastStepAt=null;return {...this.position};
  }
+ canStep(x,y,dx,dy){
+  if(!this.renderer.canWalk(x+dx,y+dy))return false;
+  return dx===0||dy===0||(this.renderer.canWalk(x+dx,y)&&this.renderer.canWalk(x,y+dy));
+ }
  moveTo(x,y){
   this.route=[];this.moving=false; // A new destination replaces the old route, even if invalid.
   if(!this.position||!this.renderer.scene||!this.renderer.canWalk(x,y))return false;
@@ -26,9 +30,7 @@ class TalkingIslandMovementController {
    if(p.x===x&&p.y===y){found=true;break}
    for(const [dx,dy] of directions){
     const nx=p.x+dx,ny=p.y+dy,k=key(nx,ny);
-    const diagonal=dx!==0&&dy!==0;
-    if(diagonal&&(!this.renderer.canWalk(p.x+dx,p.y)||!this.renderer.canWalk(p.x,p.y+dy)))continue;
-    if(queue.length<this.maxNodes&&!visited.has(k)&&this.renderer.canWalk(nx,ny)){
+    if(queue.length<this.maxNodes&&!visited.has(k)&&this.canStep(p.x,p.y,dx,dy)){
      visited.add(k);parents.set(k,p);queue.push({x:nx,y:ny});
     }
    }
@@ -40,9 +42,10 @@ class TalkingIslandMovementController {
  }
  step(){
   if(!this.position||!this.route.length){this.moving=false;return false;}
-  const next=this.route.shift();
-  if(!this.renderer.canWalk(next.x,next.y)){this.route=[];this.moving=false;return false}
-  const dx=next.x-this.position.x,dy=next.y-this.position.y;
+  const next=this.route[0];
+  const {x,y}=this.position,dx=next.x-x,dy=next.y-y;
+  if(!this.canStep(x,y,dx,dy)){this.cancel();return false}
+  this.route.shift();
   // Facing names are world-grid directions, independent of screen orientation.
   this.facing=({'0,-1':'N','1,-1':'NE','1,0':'E','1,1':'SE','0,1':'S','-1,1':'SW','-1,0':'W','-1,-1':'NW'})[dx+','+dy]||this.facing;
   this.position={...next};this.moving=this.route.length>0;this.lastStepAt=Date.now();return true;
@@ -58,6 +61,8 @@ class TalkingIslandMovementController {
  // Pixel click to isometric cell; returns null if outside verified walkable bounds.
  pick(screenX,screenY,cameraX,cameraY){
   if(!this.renderer.scene||!this.renderer.collision||![screenX,screenY,cameraX,cameraY].every(Number.isFinite))return null;
+  const {width,height}=this.renderer.canvas;
+  if(screenX<0||screenY<0||screenX>=width||screenY>=height)return null;
   const tw=this.renderer.tileWidth,th=this.renderer.tileHeight;
   const a=(screenX-this.renderer.canvas.width/2+cameraX)/(tw/2),b=(screenY+cameraY)/(th/2);
   const x=Math.round((a+b)/2),y=Math.round((b-a)/2);

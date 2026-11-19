@@ -105,7 +105,7 @@
    for(const layer of this.scene.layers){
     for(const item of layer.images)entries.push({depth:layer.depth,footY:item.footY??(item.x+item.y),item});
    }
-   if(player&&player.image)entries.push({depth:player.depth??1,footY:player.footY??player.y,item:player});
+   if(player&&player.image)entries.push({depth:player.depth??1,footY:player.footY??(player.x+player.y),item:player});
    // Ground is below actors; world objects at the SAME depth sort by
    // foot position, so a character can pass in front of or behind buildings.
    // Foreground overlays can use a higher explicit depth.
