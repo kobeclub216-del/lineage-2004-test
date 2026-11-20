@@ -339,30 +339,28 @@ function verifyVisualGeometry(){
 if(visualParams.get('verifyGeometry')==='1')setTimeout(verifyVisualGeometry,0);
 function pathfind(sx,sy,gx,gy){if(!pass(gx,gy))return [];let start=sx+sy*W,goal=gx+gy*W,q=[start],prev=new Int32Array(W*H).fill(-1);prev[start]=start;for(let head=0;head<q.length;head++){let u=q[head];if(u===goal)break;let x=u%W,y=Math.floor(u/W);for(let [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,1],[1,-1],[-1,-1]]){let nx=x+dx,ny=y+dy,v=nx+ny*W;if(!pass(nx,ny)||prev[v]!==-1)continue;if(dx&&dy&&(!pass(x+dx,y)||!pass(x,y+dy)))continue;prev[v]=u;q.push(v)}}if(prev[goal]===-1)return [];let out=[];for(let v=goal;v!==start;v=prev[v])out.push({x:v%W,y:Math.floor(v/W)});return out.reverse()}function clickAt(sx,sy){if(talkingIslandMode()){
   if(!verifiedTalkingIslandMovement)return;
-  const movement=verifiedTalkingIslandMovement,c=displayedIslandFrame?.camera??movement.camera(),cell=movement.pick(sx,sy,c.cameraX,c.cameraY);
+  const movement=verifiedTalkingIslandMovement,frame=displayedIslandFrame;
+  if(!frame)return;
   if(villageSpellTargeting){
    targetVillageSpell(sx,sy);
    return;
   }
-  const scene=verifiedTalkingIslandScene;
-  const teacher=scene.teacher;
-  if(teacher&&scene.roofCells.has(movement.position.x+','+movement.position.y)){
-   const point=movement.renderer.project(teacher.x,teacher.y,c.cameraX,c.cameraY);
-   if(isVillageActorLabelHit('吉倫','14px Arial',point,sx,sy,57)||isVillageActorBodyHit(teacher,sx,sy)){
-    if(Math.max(Math.abs(movement.position.x-teacher.x),Math.abs(movement.position.y-teacher.y))<=1)openGerengDialogue();
-    else {msg('請走近吉倫。');update();}
-    return;
+  const {camera:c}=frame;
+  const hit=pickVillageActor(sx,sy);
+  if(hit==='teacher'||hit==='merchant'){
+   const teacher=hit==='teacher';
+   const npc=verifiedTalkingIslandScene[hit];
+   if(Math.max(Math.abs(movement.position.x-npc.x),Math.abs(movement.position.y-npc.y))<=1){
+    if(teacher)openGerengDialogue();else openVillageShop();
+   }else{
+    msg(teacher?'請走近吉倫。':'請走近潘朵拉再購買');update();
    }
+   return;
   }
-  const merchant=scene.merchant;
-  if(merchant){
-   const p=movement.renderer.project(merchant.x,merchant.y,c.cameraX,c.cameraY);
-   if(isVillageActorLabelHit('潘朵拉','14px Arial',p,sx,sy,62)||
-      isVillageActorBodyHit(merchant,sx,sy)){
-    if(Math.max(Math.abs(movement.position.x-merchant.x),Math.abs(movement.position.y-merchant.y))<=1)openVillageShop();
-    else {msg('請走近潘朵拉再購買');update();}
-    return;
-   }
+  if(hit==='enemy'){
+   const {x,y}=VILLAGE_TRIAL_ENEMY;
+   if(!villageTrial.target&&movement.moveTo(x,y))villageTrial.target=true;
+   return;
   }
   if(villageTrial){
    if(villageProgress()&&villageTrial.phase==='defeated'&&villageTrial.dropAvailable){
@@ -372,12 +370,12 @@ function pathfind(sx,sy,gx,gy){if(!pass(gx,gy))return [];let start=sx+sy*W,goal=
      return;
     }
    }
-   if(selectVillageTrialTarget(sx,sy,c))return;
    villageTrial.pickupStartedAt=null;
    villageTrial.pickup=false;
    villageTrial.target=null;
    villageTrial.attackStartedAt=-Infinity;villageTrial.attackPending=false;
   }
+  const cell=movement.pick(sx,sy,c.cameraX,c.cameraY);
   if(cell)movement.moveTo(cell.x,cell.y);else movement.cancel();
   return;
  }if(!player)return;let t=unproject(sx,sy),m=monsters.find(m=>m.alive&&m.x===t.x&&m.y===t.y);if(m){target={type:'monster',ref:m};msg('鎖定 '+m.name);return}let d=drops.find(d=>d.x===t.x&&d.y===t.y);if(d){target={type:'drop',ref:d};return}target=null;player.path=pathfind(player.x,player.y,t.x,t.y);if(!player.path.length&&!pass(t.x,t.y))msg('該地形不可通行')}function centerCamera(){if(talkingIslandMode())return;if(!player)return;cam.x=(player.x-player.y)*TW/2;cam.y=(player.x+player.y)*TH/2+90-canvas.height*.53}
@@ -385,16 +383,17 @@ function pointerXY(e){
  const r=canvas.getBoundingClientRect();
  if(!localVillageEntered)return {x:(e.clientX-r.left)*canvas.width/r.width,y:(e.clientY-r.top)*canvas.height/r.height};
  const scale=Math.min(canvas.clientWidth/canvas.width,canvas.clientHeight/canvas.height);
- const left=r.left+canvas.clientLeft+(canvas.clientWidth-canvas.width*scale)/2;
- const top=r.top+canvas.clientTop+(canvas.clientHeight-canvas.height*scale)/2;
- return {x:(e.clientX-left)/scale,y:(e.clientY-top)/scale};
+ const boxX=r.width/canvas.offsetWidth,boxY=r.height/canvas.offsetHeight;
+ const left=canvas.clientLeft+(canvas.clientWidth-canvas.width*scale)/2;
+ const top=canvas.clientTop+(canvas.clientHeight-canvas.height*scale)/2;
+ return {x:((e.clientX-r.left)/boxX-left)/scale,y:((e.clientY-r.top)/boxY-top)/scale};
 }
 let gesture=null;
 window.addEventListener('blur',()=>{keys={};gesture=null;});
 canvas.addEventListener('lostpointercapture',()=>{gesture=null;});
 canvas.addEventListener('pointerdown',e=>{if(talkingIslandMode()&&(!worldEntered||!e.isPrimary||e.button!==0))return;if(talkingIslandMode()&&!verifiedTalkingIslandMovement)return;if(!talkingIslandMode()&&!player)return;e.preventDefault();let p=pointerXY(e);gesture={id:e.pointerId,x:p.x,y:p.y,camX:cam.x,camY:cam.y,drag:false};canvas.setPointerCapture(e.pointerId)});
 canvas.addEventListener('pointermove',e=>{if(!gesture||gesture.id!==e.pointerId)return;let p=pointerXY(e);let dx=p.x-gesture.x,dy=p.y-gesture.y;if(Math.hypot(dx,dy)>12)gesture.drag=true;if(gesture.drag&&!talkingIslandMode()){cam.x=gesture.camX-dx;cam.y=gesture.camY-dy}});
-canvas.addEventListener('pointerup',e=>{if(!gesture||gesture.id!==e.pointerId)return;let g=gesture,p=pointerXY(e);gesture=null;if(!g.drag&&(!talkingIslandMode()||e.button===0)&&(!localVillageEntered||(p.x>=0&&p.y>=0&&p.x<canvas.width&&p.y<canvas.height)))clickAt(p.x,p.y)});
+canvas.addEventListener('pointerup',e=>{if(!gesture||gesture.id!==e.pointerId)return;let g=gesture,p=pointerXY(e);gesture=null;if(!g.drag&&Math.hypot(p.x-g.x,p.y-g.y)<=12&&(!talkingIslandMode()||e.button===0)&&(!localVillageEntered||(p.x>=0&&p.y>=0&&p.x<canvas.width&&p.y<canvas.height)))clickAt(p.x,p.y)});
 canvas.addEventListener('pointercancel',()=>gesture=null);
 document.getElementById('centerCam').onclick=centerCamera;
 document.getElementById('mobileHeal').onclick=()=>document.getElementById('heal').click();
@@ -988,45 +987,55 @@ function showVillageTrialStatus(){
  document.getElementById('a11EntryStatus').textContent=messages[villageTrial.phase];
  a17rRefresh();
 }
-function selectVillageTrialTarget(sx,sy,camera){
- const trial=villageTrial;
- if(trial.phase!=='fight')return false;
- const movement=verifiedTalkingIslandMovement;
- const {x,y}=VILLAGE_TRIAL_ENEMY;
- const p=movement.renderer.project(x,y,camera.cameraX,camera.cameraY);
- const frame=displayedIslandFrame?.actors[0];
- if(!frame||
-    (!isVillageActorLabelHit(villageTrialTargetLabel(),'14px sans-serif',p,sx,sy,36)&&
-     !isVillageActorBodyHit(frame,sx,sy)))return false;
- if(!trial.target&&movement.moveTo(x,y))trial.target=true;
- return true;
+// Use the last painted frame for both animation pixels and camera position.
+function pickVillageActor(sx,sy,spell=false){
+ const frame=displayedIslandFrame;
+ if(!frame||sx<0||sy<0||sx>=canvas.width||sy>=canvas.height)return null;
+ const scene=verifiedTalkingIslandScene;
+ const targets=new Map();
+ if(spell&&scene.dummy)targets.set(scene.dummy,'dummy');
+ else if(villageTrial?.phase==='fight')targets.set(frame.enemy,'enemy');
+ if(!spell){
+  if(scene.teacher)targets.set(scene.teacher,'teacher');
+  if(scene.merchant)targets.set(scene.merchant,'merchant');
+ }
+ const radius=4;
+ const nearby=frame.draws.filter(({item,left,top})=>
+  sx>=left-radius&&sx<left+item.width+radius&&sy>=top-radius&&sy<top+item.height+radius);
+ const topPixel=(x,y)=>{
+  for(let i=nearby.length-1;i>=0;i--){
+   if(isOpaqueIslandPixel(nearby[i],x,y))return nearby[i].item;
+  }
+  return null;
+ };
+ const exact=topPixel(sx,sy);
+ if(targets.has(exact))return targets.get(exact);
+ // Name labels are painted above the scene. Use the same projected anchor.
+ for(const {item,name,font,point,offset} of frame.labels){
+  if(targets.has(item)&&isVillageActorLabelHit(name,font,point,sx,sy,offset))return targets.get(item);
+ }
+ // A painted foreground object blocks tolerance behind it. The ground
+ // layer is excluded from draws used for interaction.
+ if(exact)return null;
+ let best=null,bestDistance=radius*radius+1;
+ for(let dy=-radius;dy<=radius;dy++){
+  for(let dx=-radius;dx<=radius;dx++){
+   const distance=dx*dx+dy*dy;
+   if(distance>=bestDistance||distance>radius*radius)continue;
+   const item=topPixel(sx+dx,sy+dy);
+   if(targets.has(item)){best=targets.get(item);bestDistance=distance;}
+  }
+ }
+ return best;
 }
+
 function isVillageActorLabelHit(label,font,point,sx,sy,offset){
  ctx.save();
  ctx.font=font;
- const halfWidth=ctx.measureText(label).width/2+6;
+ const halfWidth=ctx.measureText(label).width/2+2;
  ctx.restore();
  const baseline=point.y-offset;
- return Math.abs(sx-point.x)<=halfWidth&&sy>=baseline-17&&sy<=baseline+5;
-}
-
-function isVillageActorBodyHit(actor,sx,sy){
- const draws=displayedIslandFrame?.draws;
- const index=draws?.findIndex(entry=>entry.item===actor)??-1;
- if(index<0)return false;
- const entry=draws[index], radius=7;
- if(sx<entry.left-radius||sy<entry.top-radius||
-    sx>=entry.left+actor.width+radius||sy>=entry.top+actor.height+radius)return false;
- const foreground=draws.slice(index+1);
- if(foreground.some(layer=>isOpaqueIslandPixel(layer,sx,sy)))return false;
- for(let dy=-radius;dy<=radius;dy++){
-  for(let dx=-radius;dx<=radius;dx++){
-   if(dx*dx+dy*dy>radius*radius)continue;
-   if(isOpaqueIslandPixel(entry,sx+dx,sy+dy)&&
-      !foreground.some(layer=>isOpaqueIslandPixel(layer,sx+dx,sy+dy)))return true;
-  }
- }
- return false;
+ return Math.abs(sx-point.x)<=halfWidth&&sy>=baseline-14&&sy<=baseline+3;
 }
 
 function isOpaqueIslandPixel({item,left,top},sx,sy){
@@ -1046,7 +1055,7 @@ function isOpaqueIslandPixel({item,left,top},sx,sy){
  const src=item.sourceRect??{x:0,y:0,width:pixels.width,height:pixels.height};
  const px=src.x+Math.floor(x*src.width/item.width);
  const py=src.y+Math.floor(y*src.height/item.height);
- return pixels.data[(py*pixels.width+px)*4+3]===255;
+ return pixels.data[(py*pixels.width+px)*4+3]>=128;
 }
 function advanceVillageTrial(ts){
  const trial=villageTrial;
@@ -1461,26 +1470,33 @@ function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);
   const height=spriteConfig?.drawHeight??72;
   const width=spriteConfig?.drawHeight?height*sourceRect.width/sourceRect.height:48;
   const offsetY=height*(1-(spriteConfig?.footAnchorY??1));
-  const actors=villageTrialActors(now,goblin);
+  const actors=villageTrialActors(now,goblin),enemy=actors[0];
   if(verifiedTalkingIslandScene.dummy)actors.push(verifiedTalkingIslandScene.dummy);
   if(verifiedTalkingIslandScene.merchant)actors.push(verifiedTalkingIslandScene.merchant);
   const {teacher,roof,roofCells}=verifiedTalkingIslandScene;
   const underRoof=teacher&&roofCells.has(movement.position.x+','+movement.position.y);
   if(teacher)actors.push(underRoof?teacher:roof);
   if(bolt)actors.push(bolt);
-  const draws=[];
-  const onDraw=actors.length?(item,left,top)=>draws.push({item,left,top}):undefined;
+  const draws=[],labels=[];
+  const ground=new Set(renderer.scene.layers.filter(layer=>layer.depth===0).flatMap(layer=>layer.images));
+  const onDraw=actors.length?(item,left,top)=>{
+   if(!ground.has(item)&&item!==bolt)draws.push({item,left,top});
+  }:undefined;
   renderer.render({cameraX:c.cameraX,cameraY:c.cameraY,actors,onDraw,player:{image:actor,x:p.x,y:p.y,width,height,offsetY,depth:1,...(sourceRect?{sourceRect}:{})}});
-  displayedIslandFrame={camera:c,actors,draws};
+  if(enemy&&villageTrial.phase==='fight')labels.push({item:enemy,name:villageTrialTargetLabel(),
+   font:'14px sans-serif',point:renderer.project(enemy.x,enemy.y,c.cameraX,c.cameraY),offset:36});
+  displayedIslandFrame={camera:c,enemy,draws,labels};
   if(villageTrial)drawVillageTrial(renderer,c);
   if(underRoof){
    const label=renderer.project(teacher.x,teacher.y,c.cameraX,c.cameraY);
    ctx.save();ctx.font='14px Arial';ctx.textAlign='center';ctx.strokeStyle='#20190e';ctx.lineWidth=3;ctx.fillStyle='#f8df9e';
+   labels.unshift({item:teacher,name:'吉倫',font:'14px Arial',point:label,offset:57});
    ctx.strokeText('吉倫',label.x,label.y-57);ctx.fillText('吉倫',label.x,label.y-57);ctx.restore();
   }
   if(verifiedTalkingIslandScene.merchant){
    const shop=renderer.project(PANDORA.x,PANDORA.y,c.cameraX,c.cameraY);
    ctx.save();ctx.font='14px Arial';ctx.textAlign='center';ctx.strokeStyle='#20190e';ctx.lineWidth=3;ctx.fillStyle='#f8df9e';
+   labels.unshift({item:verifiedTalkingIslandScene.merchant,name:'潘朵拉',font:'14px Arial',point:shop,offset:62});
    ctx.strokeText('潘朵拉',shop.x,shop.y-62);ctx.fillText('潘朵拉',shop.x,shop.y-62);ctx.restore();
   }
  if(villageProgress()&&villageTrial.phase==='defeated'&&villageTrial.dropAvailable){
@@ -1721,23 +1737,11 @@ function setVillageSpellTargeting(active){
 }
 
 function targetVillageSpell(sx,sy){
- const scene=verifiedTalkingIslandScene;
- const dummy=scene?.dummy;
- let target=dummy;
- if(dummy){
-  const draws=displayedIslandFrame?.draws;
-  if(!draws)return false;
-  const index=draws.findIndex(entry=>entry.item===dummy);
-  if(index<0||!isVillageActorBodyHit(dummy,sx,sy))return false;
- }else{
-  if(!villageProgress()||!knowsEnergyBolt(player)||villageTrial.phase!=='fight')return false;
-  const frame=displayedIslandFrame?.actors[0],camera=displayedIslandFrame?.camera;
-  if(!frame||!camera)return false;
-  target=VILLAGE_TRIAL_ENEMY;
-  const point=scene.renderer.project(target.x,target.y,camera.cameraX,camera.cameraY);
-  if(!isVillageActorLabelHit(villageTrialTargetLabel(),'14px sans-serif',point,sx,sy,36)&&
-     !isVillageActorBodyHit(frame,sx,sy))return false;
- }
+ const dummy=verifiedTalkingIslandScene?.dummy;
+ if(!dummy&&(!villageProgress()||!knowsEnergyBolt(player)))return false;
+ const hit=pickVillageActor(sx,sy,true);
+ if(hit!==(dummy?'dummy':'enemy'))return false;
+ const target=dummy??VILLAGE_TRIAL_ENEMY;
  setVillageSpellTargeting(false);
  return playVillageCastPreview(true,target);
 }

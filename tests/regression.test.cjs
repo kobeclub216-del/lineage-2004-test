@@ -266,3 +266,91 @@ test('combat light bolt requires learning, a live target, a stationary caster an
  assert.equal(c.villageCastPreview.combat,true);
  assert.equal(cast(),false);
 });
+
+function pointerScene(){
+ const makeActor=()=>({image:{},width:12,height:20});
+ const enemy=makeActor(),merchant=makeActor(),teacher=makeActor();
+ const draws=[{item:enemy,left:30,top:20},{item:merchant,left:60,top:20},{item:teacher,left:90,top:20}];
+ const imagePixels=new Map(draws.map(({item})=>{
+  const {width,height}=item,data=new Uint8ClampedArray(width*height*4);
+  for(let y=4;y<=15;y++)data[(y*width+5)*4+3]=200;
+  return [item.image,{width,height,data}];
+ }));
+ const camera={cameraX:12.5,cameraY:27.25};
+ const calls=[];
+ const movement={position:{x:3,y:3},pick:(...args)=>{
+  calls.push(['pick',...args]);return {x:7,y:8};
+ },moveTo:(...args)=>{calls.push(['move',...args]);return true;}};
+ Object.assign(teacher,{x:3,y:4});
+ Object.assign(merchant,{x:4,y:3});
+ const c=context(['pickVillageActor','isOpaqueIslandPixel','isVillageActorLabelHit','clickAt'],{
+  canvas:{width:200,height:100},villageTrial:{phase:'fight'},
+  displayedIslandFrame:{draws,enemy,camera,labels:[]},
+  verifiedTalkingIslandScene:{imagePixels,merchant,teacher},
+  verifiedTalkingIslandMovement:movement,
+  VILLAGE_TRIAL_ENEMY:{x:9,y:9},
+  talkingIslandMode:()=>true,villageSpellTargeting:false,villageProgress:()=>true,
+  openGerengDialogue:()=>calls.push(['teacher']),openVillageShop:()=>calls.push(['merchant'])
+ });
+ return {c,draws,calls};
+}
+
+test('clicking animated enemy and NPC heads and bodies selects their existing actions',()=>{
+ const {c,calls}=pointerScene();
+ c.clickAt(35,24);
+ c.clickAt(65,33);
+ c.clickAt(95,24);
+ assert.deepEqual(calls,[['move',9,9],['merchant'],['teacher']]);
+ assert.equal(c.pickVillageActor(38,32,true),'enemy');
+ assert.equal(c.pickVillageActor(65,33,true),null);
+ c.villageTrial.phase='dying';
+ assert.equal(c.pickVillageActor(35,24),null);
+});
+
+test('empty ground uses the painted camera and does not widen the sprite to its empty rectangle',()=>{
+ const {c,calls}=pointerScene();
+ c.clickAt(30,37);
+ assert.deepEqual(calls,[['pick',30,37,12.5,27.25],['move',7,8]]);
+ c.displayedIslandFrame=null;
+ c.clickAt(35,24);
+ assert.equal(calls.length,2);
+});
+
+test('overlapping targets follow the top visible pixel before using tolerance',()=>{
+ const {c,draws}=pointerScene();
+ draws[1].left=draws[0].left;
+ assert.equal(c.pickVillageActor(35,25),'merchant');
+ assert.equal(c.pickVillageActor(35,25,true),null);
+ draws[1].left=32;
+ assert.equal(c.pickVillageActor(35,25),'enemy');
+ assert.equal(c.pickVillageActor(37,25),'merchant');
+ const scene=c.verifiedTalkingIslandScene;
+ scene.teacher=null;
+ draws[2].left=30;
+ assert.equal(c.pickVillageActor(35,25),null);
+});
+
+test('letterbox pointer maps to bitmap coordinates under viewport scaling and borders',()=>{
+ const c=context(['pointerXY'],{localVillageEntered:true,canvas:{
+  width:800,height:600,clientWidth:1000,clientHeight:600,clientLeft:2,clientTop:2,
+  offsetWidth:1004,offsetHeight:604,
+  getBoundingClientRect:()=>({left:30,top:45,width:753,height:453})
+ }});
+ const point=c.pointerXY({clientX:30+(102+400)*.75,clientY:45+(2+300)*.75});
+ assert.deepEqual([point.x,point.y],[400,300]);
+ assert.ok(c.pointerXY({clientX:40,clientY:100}).x<0);
+});
+
+test('target picking uses the current sprite atlas crop and projected name label',()=>{
+ const {c,draws}=pointerScene();
+ const {item}=draws[0],width=12,height=40,data=new Uint8ClampedArray(width*height*4);
+ data[((20+5)*width+7)*4+3]=255;
+ c.verifiedTalkingIslandScene.imagePixels.set(item.image,{width,height,data});
+ item.sourceRect={x:0,y:20,width:12,height:20};
+ assert.equal(c.pickVillageActor(37,25),'enemy');
+ assert.equal(c.pickVillageActor(37,34),null);
+ c.ctx={save(){},restore(){},measureText:()=>({width:20})};
+ c.displayedIslandFrame.labels.push({item,name:'哥布林',font:'14px sans-serif',point:{x:36,y:52},offset:36});
+ assert.equal(c.pickVillageActor(36,12),'enemy');
+ assert.equal(c.pickVillageActor(50,12),null);
+});
