@@ -1,0 +1,155 @@
+
+/* P05-D36 — image-backed isometric scene renderer.
+ * No map art is generated or bundled. Input coordinates and assets must be verified.
+ * Usage: const renderer = new TalkingIslandLayerRenderer(canvas, {tileWidth:56,tileHeight:28});
+ * renderer.setScene({bounds:{minX,minY,maxX,maxY},layers:[{id,depth,images:[{image,x,y,width,height,footY}]}]});
+ * renderer.render({cameraX,cameraY,player:{image,x,y,footY,width,height}});
+ * This is a renderer, NOT a historical map reconstruction.
+ */
+(function(root){
+ 'use strict';
+ class TalkingIslandLayerRenderer {
+  constructor(canvas,options={}){
+   if(!canvas||!canvas.getContext)throw new TypeError('Canvas required');
+   this.canvas=canvas;this.ctx=canvas.getContext('2d');
+   this.tileWidth=options.tileWidth||56;this.tileHeight=options.tileHeight||28;
+   this.scene=null;
+   this.collision=null;
+  }
+  setScene(scene){
+   if(!scene||!scene.bounds||!Array.isArray(scene.layers))throw new TypeError('Invalid scene');
+   const b=scene.bounds;
+   if(![b.minX,b.minY,b.maxX,b.maxY].every(Number.isFinite)||b.maxX<=b.minX||b.maxY<=b.minY)throw new RangeError('Invalid bounds');
+   for(const layer of scene.layers){
+    if(!Number.isFinite(layer.depth)||!Array.isArray(layer.images))throw new TypeError('Invalid layer');
+    for(const item of layer.images){
+     if(item.sourceRect&&(!['x','y','width','height'].every(k=>Number.isInteger(item.sourceRect[k]))||item.sourceRect.x<0||item.sourceRect.y<0||item.sourceRect.width<=0||item.sourceRect.height<=0))throw new TypeError('Invalid sprite source rectangle');
+     if(!item.image||!Number.isFinite(item.x)||!Number.isFinite(item.y)||!Number.isFinite(item.width)||!Number.isFinite(item.height)||item.width<=0||item.height<=0||
+      (item.footY!==undefined&&!Number.isFinite(item.footY))||
+      (item.offsetX!==undefined&&!Number.isFinite(item.offsetX))||
+      (item.offsetY!==undefined&&!Number.isFinite(item.offsetY)))throw new TypeError('Invalid image placement');
+     if(item.sourceRect&&item.image.naturalWidth&&item.image.naturalHeight&&
+      (item.sourceRect.x+item.sourceRect.width>item.image.naturalWidth||
+       item.sourceRect.y+item.sourceRect.height>item.image.naturalHeight))
+      throw new RangeError('Scene image crop exceeds atlas bounds');
+    }
+   }
+   this.scene=scene;
+  }
+  project(x,y,cameraX=0,cameraY=0){
+   return {x:(x-y)*this.tileWidth/2+this.canvas.width/2-cameraX,
+           y:(x+y)*this.tileHeight/2-cameraY};
+  }
+  // P05-D38: data-driven collision; missing collision data is NOT treated as walkable.
+  setCollision({bounds,blockedCells,blockedEdges=[]}){
+   if(!bounds||![bounds.minX,bounds.minY,bounds.maxX,bounds.maxY].every(Number.isInteger))throw new TypeError('Integer collision bounds required');
+   if(bounds.minX>=bounds.maxX||bounds.minY>=bounds.maxY)throw new RangeError('Invalid collision bounds');
+   if(!Array.isArray(blockedCells))throw new TypeError('Blocked cell list required');
+   if(!Array.isArray(blockedEdges))throw new TypeError('Blocked edge list required');
+   const inBounds=(x,y)=>x>=bounds.minX&&x<bounds.maxX&&y>=bounds.minY&&y<bounds.maxY;
+   const blocked=new Set();
+   for(const cell of blockedCells){
+    if(!Array.isArray(cell)||cell.length!==2||!cell.every(Number.isInteger))throw new TypeError('Invalid blocked cell');
+    if(cell[0]<bounds.minX||cell[0]>=bounds.maxX||cell[1]<bounds.minY||cell[1]>=bounds.maxY)throw new RangeError('Blocked cell outside bounds');
+    blocked.add(cell[0]+','+cell[1]);
+   }
+   const edges=new Set();
+   for(const edge of blockedEdges){
+    if(!Array.isArray(edge)||edge.length!==4||!edge.every(Number.isInteger))throw new TypeError('Invalid blocked edge');
+    const [x,y,nx,ny]=edge;
+    if(!inBounds(x,y)||!inBounds(nx,ny)||Math.abs(nx-x)+Math.abs(ny-y)!==1)throw new RangeError('Blocked edge must connect adjacent cells inside bounds');
+    edges.add(this.edgeKey(x,y,nx,ny));
+   }
+   this.collision={bounds,blocked,edges};
+  }
+  canWalk(x,y){
+   if(!this.collision||!Number.isInteger(x)||!Number.isInteger(y))return false;
+   const {bounds:b,blocked}=this.collision;
+   return x>=b.minX&&x<b.maxX&&y>=b.minY&&y<b.maxY&&!blocked.has(x+','+y);
+  }
+  edgeKey(x,y,nx,ny){
+   return x<nx||y<ny?[x,y,nx,ny].join(','):[nx,ny,x,y].join(',');
+  }
+  canStep(x,y,nx,ny){
+   const dx=Math.abs(nx-x),dy=Math.abs(ny-y);
+   if(!this.canWalk(x,y)||!this.canWalk(nx,ny)||dx>1||dy>1||dx+dy===0)return false;
+   const edges=this.collision.edges;
+   if(dx+dy===1)return !edges.has(this.edgeKey(x,y,nx,ny));
+   return this.canWalk(nx,y)&&this.canWalk(x,ny)&&
+    !edges.has(this.edgeKey(x,y,nx,y))&&!edges.has(this.edgeKey(nx,y,nx,ny))&&
+    !edges.has(this.edgeKey(x,y,x,ny))&&!edges.has(this.edgeKey(x,ny,nx,ny));
+  }
+  // P05-D40: a reference photograph/map is a screen-space image, not a world tile.
+  // Keep its original aspect ratio and never fabricate world coordinates for it.
+  renderReferenceImage(image){
+   if(!image||!image.complete||!image.naturalWidth||!image.naturalHeight)return false;
+   const ctx=this.ctx,w=this.canvas.width,h=this.canvas.height;
+   ctx.clearRect(0,0,w,h);ctx.fillStyle='#141414';ctx.fillRect(0,0,w,h);
+   const scale=Math.min(w/image.naturalWidth,h/image.naturalHeight);
+   const dw=image.naturalWidth*scale,dh=image.naturalHeight*scale;
+   ctx.drawImage(image,(w-dw)/2,(h-dh)/2,dw,dh);
+   return true;
+  }
+  // P05-D42: turn verified scene descriptors into image objects without
+  // inventing artwork, geometry, or historical coordinates.
+  static async loadSceneDescriptor(descriptor,loadImage){
+   if(!descriptor||descriptor.verified!==true||!descriptor.bounds||!Array.isArray(descriptor.layers))throw new TypeError('Verified scene descriptor required');
+   if(typeof loadImage!=='function')throw new TypeError('Image loader required');
+   const layers=[];
+   for(const layer of descriptor.layers){
+    if(layer.verified!==true||!Number.isFinite(layer.depth)||!Array.isArray(layer.images))throw new TypeError('Unverified or invalid scene layer');
+    const images=[];
+    for(const item of layer.images){
+     if(item.verified!==true||item.licenseVerified!==true||typeof item.path!=='string'||!/^\.\/assets\/maps\/[a-zA-Z0-9_/-]+\.(?:png|webp|jpg|jpeg)$/.test(item.path)||item.path.split('/').some(part=>part==='..'))throw new TypeError('Unverified or unsafe scene image path');
+     const image=await loadImage(item.path);
+     if(!image||!image.complete||!image.naturalWidth||!image.naturalHeight)throw new Error('Scene image failed: '+item.path);
+     if(![item.x,item.y,item.width,item.height].every(Number.isFinite)||item.width<=0||item.height<=0||(item.footY!==undefined&&!Number.isFinite(item.footY)))throw new TypeError('Invalid scene image placement');
+     if(item.sourceRect){
+      const sr=item.sourceRect;
+      if(!['x','y','width','height'].every(k=>Number.isInteger(sr[k]))||
+       sr.x<0||sr.y<0||sr.width<=0||sr.height<=0||
+       sr.x+sr.width>image.naturalWidth||sr.y+sr.height>image.naturalHeight)
+       throw new TypeError('Scene sprite crop outside image bounds');
+     }
+     images.push({image,x:item.x,y:item.y,width:item.width,height:item.height,
+      footY:item.footY,...(item.sourceRect?{sourceRect:{...item.sourceRect}}:{})});
+    }
+    layers.push({id:layer.id,depth:layer.depth,images});
+   }
+   if(![descriptor.bounds.minX,descriptor.bounds.minY,descriptor.bounds.maxX,descriptor.bounds.maxY].every(Number.isFinite)||descriptor.bounds.minX>=descriptor.bounds.maxX||descriptor.bounds.minY>=descriptor.bounds.maxY)throw new TypeError('Invalid verified scene bounds');
+   return {bounds:descriptor.bounds,layers};
+  }
+  render({cameraX=0,cameraY=0,player=null,actors=[],onDraw}={}){
+   const ctx=this.ctx;
+   ctx.clearRect(0,0,this.canvas.width,this.canvas.height);
+   ctx.fillStyle='#141414';ctx.fillRect(0,0,this.canvas.width,this.canvas.height);
+   if(!this.scene)return false;
+   if(!Number.isFinite(cameraX)||!Number.isFinite(cameraY))throw new TypeError('Invalid camera coordinates');
+   const entries=[];
+   for(const layer of this.scene.layers){
+    for(const item of layer.images)entries.push({depth:layer.depth,footY:item.footY??(item.x+item.y),item});
+   }
+   for(const item of actors)entries.push({depth:item.depth??1,footY:item.footY??(item.x+item.y),item});
+   if(player&&player.image)entries.push({depth:player.depth??1,footY:player.footY??(player.x+player.y),item:player});
+   // Ground is below actors; world objects at the SAME depth sort by
+   // foot position, so a character can pass in front of or behind buildings.
+   // Foreground overlays can use a higher explicit depth.
+   entries.sort((a,b)=>a.depth-b.depth||a.footY-b.footY);
+   for(const {item} of entries){
+    if(!item.image.complete||!item.image.naturalWidth)continue;
+    const p=this.project(item.x,item.y,cameraX,cameraY);
+    const left=p.x+(item.offsetX??0)-item.width/2,top=p.y+(item.offsetY??0)-item.height;
+    if(left>this.canvas.width||left+item.width<0||top>this.canvas.height||top+item.height<0)continue;
+    const src=item.sourceRect;
+    if(src){
+     if(src.x+src.width>item.image.naturalWidth||src.y+src.height>item.image.naturalHeight)continue;
+     ctx.drawImage(item.image,src.x,src.y,src.width,src.height,left,top,item.width,item.height);
+    }else ctx.drawImage(item.image,left,top,item.width,item.height);
+    onDraw?.(item,left,top);
+   }
+   return true;
+  }
+ }
+ root.TalkingIslandLayerRenderer=TalkingIslandLayerRenderer;
+})(typeof window!=='undefined'?window:globalThis);
+

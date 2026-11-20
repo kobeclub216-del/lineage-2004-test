@@ -1,0 +1,21 @@
+name: Development regression tests
+on:
+  push:
+    branches: [lineage-182-dev]
+  pull_request:
+    branches: [lineage-182-dev]
+permissions:
+  contents: read
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm test
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lineage-182-windows-dev
+          path: v182-p05-windows/

@@ -1,0 +1,210 @@
+const {test}=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const vm=require('node:vm');
+const crypto=require('node:crypto');
+const root=path.resolve(__dirname,'..');
+const dir=path.join(root,'v182-p05-windows');
+const source=fs.readFileSync(path.join(dir,'assets/script-3.js'),'utf8');
+// Execute the functions from the shipped source, never a copied implementation.
+function functionSource(name){
+ const start=source.indexOf('function '+name+'(');
+ assert.ok(start>=0,'missing shipped function '+name);
+ for(let end=source.indexOf('}',start);end>=0;end=source.indexOf('}',end+1)){
+  const candidate=source.slice(start,end+1);
+  try{new vm.Script(candidate);return candidate;}catch{}
+ }
+ throw Error('Cannot parse '+name);
+}
+function context(names,state={}){
+ const c=vm.createContext({structuredClone,Math,Number,performance:{now:()=>0},...state});
+ for(const name of names)vm.runInContext(functionSource(name),c);
+ return c;
+}
+function scene(){
+ const draws=[];
+ const canvas={width:800,height:600,getContext:()=>({clearRect(){},fillRect(){},drawImage:(...x)=>draws.push(x)})};
+ const c=vm.createContext({});
+ for(const n of [1,2])vm.runInContext(fs.readFileSync(path.join(dir,'assets/script-'+n+'.js'),'utf8'),c);
+ const r=new c.TalkingIslandLayerRenderer(canvas);
+ const bounds={minX:0,minY:0,maxX:8,maxY:8};
+ r.setScene({bounds,layers:[]});r.setCollision({bounds,blockedCells:[]});
+ const m=new c.TalkingIslandMovementController(r);m.spawn(3,3);
+ return {r,m,c,draws,bounds};
+}
+test('all six shipped scripts compile',()=>{
+ for(let i=1;i<=6;i++)new vm.Script(fs.readFileSync(path.join(dir,'assets/script-'+i+'.js'),'utf8'));
+});
+test('all 61 supplied image/font assets retain their exact bytes',()=>{
+ const manifest=JSON.parse(fs.readFileSync(path.join(dir,'assets/manifest.json')));
+ assert.equal(manifest.assets.length,61);
+ for(const asset of manifest.assets){
+  const bytes=fs.readFileSync(path.join(dir,asset.path));
+  assert.equal(bytes.length,asset.bytes);
+  assert.equal(crypto.createHash('sha256').update(bytes).digest('hex'),asset.sha256);
+ }
+});
+test('every local HTML/script asset reference resolves',()=>{
+ const files=fs.readdirSync(dir).filter(n=>n.endsWith('.html')).map(n=>path.join(dir,n));
+ files.push(path.join(dir,'assets/script-3.js'));
+ for(const f of files){
+  const text=fs.readFileSync(f,'utf8');
+  for(const m of text.matchAll(/(?:\.\/)?assets\/[a-f0-9]{20}\.(?:png|webp|woff)|\.\/assets\/script-\d+\.js/g))
+   assert.ok(fs.existsSync(path.join(dir,m[0])),m[0]);
+ }
+ const html=fs.readFileSync(path.join(dir,'Start.html'),'utf8');
+ assert.match(html,/aspect-ratio:4\/3/);
+ for(const id of ['a47Home','characterSelect','modal','villageShop','gerengDialog','spellbookWindow'])
+  assert.ok(html.includes('id="'+id+'"'),id);
+});
+for(const [dx,dy,expected] of [[0,-1,'NE'],[1,-1,'E'],[1,0,'SE'],[1,1,'S'],[0,1,'SW'],[-1,1,'W'],[-1,0,'NW'],[-1,-1,'N']]){
+ test('grid step '+dx+','+dy+' selects screen animation '+expected,()=>{
+  const {m}=scene();assert.ok(m.moveTo(3+dx,3+dy));assert.ok(m.step());
+  assert.equal(m.getScreenFacing(),expected);assert.equal(m.moving,false);
+  m.face(3+10*dx,3+10*dy);assert.equal(m.getScreenFacing(),expected);
+ });
+}
+test('diagonal routing cannot cut a blocked cell or blocked edge',()=>{
+ const {r,m,bounds}=scene();
+ r.setCollision({bounds,blockedCells:[[4,3]],blockedEdges:[[3,3,3,4]]});
+ assert.equal(r.canStep(3,3,4,4),false);
+ assert.ok(m.moveTo(4,4));
+ let prev={...m.position};
+ while(m.moving){assert.ok(m.step());assert.ok(r.canStep(prev.x,prev.y,m.position.x,m.position.y));prev={...m.position};}
+});
+test('collision changes during an existing route stop the next illegal step',()=>{
+ const {r,m,bounds}=scene();assert.ok(m.moveTo(4,4));
+ r.setCollision({bounds,blockedCells:[[4,3]]});
+ assert.equal(m.step(),false);assert.equal(m.position.x,3);assert.equal(m.route.length,0);
+});
+test('replacing destination, cancel, spawn and projected clicks reset correctly',()=>{
+ const {r,m}=scene();m.moveTo(6,6);assert.equal(m.moveTo(-1,-1),false);assert.equal(m.moving,false);
+ m.moveTo(5,5);m.cancel();assert.equal(m.step(),false);
+ m.face(7,3);m.spawn(2,2);assert.equal(m.facing,'S');
+ const camera=m.camera(),p=r.project(5,4,camera.cameraX,camera.cameraY);
+ assert.equal(JSON.stringify(m.pick(p.x,p.y,camera.cameraX,camera.cameraY)),JSON.stringify({x:5,y:4}));
+ assert.equal(m.pick(NaN,0,0,0),null);
+});
+test('D86 diagnostic scene accepts ground/foreground and uses grid-sum foot depth',()=>{
+ const c=vm.createContext({});vm.runInContext(fs.readFileSync(path.join(root,'v182-p05-test/assets/maps/talking-island-renderer.js'),'utf8'),c);
+ const draws=[],r=new c.TalkingIslandLayerRenderer({width:800,height:600,getContext:()=>({clearRect(){},fillRect(){},drawImage:i=>draws.push(i.id)})});
+ const image=id=>({id,complete:true,naturalWidth:100,naturalHeight:100});
+ r.setScene({bounds:{minX:0,minY:0,maxX:8,maxY:8},layers:[{depth:0,images:[{image:image('ground'),x:0,y:0,width:800,height:600}]},{depth:1,images:[{image:image('building'),x:3,y:3,width:100,height:100,footY:6}]}]});
+ r.render({player:{image:image('player'),x:5,y:2,width:48,height:72}});
+ assert.deepEqual(draws,['ground','building','player']);
+ const tool=fs.readFileSync(path.join(root,'v182-p05-test/tools/talking-island-walk-test.html'),'utf8');
+ assert.doesNotMatch(tool,/footY:\s*-?Infinity/);
+});
+function trade(storageFails=false){
+ const writes=[];
+ const c=context(['shopBalance','commitVillagePlayer','buyVillagePotion','sellVillagePotion'],{
+  player:{adena:80,pots:3,path:[]},a37Slots:[{player:{name:'old'}}],a37ActiveSlot:0,a37Key:'slots',
+  drops:[],monsters:[],p04MakeBackup(){},msg(){},villageProgress:()=>true,
+  verifiedTalkingIslandScene:{merchant:{}},verifiedTalkingIslandMovement:{position:{x:5,y:5}},
+  PANDORA:{x:5,y:5},POTION_PRICE:40,POTION_SELL_PRICE:19,
+  localStorage:{setItem(k,v){if(storageFails)throw Error('quota');writes.push([k,JSON.parse(v)]);}}
+ });return {c,writes};
+}
+test('buy/sell persist exact money and stack changes without losing slot data',()=>{
+ const {c,writes}=trade();assert.ok(c.buyVillagePotion(2));assert.equal(c.player.adena,0);assert.equal(c.player.pots,5);
+ assert.ok(c.sellVillagePotion(3));assert.equal(c.player.adena,57);assert.equal(c.player.pots,2);
+ assert.equal(writes.length,2);assert.equal(writes[1][1][0].player.adena,57);
+});
+test('failed storage leaves live player and saved slot unchanged',()=>{
+ const {c,writes}=trade(true);const player=c.player,slots=c.a37Slots;
+ assert.equal(c.buyVillagePotion(1),false);assert.equal(c.sellVillagePotion(1),false);
+ assert.equal(c.player,player);assert.equal(c.a37Slots,slots);assert.equal(c.player.adena,80);assert.equal(writes.length,0);
+});
+test('trade rejects invalid counts, insufficient funds, distance, overflow and corrupt stacks',()=>{
+ const {c}=trade();
+ for(const q of [0,-1,0.5,NaN,Infinity,3])assert.equal(c.buyVillagePotion(q),false);
+ c.verifiedTalkingIslandMovement.position.x=0;assert.equal(c.sellVillagePotion(1),false);
+ c.verifiedTalkingIslandMovement.position.x=5;c.player.pots=Number.MAX_SAFE_INTEGER;
+ assert.equal(c.buyVillagePotion(1),false);
+ c.player.adena=Number.MAX_SAFE_INTEGER;assert.equal(c.sellVillagePotion(1),false);
+ c.player.pots=NaN;assert.equal(c.buyVillagePotion(1),false);assert.equal(c.sellVillagePotion(1),false);
+});
+test('level 4 mage learning, duplicate, funds and non-mage checks use shipped rules',()=>{
+ const c=context(['knowsEnergyBolt','learnEnergyBolt'],{ENERGY_BOLT_ID:'energy-bolt',GERENG_LEARN_PRICE:100});
+ const p={job:'法師',lv:4,adena:100};const result=c.learnEnergyBolt(p);
+ assert.equal(result.player.adena,0);assert.equal(p.adena,100);assert.ok(c.knowsEnergyBolt(result.player));
+ assert.equal(c.learnEnergyBolt(result.player).player,undefined);
+ for(const override of [{lv:3},{job:'騎士'},{adena:99}])assert.equal(c.learnEnergyBolt({...p,...override}).player,undefined);
+});
+test('village EXP reaches level boundary, carries surplus, supports multiple levels and level cap',()=>{
+ const c=context(['p03ApplyExperience'],{player:{lv:1,xp:98},p04Schema:2,p03ExpNeeded:lv=>100*lv,a46LevelUp(){c.player.lv++;}});
+ assert.ok(c.p03ApplyExperience(5));assert.equal(c.player.lv,2);assert.equal(c.player.xp,3);assert.equal(c.player.dataSchema,2);
+ c.p03ApplyExperience(500);assert.equal(c.player.lv,4);assert.equal(c.player.xp,3);
+ assert.equal(c.p03ApplyExperience(-1),false);
+ c.player={lv:98,xp:9799};c.p03ApplyExperience(100000);assert.equal(c.player.lv,99);assert.equal(c.player.xp,0);
+});
+function combat(){
+ const scene={boltImage:{}},trial={phase:'fight',hp:3,exp:0},character={mp:8};let damage=0;
+ const c=context(['villageBoltFlightTicks','resolveVillageBoltImpact','villageBoltActor','advanceVillageCast','cancelVillageCast'],{
+  villageTrial:trial,player:character,verifiedTalkingIslandScene:scene,a37ActiveSlot:0,
+  boltAxes:{E:[1,-1,3]},villageProgress:()=>true,applyVillageGoblinDamage(){damage++;},
+  villageCastPreview:null
+ });
+ const cast={origin:{x:0,y:0},target:{x:10,y:0},startedAt:0,directional:true,combat:true,
+  facing:'E',slot:0,encounter:trial,scene,sprite:[{frameEnds:[100,200,300,400,500,600,700]}]};
+ c.villageCastPreview=cast;return {c,cast,get damage(){return damage;}};
+}
+test('light bolt only resolves at arrival and only once',()=>{
+ const state=combat(),{c,cast}=state,arrival=600+c.villageBoltFlightTicks(cast)*1000/24;
+ c.resolveVillageBoltImpact(cast,arrival-0.01,arrival-0.01);assert.equal(state.damage,0);
+ c.resolveVillageBoltImpact(cast,arrival+0.01,arrival+0.01);assert.equal(state.damage,1);
+ c.resolveVillageBoltImpact(cast,arrival+100,arrival+100);assert.equal(state.damage,1);
+});
+test('pre-release interrupt cancels; released bolt survives movement and Escape',()=>{
+ const a=combat();a.c.advanceVillageCast(599,true);assert.equal(a.c.villageCastPreview,null);assert.equal(a.damage,0);
+ const b=combat();b.c.cancelVillageCast(601);assert.equal(b.c.villageCastPreview,b.cast);
+ const state=b.c.advanceVillageCast(650,true);assert.equal(state.casting,false);assert.ok(state.bolt);
+ b.c.advanceVillageCast(3000,true);assert.equal(b.damage,1);assert.equal(b.c.villageCastPreview,null);
+});
+test('old bolt cannot damage a replacement encounter, scene or character slot',()=>{
+ for(const mutation of [c=>c.villageTrial={},c=>c.verifiedTalkingIslandScene={},c=>c.a37ActiveSlot=1]){
+  const s=combat();mutation(s.c);s.c.resolveVillageBoltImpact(s.cast,3000,3000);assert.equal(s.damage,0);
+ }
+});
+test('goblin defeat awards EXP/drop once through the common progression function',()=>{
+ let awarded=0;
+ const c=context(['applyVillageGoblinDamage'],{villageTrial:{phase:'fight',hp:3,exp:0},GOBLIN:{exp:5},
+  msg(){},showVillageTrialStatus(){},villageProgress:()=>true,p03ApplyExperience:n=>awarded+=n});
+ c.applyVillageGoblinDamage(9,100,'hit','damage');c.applyVillageGoblinDamage(9,200,'hit','damage');
+ assert.equal(awarded,5);assert.equal(c.villageTrial.hp,0);assert.equal(c.villageTrial.phase,'dying');assert.equal(c.villageTrial.dropAvailable,true);
+});
+function localObject(name){
+ const marker='const '+name+'=';
+ const start=source.indexOf(marker)+marker.length;
+ assert.ok(start>=marker.length);
+ return JSON.parse(source.slice(start,source.indexOf(';\n',start)));
+}
+test('all 28 supplied character animation configurations fit their eight-direction atlases',()=>{
+ const data=localObject('localData'),images=localObject('localImages');let checked=0;
+ for(const [name,config] of Object.entries(data)){
+  if(!config.directions)continue;
+  const png=fs.readFileSync(path.join(dir,images[name.replace('.json','.png')]));
+  assert.equal(png.toString('hex',0,8),'89504e470d0a1a0a');
+  const width=png.readUInt32BE(16),height=png.readUInt32BE(20);
+  assert.equal(width%config.columns,0,name);assert.equal(height%8,0,name);
+  assert.deepEqual([...config.directions].sort(),['E','N','NE','NW','S','SE','SW','W']);
+  if(config.frameEnds){
+   assert.equal(config.frameEnds.length,config.columns,name);
+   config.frameEnds.forEach((end,i)=>assert.ok(end>(config.frameEnds[i-1]??0),name));
+  }
+  checked++;
+ }
+ assert.equal(checked,28);
+});
+test('both supplied village maps validate collision edges and allow their actual spawn',()=>{
+ for(const name of ['village-scene.json','shop-scene.json']){
+  const data=localObject('localData')[name],{r,c}=scene();
+  r.setScene({bounds:data.bounds,layers:[]});r.setCollision(data);
+  const movement=new c.TalkingIslandMovementController(r);movement.spawn(data.spawn.x,data.spawn.y);
+  assert.ok(r.canWalk(data.spawn.x,data.spawn.y));
+  for(const edge of data.blockedEdges){
+   assert.equal(r.canStep(...edge),false);assert.equal(r.canStep(edge[2],edge[3],edge[0],edge[1]),false);
+  }
+ }
+});

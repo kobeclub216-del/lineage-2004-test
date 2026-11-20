@@ -63,9 +63,9 @@ document.getElementById('start').addEventListener('click',async()=>{
  if(building&&data.spawn.x>=bx&&data.spawn.x<bx+bw&&data.spawn.y>=by&&data.spawn.y<by+bh)throw Error('人物出生點不能位於建築物佔地內');
  // Ground is drawn in screen space at the same isometric anchor as all other layers.
  // The reference scene has no automatic historical calibration.
- const layers=[{id:'local-ground',depth:0,images:[{image:ground,x:placement.x,y:placement.y,width:placement.width,height:placement.height,footY:-Infinity}]}];
+ const layers=[{id:'local-ground',depth:0,images:[{image:ground,x:placement.x,y:placement.y,width:placement.width,height:placement.height}]}];
  if(building)layers.push({id:'local-building',depth:1,images:[{image:building,x:bx,y:by,width:building.naturalWidth,height:building.naturalHeight,footY:bx+by+bw+bh-2}]});
- if(foreground)layers.push({id:'local-foreground',depth:2,images:[{image:foreground,x:placement.x,y:placement.y,width:placement.width,height:placement.height,footY:Infinity}]});
+ if(foreground)layers.push({id:'local-foreground',depth:2,images:[{image:foreground,x:placement.x,y:placement.y,width:placement.width,height:placement.height}]});
  if(generation!==loadGeneration)return;
  renderer.setScene({bounds:b,layers});
  const blocked=data.blockedCells.slice();
