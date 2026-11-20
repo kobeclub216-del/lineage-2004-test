@@ -1,5 +1,6 @@
 <!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><title>說話之島｜行走與遮擋回歸測試</title><style>body{font:15px system-ui;background:#171717;color:#eee;margin:24px}li{margin:8px} .ok{color:#a9e6b2}.bad{color:#ff9999}</style></head><body><h2>說話之島｜行走與遮擋回歸測試</h2><p>使用程式產生的測試物件（不是遊戲圖片）驗證移動、碰撞與繪製順序，不代表原版場景完成。</p><ol id="results"></ol><canvas id="test" width="800" height="600" hidden></canvas>
-<script src="../assets/maps/talking-island-renderer.js"></script><script src="../assets/maps/talking-island-movement.js"></script><script>
+<script src="../assets/maps/talking-island-renderer.js"></script><script src="../assets/maps/talking-island-movement.js"></script><script src="../tests/P05-D87-movement-edge-cases.js"></script>
+<script>
 (()=>{
 'use strict';
 const results=document.getElementById('results');let pass=0,fail=0;const pending=[];
@@ -176,6 +177,7 @@ test('角色和物件預設使用相同的等角深度',()=>{
 });
 test('鏡頭跟隨位置有效',()=>{const c=m.camera();return Number.isFinite(c.cameraX)&&Number.isFinite(c.cameraY)});
 test('停止移動清空路徑',()=>m.moveTo(7,7)&&(m.cancel(),m.route.length===0));
+test('P05-D87：11 項移動邊界測試',()=>{const result=runTalkingIslandMovementEdgeCases();if(result.failed)throw new Error(result.failures.join('、'));return result.passed===11});
 Promise.all(pending).then(()=>{const p=document.createElement('p');p.textContent='結果：'+pass+' 通過，'+fail+' 失敗';p.className=fail?'bad':'ok';results.after(p)});
 })();
 </script></body></html>
