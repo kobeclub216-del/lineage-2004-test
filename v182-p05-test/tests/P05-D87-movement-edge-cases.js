@@ -33,7 +33,7 @@ function runMovementEdgeCases(){
  assert('camera offset picking',!!picked&&picked.x===4&&picked.y===3);
  assert('out-of-canvas pick rejected',movement.pick(-1,10,camera.cameraX,camera.cameraY)===null);
  assert('cancel clears movement',movement.moveTo(6,6)&&(movement.cancel(),!movement.moving&&movement.route.length===0));
- return {passed:10-failures.length,failed:failures.length,failures};
+ return {passed:11-failures.length,failed:failures.length,failures};
 }
 root.runTalkingIslandMovementEdgeCases=runMovementEdgeCases;
 })(typeof window!=='undefined'?window:globalThis);
