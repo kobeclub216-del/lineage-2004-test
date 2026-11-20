@@ -208,3 +208,61 @@ test('both supplied village maps validate collision edges and allow their actual
   }
  }
 });
+
+test('magic test launchers share only the dedicated save and backup across scenes',()=>{
+ const launcher=fs.readFileSync(path.join(dir,'Magic-Test.html'),'utf8');
+ const queries=[...launcher.matchAll(/href="Start\.html(\?[^"]+)"/g)].map(m=>m[1].replaceAll('&amp;','&'));
+ assert.deepEqual(queries,['?magicTest=1&gerengPreview=1','?magicTest=1']);
+ const values=new Map([
+  ['lineage_182_p01_character_slots','[]'],
+  ['lineage_182_pre_p04_backup_v1','formal backup'],
+  ['lineage_182_gereng_test_slots','[]']
+ ]);
+ const localStorage={getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,v)};
+ const section=(start,end)=>source.slice(source.indexOf(start),source.indexOf(end));
+ function load(search){
+  const c=context([], {localStorage,URLSearchParams,location:{search},alert:assert.fail});
+  vm.runInContext(section('const visualParams=','function visualScaleParam')+
+   section('const a37Key=','function a37Snapshot'),c);
+  return c;
+ }
+ const learning=load(queries[0]);
+ const mage=vm.runInContext('a37Slots[0].player',learning);
+ assert.deepEqual([mage.job,mage.lv,mage.adena,mage.mp,mage.learnedSpells.length],['法師',4,100,7,0]);
+ for(const name of ['knowsEnergyBolt','learnEnergyBolt','commitVillagePlayer'])
+  vm.runInContext(functionSource(name),learning);
+ vm.runInContext(section('const ENERGY_BOLT_MP','function knowsEnergyBolt')+
+  'let player=a37Slots[0].player,drops=[],monsters=[];',learning);
+ assert.equal(vm.runInContext('commitVillagePlayer(learnEnergyBolt(player).player)',learning),true);
+ const combatMode=load(queries[1]);
+ assert.equal(vm.runInContext('a37Slots[0].player.learnedSpells[0]',combatMode),'energy-bolt');
+ assert.equal(vm.runInContext('a37Slots[0].player.adena',combatMode),0);
+ vm.runInContext('a37Persist()',combatMode);
+ assert.ok(values.has('lineage_182_magic_test_backup'));
+ assert.equal(vm.runInContext('a37Slots[0]',load('')),null);
+ assert.equal(values.get('lineage_182_p01_character_slots'),'[]');
+ assert.equal(values.get('lineage_182_pre_p04_backup_v1'),'formal backup');
+ assert.equal(values.get('lineage_182_gereng_test_slots'),'[]');
+});
+
+test('combat light bolt requires learning, a live target, a stationary caster and 3 MP',()=>{
+ const enemy={x:1,y:0},scene={casts:[{}]},movement={
+  position:{x:0,y:0},moving:false,face(){},getScreenFacing:()=> 'SE'
+ };
+ const c=context(['knowsEnergyBolt','playVillageCastPreview'],{
+  ENERGY_BOLT_ID:'energy-bolt',ENERGY_BOLT_MP:3,player:{mp:2,learnedSpells:[]},
+  worldEntered:true,verifiedTalkingIslandScene:scene,verifiedTalkingIslandMovement:movement,
+  verifiedTalkingIslandStepFrom:null,villageProgress:()=>true,villageTrial:{phase:'fight'},
+  villageCastPreview:null,a37ActiveSlot:0,boltAxes:{SE:[1,0]},boltScreenDirections:Array(8).fill('SE'),
+  msg(){},update(){}
+ });
+ const cast=()=>c.playVillageCastPreview(true,enemy);
+ c.player.mp=3;assert.equal(cast(),false);
+ c.player.learnedSpells.push('energy-bolt');
+ c.villageTrial.phase='defeated';assert.equal(cast(),false);
+ c.villageTrial.phase='fight';movement.moving=true;assert.equal(cast(),false);
+ movement.moving=false;c.player.mp=2;assert.equal(cast(),false);assert.equal(c.player.mp,2);
+ c.player.mp=3;assert.equal(cast(),true);assert.equal(c.player.mp,0);
+ assert.equal(c.villageCastPreview.combat,true);
+ assert.equal(cast(),false);
+});

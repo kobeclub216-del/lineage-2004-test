@@ -5,6 +5,7 @@ const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
 // comparison values are NOT asserted to be original Lineage 1.82 measurements.
 // Scale the isometric X and Y axes together to preserve tile geometry.
 const visualParams=new URLSearchParams(location.search);
+const magicTestMode=visualParams.get('magicTest')==='1';
 const gerengTestMode=visualParams.get('gerengPreview')==='1'&&visualParams.get('gerengTest')==='1';
 function visualScaleParam(name){
  const raw=visualParams.get(name);
@@ -60,10 +61,10 @@ function a46LevelUp(){const g=a46Growth[player.job]||a46Growth.王族,con=player
 function newPlayer(name,job){if(!Object.prototype.hasOwnProperty.call(jobs,job)){alert('1.82 尚未開放此職業');return}name=String(name||'').normalize('NFKC').trim();const selected=a37PendingSlot;if(a43NameTaken(name,selected)){alert('角色名稱「'+name+'」已被使用，請更換名稱。');document.getElementById('name').focus();return}let a=jobs[job];if(creationRemaining()!==0){alert('請先分配全部能力值點數');return}const existing=a37Slots[selected];if(existing&&!confirm('此欄位已有角色，確定覆蓋？'))return;const stats=a.slice(0,6).map((v,i)=>v+creationPoints[i]);const vitals=a45StartingVitals(job,stats);player={dataVersion:'1.82',dataSchema:p04Schema,name,job,gender:document.getElementById('gender').value,x:10,y:10,hp:vitals.hp,maxHp:vitals.hp,mp:vitals.mp,maxMp:vitals.mp,lv:1,xp:0,pots:3,stats,path:[],step:0};drops=[];target=null;spawn();centerCamera();a37ActiveSlot=selected;a37Slots[selected]={player:structuredClone(player),drops:[],monsters:structuredClone(monsters)};a37Persist();document.getElementById('modal').style.display='none';showCharacterSelection();update()}
 let worldEntered=false;
 /* A37: eight independent browser-local character slots. A19 visual stage preserved. */
-const a37Key=gerengTestMode?'lineage_182_gereng_test_slots':'lineage_182_p01_character_slots';
+const a37Key=magicTestMode?'lineage_182_magic_test_slots':gerengTestMode?'lineage_182_gereng_test_slots':'lineage_182_p01_character_slots';
 /* P04: retain P01-P03 key; backup before first P04 write and migrate in memory.
    No automatic destructive overwrite of old slots. Browser-local only. */
-const p04BackupKey=gerengTestMode?'lineage_182_gereng_test_backup':'lineage_182_pre_p04_backup_v1';
+const p04BackupKey=magicTestMode?'lineage_182_magic_test_backup':gerengTestMode?'lineage_182_gereng_test_backup':'lineage_182_pre_p04_backup_v1';
 const p04Schema=2;
 function p04MigrateSlot(slot){
  if(!slot||!slot.player||typeof slot.player!=='object')return null;
@@ -85,6 +86,13 @@ function p04MakeBackup(){
 }
 let a37Slots=Array(8).fill(null),a37Page=0,a37ActiveSlot=0,a37PendingSlot=0;
 try{const stored=JSON.parse(localStorage.getItem(a37Key));if(Array.isArray(stored))a37Slots=Array.from({length:8},(_,i)=>p04MigrateSlot(stored[i]))}catch(e){console.warn('P04: save read failed',e)}
+// Only the dedicated magic test entry supplies a ready-to-learn character.
+if(magicTestMode&&!a37Slots.some(Boolean))a37Slots[0]={
+ player:{dataVersion:'1.82',dataSchema:p04Schema,name:'光箭測試法師',job:'法師',gender:'男',
+  x:10,y:10,hp:24,maxHp:24,mp:7,maxMp:7,lv:4,xp:0,pots:3,adena:100,
+  stats:[8,7,18,18,16,8],path:[],step:0,learnedSpells:[]},
+ drops:[],monsters:[]
+};
 function a37Persist(){try{p04MakeBackup();localStorage.setItem(a37Key,JSON.stringify(a37Slots))}catch(e){alert('儲存失敗：請確認瀏覽器空間或隱私設定')}}
 function a37Snapshot(){if(!player)return;player.dataVersion='1.82';player.dataSchema=p04Schema;a37Slots[a37ActiveSlot]={player:structuredClone({...player,path:[]}),drops:structuredClone(drops),monsters:structuredClone(monsters)};a37Persist()}
 /* A39: reuse the A15 conservative edge-connected black removal for every slot. */
@@ -1196,7 +1204,7 @@ async function prepareGerengScene(loadSprite){
  renderer.setScene({bounds:data.bounds,layers:[{id:'ground',depth:0,images:[{...groundPlacement,image:ground}]}]});
  renderer.setCollision(data);
  const movement=new TalkingIslandMovementController(renderer,{maxNodes:12288});
- const spawn=gerengTestMode?{x:data.npc.x,y:data.npc.y+1}:data.spawn;
+ const spawn=(gerengTestMode||magicTestMode)?{x:data.npc.x,y:data.npc.y+1}:data.spawn;
  movement.spawn(spawn.x,spawn.y);
  return {renderer,movement,actor,spriteConfig,
   teacher:{x:data.npc.x,y:data.npc.y,image:teacher,width:29,height:55},
