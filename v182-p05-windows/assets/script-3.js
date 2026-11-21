@@ -303,7 +303,19 @@ document.getElementById('gender').addEventListener('change',()=>{updateCreationP
 document.getElementById('creationCancel').addEventListener('click',()=>{document.getElementById('name').value='';const job=document.getElementById('job');job.value='王族';job.dispatchEvent(new Event('change'));const gender=document.getElementById('gender');gender.value='男';gender.dispatchEvent(new Event('change'));creationPoints=[0,0,0,0,0,0];updateCreationStats();document.getElementById('name').focus()});
 document.getElementById('job').addEventListener('change',()=>{creationPoints=[0,0,0,0,0,0];updateCreationStats();updateCreationPreview();renderCreationClassTabs();renderCreationEmblems()});updateCreationStats();updateCreationPreview();renderCreationClassTabs();renderCreationEmblems();
 document.getElementById('closeDesktopHelp').onclick=()=>document.getElementById('desktopGameHelp').hidden=true;
-document.getElementById('start').onclick=()=>newPlayer(document.getElementById('name').value.trim()||'冒險者',document.getElementById('job').value);document.getElementById('load').onclick=load;document.getElementById('save').onclick=save;document.getElementById('reset').onclick=()=>{if(confirm('重新建立角色？舊存檔不會自動刪除。'))(creationPoints=[0,0,0,0,0,0],updateCreationStats(),document.getElementById('modal').style.display='flex')};document.getElementById('heal').onclick=()=>{if(!player||(localVillageEntered&&!villageProgress()))return;if(player.pots<1){msg('治癒藥水不足');return}if(player.hp===player.maxHp)return;player.pots--;player.hp=Math.min(player.maxHp,player.hp+40);msg('使用治癒藥水，回復 40 HP（測試值）');update()};function update(){if(!player)return;a17rRefresh();document.getElementById('who').textContent=player.name+'｜'+player.job+' Lv.'+player.lv;for(let k of ['hp','mp']){let max=k==='hp'?'maxHp':'maxMp';document.getElementById(k+'text').textContent=player[k]+' / '+player[max];document.getElementById(k+'bar').style.width=(100*player[k]/player[max])+'%'}document.getElementById('xptext').textContent=player.xp+' / '+p03ExpNeeded(player.lv)+'（測試）';document.getElementById('xpbar').style.width=(100*player.xp/p03ExpNeeded(player.lv))+'%';document.getElementById('pots').textContent=player.pots;document.getElementById('attributes').innerHTML='<b>能力值（歷史待覆核）</b><div>'+['STR','DEX','CON','INT','WIS','CHA'].map((s,i)=>s+': '+player.stats[i]).join('　')+'</div><div>座標：'+player.x+', '+player.y+'</div>'}function screen(x,y){return {x:(x-y)*TW/2+canvas.width/2-cam.x,y:(x+y)*TH/2+90-cam.y}}function unproject(sx,sy){let a=(sx-canvas.width/2+cam.x)/(TW/2),b=(sy-90+cam.y)/(TH/2);return {x:Math.floor((a+b)/2+.5),y:Math.floor((b-a)/2+.5)}}// P05-D7: optional geometry regression audit; does not change gameplay or UI.
+document.getElementById('start').onclick=()=>newPlayer(document.getElementById('name').value.trim()||'冒險者',document.getElementById('job').value);document.getElementById('load').onclick=load;document.getElementById('save').onclick=save;document.getElementById('reset').onclick=()=>{if(confirm('重新建立角色？舊存檔不會自動刪除。'))(creationPoints=[0,0,0,0,0,0],updateCreationStats(),document.getElementById('modal').style.display='flex')};document.getElementById('heal').onclick=useHealingPotion;
+function useHealingPotion(){
+ if(!worldEntered||!player||(localVillageEntered&&!villageProgress()))return false;
+ if(!Number.isSafeInteger(player.pots)||player.pots<1){msg('治癒藥水不足');update();return false;}
+ if(!(player.hp<player.maxHp))return false;
+ const healingPreviousHp=player.hp;
+ const nextPlayer={...player,pots:player.pots-1,hp:Math.min(player.maxHp,player.hp+40)};
+ if(!commitVillagePlayer(nextPlayer)){update();return false;}
+ msg('使用治癒藥水，回復 '+(nextPlayer.hp-healingPreviousHp)+' HP（測試值）');
+ update();
+ return true;
+}
+function update(){if(!player)return;a17rRefresh();document.getElementById('who').textContent=player.name+'｜'+player.job+' Lv.'+player.lv;for(let k of ['hp','mp']){let max=k==='hp'?'maxHp':'maxMp';document.getElementById(k+'text').textContent=player[k]+' / '+player[max];document.getElementById(k+'bar').style.width=(100*player[k]/player[max])+'%'}document.getElementById('xptext').textContent=player.xp+' / '+p03ExpNeeded(player.lv)+'（測試）';document.getElementById('xpbar').style.width=(100*player.xp/p03ExpNeeded(player.lv))+'%';document.getElementById('pots').textContent=player.pots;document.getElementById('attributes').innerHTML='<b>能力值（歷史待覆核）</b><div>'+['STR','DEX','CON','INT','WIS','CHA'].map((s,i)=>s+': '+player.stats[i]).join('　')+'</div><div>座標：'+player.x+', '+player.y+'</div>'}function screen(x,y){return {x:(x-y)*TW/2+canvas.width/2-cam.x,y:(x+y)*TH/2+90-cam.y}}function unproject(sx,sy){let a=(sx-canvas.width/2+cam.x)/(TW/2),b=(sy-90+cam.y)/(TH/2);return {x:Math.floor((a+b)/2+.5),y:Math.floor((b-a)/2+.5)}}// P05-D7: optional geometry regression audit; does not change gameplay or UI.
 // Run with ?verifyGeometry=1 (and optionally mapScale / characterScale).
 function verifyVisualGeometry(){
  const failures=[];
@@ -1874,6 +1886,23 @@ function assignActionHotkey(character,slot,kind){
  }else return false;
  return true;
 }
+function saveActionHotkey(slot,kind){
+ if(!worldEntered||!player)return false;
+ const nextPlayer={...player};
+ if(!assignActionHotkey(nextPlayer,slot,kind))return false;
+ const saved=a37Slots[a37ActiveSlot];
+ if(!saved?.player)return false;
+ const nextSlots=a37Slots.slice();
+ // Assignments are durable without saving unrelated preview-world progress.
+ const {potionHotkey,energyBoltHotkey}=nextPlayer;
+ nextSlots[a37ActiveSlot]={...saved,player:{...saved.player,potionHotkey,energyBoltHotkey}};
+ try{p04MakeBackup();localStorage.setItem(a37Key,JSON.stringify(nextSlots));}
+ catch(error){msg('快捷欄儲存失敗，配置未變更。');update();return false;}
+ a37Slots=nextSlots;
+ player=nextPlayer;
+ refreshItemHotkeys();
+ return true;
+}
 function useActionHotkey(slot){
  if(!worldEntered)return false;
  const kind=actionHotkeyKind(player,slot);
@@ -1908,7 +1937,7 @@ for(let slot=0;slot<8;slot++){
   const data=event.dataTransfer;
   const kind=data.getData('application/x-lineage-energy-bolt')===ENERGY_BOLT_ID?'bolt':
    data.getData('application/x-lineage-potion')==='healing'?'potion':null;
-  if(assignActionHotkey(player,slot,kind))refreshItemHotkeys();
+  saveActionHotkey(slot,kind);
  };
  itemHotkeys.append(button);
 }

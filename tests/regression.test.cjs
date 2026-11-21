@@ -453,3 +453,40 @@ test('only the isolated magic trial supplies enough target HP for two casts and 
  c.villageTrial.hp-=2*18;
  assert.equal(c.villageTrialTargetLabel(),'哥布林 4/40');
 });
+
+test('hotkey assignment survives reload without saving unrelated progress or losing old slot data',()=>{
+ const writes=[];
+ const c=context(['knowsEnergyBolt','assignActionHotkey','saveActionHotkey'],{
+  ENERGY_BOLT_ID:'energy-bolt',worldEntered:true,a37ActiveSlot:0,a37Key:'slots',
+  player:{pots:2,hp:5,potionHotkey:0,learnedSpells:['energy-bolt']},
+  a37Slots:[{player:{hp:20,potionHotkey:0},drops:[1]},{player:{name:'other'}}],
+  p04MakeBackup(){},localStorage:{setItem:(k,v)=>writes.push(JSON.parse(v))},
+  refreshItemHotkeys(){},msg(){},update(){}
+ });
+ assert.equal(c.saveActionHotkey(0,'bolt'),true);
+ assert.equal(writes[0][0].player.energyBoltHotkey,0);
+ assert.equal(writes[0][0].player.potionHotkey,undefined);
+ assert.equal(writes[0][0].player.hp,20);
+ assert.deepEqual(writes[0][0].drops,[1]);
+ assert.equal(writes[0][1].player.name,'other');
+ c.localStorage.setItem=()=>{throw Error('quota');};
+ assert.equal(c.saveActionHotkey(1,'potion'),false);
+ assert.equal(c.player.potionHotkey,undefined);
+});
+
+test('potion uses one stack entry, clamps healing, and leaves HP and stack intact on storage failure',()=>{
+ let writes=0;
+ const c=context(['commitVillagePlayer','useHealingPotion'],{
+  worldEntered:true,player:{hp:10,maxHp:50,pots:2},localVillageEntered:true,villageProgress:()=>true,
+  a37Slots:[{}],a37ActiveSlot:0,a37Key:'slots',drops:[],monsters:[],p04MakeBackup(){},
+  localStorage:{setItem:()=>writes++},msg(){},update(){}
+ });
+ assert.equal(c.useHealingPotion(),true);
+ assert.deepEqual([c.player.hp,c.player.pots,writes],[50,1,1]);
+ assert.equal(c.useHealingPotion(),false);
+ assert.deepEqual([c.player.hp,c.player.pots,writes],[50,1,1]);
+ c.player.hp=10;
+ c.localStorage.setItem=()=>{throw Error('quota');};
+ assert.equal(c.useHealingPotion(),false);
+ assert.deepEqual([c.player.hp,c.player.pots],[10,1]);
+});
