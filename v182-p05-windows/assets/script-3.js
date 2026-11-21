@@ -1415,11 +1415,12 @@ function advanceVillageCast(now,interrupted=false){
  const elapsed=now-cast.startedAt,config=cast.sprite[0];
  const released=elapsed>=config.frameEnds[5];
  if(interrupted&&!released){villageCastPreview=null;return {casting:false,bolt:null};}
+ if(interrupted)cast.animationInterrupted=true;
  if(released)resolveVillageBoltImpact(cast,elapsed,now);
  const bolt=villageBoltActor(cast,cast.facing,elapsed,verifiedTalkingIslandScene.boltImage);
  const casting=elapsed<config.frameEnds.at(-1);
  if(!casting&&!bolt)villageCastPreview=null;
- return {casting:casting&&!interrupted,bolt};
+ return {casting:casting&&!cast.animationInterrupted,bolt};
 }
 function villageBoltActor(cast,facing,elapsed,image){
  if(!cast||!cast.directional)return null;

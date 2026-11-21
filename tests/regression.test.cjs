@@ -160,6 +160,7 @@ test('pre-release interrupt cancels; released bolt survives movement and Escape'
  const a=combat();a.c.advanceVillageCast(599,true);assert.equal(a.c.villageCastPreview,null);assert.equal(a.damage,0);
  const b=combat();b.c.cancelVillageCast(601);assert.equal(b.c.villageCastPreview,b.cast);
  const state=b.c.advanceVillageCast(650,true);assert.equal(state.casting,false);assert.ok(state.bolt);
+ const resumed=b.c.advanceVillageCast(675,false);assert.equal(resumed.casting,false);assert.ok(resumed.bolt);
  b.c.advanceVillageCast(3000,true);assert.equal(b.damage,1);assert.equal(b.c.villageCastPreview,null);
 });
 test('old bolt cannot damage a replacement encounter, scene or character slot',()=>{
