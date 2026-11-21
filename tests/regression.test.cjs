@@ -414,3 +414,25 @@ test('learned light bolt and legacy potion can share the hotbar without sharing 
  assert.equal(c.player.energyBoltHotkey,undefined);
  assert.equal(c.useActionHotkey(1),false);
 });
+
+test('Escape closes the focused game panel first and restores its trigger focus',()=>{
+ const active={};
+ const closed=[];
+ let bagOpen=true;
+ const elements={
+  a17rInventory:{contains:el=>el===active,classList:{contains:()=>bagOpen,toggle:(_,open)=>{bagOpen=open;}}},
+  a17rBag:{setAttribute:(key,value)=>closed.push([key,value]),focus:()=>closed.push('bag focus')},
+  spellbookWindow:{hidden:false}
+ };
+ const c=context(['setInventoryOpen','closeActiveGamePanel'],{
+  worldEntered:true,document:{activeElement:active,getElementById:id=>elements[id]},
+  setSpellbookOpen:open=>{elements.spellbookWindow.hidden=!open;}
+ });
+ assert.equal(c.closeActiveGamePanel(),true);
+ assert.deepEqual(closed,[['aria-expanded','false'],'bag focus']);
+ assert.equal(elements.spellbookWindow.hidden,false);
+ c.document.activeElement=null;
+ assert.equal(c.closeActiveGamePanel(),true);
+ assert.equal(elements.spellbookWindow.hidden,true);
+ assert.equal(c.closeActiveGamePanel(),false);
+});

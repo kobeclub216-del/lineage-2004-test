@@ -123,7 +123,7 @@ function a37RenderSlots(){const slots=document.querySelectorAll('.selection-arch
 function a37Choose(index){const record=a37Slots[index];if(!record){a37PendingSlot=index;document.getElementById('characterSelect').hidden=true;document.getElementById('modal').style.display='flex';return}if(player&&a37Slots[a37ActiveSlot]&&a37ActiveSlot!==index)a37Snapshot();a37ActiveSlot=index;player=structuredClone(record.player);player.path=[];drops=structuredClone(record.drops||[]);monsters=structuredClone(record.monsters||[]);target=null;centerCamera();showCharacterSelection();update()}
 function showCharacterSelection(){
  setSpellbookOpen(false);
- document.getElementById('a17rInventory').classList.remove('a17r-open');
+ setInventoryOpen(false);
  document.getElementById('leaveGameDialog').close();
  document.getElementById('characterStatusDialog').close();
  document.getElementById('villageShop').close();
@@ -443,6 +443,7 @@ window.addEventListener('keydown',e=>{
   playVillageCastPreview(e.key==='1');
   e.preventDefault();
  }
+ if(e.key==='Escape'&&!villageSpellTargeting&&closeActiveGamePanel()){e.preventDefault();return;}
  if(e.key==='Escape'){setVillageSpellTargeting(false);cancelVillageCast();if(villageTrial){villageTrial.pickup=false;villageTrial.pickupStartedAt=null;villageTrial.target=null;villageTrial.attackStartedAt=-Infinity;villageTrial.attackPending=false;}if(talkingIslandMode()&&worldEntered&&verifiedTalkingIslandMovement)verifiedTalkingIslandMovement.cancel();target=null;if(player)player.path=[];msg('已取消目前的移動或追擊指令');e.preventDefault();}
  if(e.key==='F1'||e.key==='?'){const help=document.getElementById('desktopGameHelp');help.hidden=!help.hidden;e.preventDefault();}
 });window.addEventListener('keyup',e=>keys[e.key]=false);function loop(ts){let dt=Math.min(.05,(ts-last)/1000||0);last=ts;if(talkingIslandMode()&&worldEntered&&verifiedTalkingIslandMovement){
@@ -1674,8 +1675,33 @@ function a17rRefresh(){
  const log=document.getElementById('log'),chat=document.getElementById('a17rChat');
  if(log&&chat)chat.textContent=log.innerText||'2004 年《天與地》介面還原測試';
 }
-document.getElementById('a17rBag').onclick=()=>document.getElementById('a17rInventory').classList.toggle('a17r-open');
-document.getElementById('a17rCloseInventory').onclick=document.getElementById('a17rCloseBag').onclick=()=>document.getElementById('a17rInventory').classList.remove('a17r-open');
+function setInventoryOpen(open){
+ const panel=document.getElementById('a17rInventory');
+ const trigger=document.getElementById('a17rBag');
+ const restoreFocus=!open&&panel.contains(document.activeElement);
+ panel.classList.toggle('a17r-open',open);
+ trigger.setAttribute('aria-expanded',String(open));
+ if(restoreFocus)trigger.focus();
+}
+function closeActiveGamePanel(){
+ if(!worldEntered)return false;
+ const inventory=document.getElementById('a17rInventory');
+ const spellbook=document.getElementById('spellbookWindow');
+ if(!spellbook.hidden&&!inventory.contains(document.activeElement)){
+  setSpellbookOpen(false);
+  return true;
+ }
+ if(inventory.classList.contains('a17r-open')){
+  setInventoryOpen(false);
+  return true;
+ }
+ return false;
+}
+document.getElementById('a17rBag').onclick=()=>{
+ const open=document.getElementById('a17rInventory').classList.contains('a17r-open');
+ setInventoryOpen(!open);
+};
+document.getElementById('a17rCloseInventory').onclick=document.getElementById('a17rCloseBag').onclick=()=>setInventoryOpen(false);
 document.getElementById('a17rHeal').onclick=()=>document.getElementById('heal').click();
 document.getElementById('a17rSave').onclick=()=>document.getElementById('save').click();
 function refreshCharacterStatus(){
@@ -1796,8 +1822,12 @@ function setSpellbookOpen(open){
   spell.setAttribute('aria-label',spell.title);
  }
 
- document.getElementById('spellbookWindow').hidden=!open;
- document.getElementById('a17rSpellbook').setAttribute('aria-expanded',String(open));
+ const panel=document.getElementById('spellbookWindow');
+ const trigger=document.getElementById('a17rSpellbook');
+ const restoreFocus=!open&&panel.contains(document.activeElement);
+ panel.hidden=!open;
+ trigger.setAttribute('aria-expanded',String(open));
+ if(restoreFocus)trigger.focus();
 }
 document.getElementById('a17rSpellbook').onclick=()=>{
  if(worldEntered)setSpellbookOpen(document.getElementById('spellbookWindow').hidden);
