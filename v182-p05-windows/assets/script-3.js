@@ -1090,11 +1090,12 @@ function advanceVillageTrial(ts){
   trial.attackStartedAt=ts;
   trial.attackPending=true;
  }
- const {frameDuration,frameEnds,impactFrame=4}=verifiedTalkingIslandScene.attack[0];
+ const attackConfig=verifiedTalkingIslandScene.attack[0];
+ const {frameDuration,frameEnds,impactFrame=4}=attackConfig;
  const impactDelay=frameEnds ? frameEnds[impactFrame-1]??0 : frameDuration*impactFrame;
  if(ts-trial.attackStartedAt<impactDelay)return;
  trial.attackPending=false;
- trial.nextAttack=trial.attackStartedAt+Math.max(700,frameEnds?.at(-1)??0);
+ trial.nextAttack=trial.attackStartedAt+Math.max(700,villageAttackDuration(attackConfig));
  applyVillageGoblinDamage(VILLAGE_TRIAL_DAMAGE,ts,'攻擊哥布林',' 點測試傷害');
 }
 function applyVillageGoblinDamage(damage,ts,action,suffix){
@@ -1142,21 +1143,31 @@ function advanceGoblinAttack(trial,movement,ts,inRange){
  msg('角色倒下，已回村恢復，可重新挑戰');
  return true;
 }
+function villageAttackDuration(config){
+ return config ? config.frameEnds?.at(-1)??config.columns*config.frameDuration : 0;
+}
+const GOBLIN_HIT_FRAMES=2;
 const GOBLIN_FRAME_MS=75;
 const GOBLIN_DEATH_FRAMES=12;
 function villageTrialTargetLabel(){
  return '哥布林 '+villageTrial.hp+'/'+GOBLIN.hp;
 }
+function villageGoblinFrame(trial,now){
+ const hitStart=trial.hitUntil-360;
+ const hitElapsed=now-hitStart;
+ if(trial.phase==='dying')
+  return 9+Math.min(GOBLIN_DEATH_FRAMES-1,Math.floor(Math.max(0,now-trial.deathStartedAt)/GOBLIN_FRAME_MS));
+ if(trial.goblinAttackAt!==null)
+  return 21+Math.min(GOBLIN_ATTACK_FRAMES-1,Math.floor(Math.max(0,now-trial.goblinAttackAt)/GOBLIN_ATTACK_FRAME_MS));
+ if(hitElapsed>=0&&hitElapsed<GOBLIN_HIT_FRAMES*GOBLIN_FRAME_MS)
+  return 7+Math.floor(hitElapsed/GOBLIN_FRAME_MS);
+ return Math.floor(now/140)%7;
+}
 function villageTrialActors(now,goblin){
  const trial=villageTrial;
  if(!trial||!goblin||(trial.phase!=='fight'&&trial.phase!=='dying'))return [];
- // Source frames share an 85×93 canvas with feet around (59,80).
- const height=93,width=119;
- let row=Math.floor(now/140)%7;
- if(trial.phase==='dying')row=9+Math.min(GOBLIN_DEATH_FRAMES-1,Math.floor((now-trial.deathStartedAt)/GOBLIN_FRAME_MS));
- else if(trial.goblinAttackAt!==null)row=21+Math.min(GOBLIN_ATTACK_FRAMES-1,
-  Math.max(0,Math.floor((now-trial.goblinAttackAt)/GOBLIN_ATTACK_FRAME_MS)));
- else if(now<trial.hitUntil-210)row=7+Math.floor((now-(trial.hitUntil-360))/GOBLIN_FRAME_MS);
+ // The supplied atlas uses 119×93 frames with idle feet at y=80.
+ const height=93,width=119,row=villageGoblinFrame(trial,now);
  return [{...VILLAGE_TRIAL_ENEMY,image:goblin,width,height,offsetX:.5,offsetY:13,
   sourceRect:{x:0,y:row*height,width,height}}];
 }
@@ -1444,7 +1455,7 @@ function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);
   verifiedTalkingIslandLastScreenFacing=animation.screenFacing;
   verifiedTalkingIslandWasMoving=visuallyMoving;
   const attackElapsed=now-(villageTrial?.attackStartedAt??-Infinity);
-  const attackDuration=attack&&(attack[0].frameEnds?.at(-1)??attack[0].columns*attack[0].frameDuration);
+  const attackDuration=villageAttackDuration(attack?.[0]);
   const attacking=attack&&!animation.moving&&attackElapsed>=0&&attackElapsed<attackDuration;
   const castElapsed=now-(villageCastPreview?.startedAt??-Infinity);
   const interrupted=visuallyMoving||attacking||villageTrial?.target;
@@ -1755,7 +1766,7 @@ function playVillageCastPreview(directional,target=verifiedTalkingIslandScene?.d
  if(movement.moving||villageCastPreview||villageTrial?.target||villageTrial?.pickup||
     (verifiedTalkingIslandStepFrom&&performance.now()-verifiedTalkingIslandLastStep<VERIFIED_SCENE_STEP_MS))return false;
  const now=performance.now();
- const attackDuration=scene.attack?.[0].frameEnds?.at(-1)??0;
+ const attackDuration=villageAttackDuration(scene.attack?.[0]);
  if(now-(villageTrial?.attackStartedAt??-Infinity)<attackDuration)return false;
  const origin={...movement.position};
  if(directional){

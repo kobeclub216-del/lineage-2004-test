@@ -249,7 +249,7 @@ test('combat light bolt requires learning, a live target, a stationary caster an
  const enemy={x:1,y:0},scene={casts:[{}]},movement={
   position:{x:0,y:0},moving:false,face(){},getScreenFacing:()=> 'SE'
  };
- const c=context(['knowsEnergyBolt','playVillageCastPreview'],{
+ const c=context(['knowsEnergyBolt','villageAttackDuration','playVillageCastPreview'],{
   ENERGY_BOLT_ID:'energy-bolt',ENERGY_BOLT_MP:3,player:{mp:2,learnedSpells:[]},
   worldEntered:true,verifiedTalkingIslandScene:scene,verifiedTalkingIslandMovement:movement,
   verifiedTalkingIslandStepFrom:null,villageProgress:()=>true,villageTrial:{phase:'fight'},
@@ -353,4 +353,42 @@ test('target picking uses the current sprite atlas crop and projected name label
  c.displayedIslandFrame.labels.push({item,name:'哥布林',font:'14px sans-serif',point:{x:36,y:52},offset:36});
  assert.equal(c.pickVillageActor(36,12),'enemy');
  assert.equal(c.pickVillageActor(50,12),null);
+});
+
+
+test('light bolt waits until the last frame of an attack atlas with uniform timing',()=>{
+ const c=context(['knowsEnergyBolt','villageAttackDuration','playVillageCastPreview'],{
+  ENERGY_BOLT_ID:'energy-bolt',ENERGY_BOLT_MP:3,player:{mp:7,learnedSpells:['energy-bolt']},
+  worldEntered:true,verifiedTalkingIslandScene:{casts:[{}],attack:[{columns:6,frameDuration:58}]},
+  verifiedTalkingIslandMovement:{position:{x:0,y:0},moving:false,face(){},getScreenFacing:()=> 'SE'},
+  verifiedTalkingIslandStepFrom:null,villageProgress:()=>true,
+  villageTrial:{phase:'fight',attackStartedAt:0},
+  villageCastPreview:null,a37ActiveSlot:0,boltAxes:{SE:[1,0]},boltScreenDirections:Array(8).fill('SE'),
+  msg(){},update(){}
+ });
+ const target={x:1,y:0};
+ c.performance.now=()=>347;
+ assert.equal(c.playVillageCastPreview(true,target),false);
+ assert.equal(c.player.mp,7);
+ c.performance.now=()=>348;
+ assert.equal(c.playVillageCastPreview(true,target),true);
+ assert.equal(c.player.mp,4);
+ assert.equal(c.villageAttackDuration({columns:5,frameDuration:42,frameEnds:[167,333,625,750,1000]}),1000);
+});
+
+test('goblin hit, death and attack animation only select their own atlas rows',()=>{
+ const c=context(['villageGoblinFrame']);
+ for(const name of ['GOBLIN_HIT_FRAMES','GOBLIN_FRAME_MS','GOBLIN_DEATH_FRAMES','GOBLIN_ATTACK_FRAMES','GOBLIN_ATTACK_FRAME_MS'])
+  vm.runInContext(source.match(new RegExp('const '+name+'=[0-9]+;'))[0],c);
+ const fight={phase:'fight',goblinAttackAt:null,hitUntil:1360};
+ for(const [now,row] of [[999,0],[1000,7],[1074,7],[1075,8],[1149,8],[1150,1]])
+  assert.equal(c.villageGoblinFrame(fight,now),row);
+ for(const [trial,now,row] of [
+  [{...fight,phase:'dying',deathStartedAt:1000},999,9],
+  [{...fight,phase:'dying',deathStartedAt:1000},1900,20],
+  [{...fight,goblinAttackAt:1000},999,21],
+  [{...fight,goblinAttackAt:1000},1500,24]
+ ])assert.equal(c.villageGoblinFrame(trial,now),row);
+ const png=fs.readFileSync(path.join(dir,'assets/db366be902fa0b49938a.png'));
+ assert.deepEqual([png.readUInt32BE(16),png.readUInt32BE(20)],[119,93*25]);
 });
