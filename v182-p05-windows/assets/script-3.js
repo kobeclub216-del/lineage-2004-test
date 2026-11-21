@@ -972,7 +972,10 @@ const GOBLIN_ATTACK_FRAMES=4;
 const GOBLIN_ATTACK_FRAME_MS=125;
 function startVillageTrial(scene){
  if(!scene.renderer.canWalk(VILLAGE_TRIAL_ENEMY.x,VILLAGE_TRIAL_ENEMY.y))return;
- villageTrial={phase:'fight',hp:GOBLIN.hp,target:null,nextAttack:0,attackStartedAt:-Infinity,attackPending:false,
+ // The isolated magic test must survive two maximum-damage light bolts.
+ const maxHp=magicTestMode?Math.max(GOBLIN.hp,40):GOBLIN.hp;
+ if(magicTestMode)player.mp=player.maxMp;
+ villageTrial={phase:'fight',hp:maxHp,maxHp,target:null,nextAttack:0,attackStartedAt:-Infinity,attackPending:false,
   playerHp:TRIAL_PLAYER_HP,goblinAttackAt:null,goblinReadyAt:0,provoked:false,exp:0,
   home:{...scene.movement.position}};
 }
@@ -1148,7 +1151,7 @@ const GOBLIN_HIT_FRAMES=2;
 const GOBLIN_FRAME_MS=75;
 const GOBLIN_DEATH_FRAMES=12;
 function villageTrialTargetLabel(){
- return '哥布林 '+villageTrial.hp+'/'+GOBLIN.hp;
+ return '哥布林 '+villageTrial.hp+'/'+villageTrial.maxHp;
 }
 function villageGoblinFrame(trial,now){
  const hitStart=trial.hitUntil-360;

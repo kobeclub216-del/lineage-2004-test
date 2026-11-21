@@ -436,3 +436,20 @@ test('Escape closes the focused game panel first and restores its trigger focus'
  assert.equal(elements.spellbookWindow.hidden,true);
  assert.equal(c.closeActiveGamePanel(),false);
 });
+
+test('only the isolated magic trial supplies enough target HP for two casts and refills MP',()=>{
+ const c=context(['startVillageTrial','villageTrialTargetLabel'],{
+  magicTestMode:false,GOBLIN:{hp:16},VILLAGE_TRIAL_ENEMY:{x:0,y:0},
+  TRIAL_PLAYER_HP:12,player:{mp:1,maxMp:7},villageTrial:null
+ });
+ const scene={renderer:{canWalk:()=>true},movement:{position:{x:1,y:1}}};
+ c.startVillageTrial(scene);
+ assert.equal(c.villageTrialTargetLabel(),'哥布林 16/16');
+ assert.equal(c.player.mp,1);
+ c.magicTestMode=true;
+ c.startVillageTrial(scene);
+ assert.equal(c.player.mp,7);
+ assert.ok(c.villageTrial.hp>2*18);
+ c.villageTrial.hp-=2*18;
+ assert.equal(c.villageTrialTargetLabel(),'哥布林 4/40');
+});
