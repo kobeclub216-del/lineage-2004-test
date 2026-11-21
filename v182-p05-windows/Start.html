@@ -916,7 +916,11 @@ body.a17r-world #a17rBar .a17rFrame{position:absolute;margin:0;padding:0;border:
 }
 #a17rBar #itemHotkeys button.item-potion{background:var(--ui-potion) center/46% auto no-repeat}
 #a17rBar #itemHotkeys button.item-energy-bolt{background:url(./assets/db951c799cb92dd08096.png) center/46% auto no-repeat}
-#a17rBar #itemHotkeys kbd{opacity:0}
+#a17rBar #itemHotkeys kbd{opacity:0;pointer-events:none}
+#a17rBar #itemHotkeys button:is(:hover,:focus-visible) kbd{opacity:1;text-shadow:1px 1px #000}
+#a17rBar #itemHotkeys button:focus-visible,
+#spellbookEnergyBolt:is(:focus-visible,[aria-pressed="true"]){outline:1px solid #bca173;outline-offset:-1px}
+#a17rBar #itemHotkeys button[data-empty-stack="true"]{filter:grayscale(1)}
 #a17rBar #itemHotkeys span{position:absolute;right:calc(2*var(--hud-pixel));bottom:0;font-size:calc(9*var(--hud-pixel))}
 body.a17r-world #a17rBar .a17rTools{display:contents}
 body.a17r-world #a17rBar .a17rTools button{

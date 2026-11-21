@@ -490,3 +490,22 @@ test('potion uses one stack entry, clamps healing, and leaves HP and stack intac
  assert.equal(c.useHealingPotion(),false);
  assert.deepEqual([c.player.hp,c.player.pots],[10,1]);
 });
+
+test('goblin death of the player uses the existing return and restores HUD health without spending potions',()=>{
+ const calls=[];
+ const scene={};
+ const c=context(['advanceGoblinAttack'],{
+  GOBLIN_ATTACK_FRAME_MS:125,GOBLIN_ATTACK_FRAMES:4,GOBLIN_DAMAGE:3,
+  player:{hp:2,maxHp:20,mp:3,pots:4},verifiedTalkingIslandScene:scene,
+  villageProgress:()=>true,a17rRefresh:()=>calls.push('HUD'),
+  activateTalkingIslandScene:s=>calls.push(s),startVillageTrial:s=>calls.push(s),
+  showVillageTrialStatus:()=>calls.push('status'),msg(){}
+ });
+ const trial={goblinAttackAt:100,home:{x:2,y:3}};
+ const movement={spawn:(x,y)=>calls.push([x,y])};
+ assert.equal(c.advanceGoblinAttack(trial,movement,599,true),false);
+ assert.equal(c.player.hp,2);
+ assert.equal(c.advanceGoblinAttack(trial,movement,600,true),true);
+ assert.deepEqual(calls,['HUD',[2,3],scene,scene,'status']);
+ assert.deepEqual([c.player.hp,c.player.mp,c.player.pots],[20,3,4]);
+});

@@ -1916,6 +1916,7 @@ function refreshItemHotkeys(){
   const kind=actionHotkeyKind(player,slot);
   button.classList.toggle('item-potion',kind==='potion');
   button.classList.toggle('item-energy-bolt',kind==='bolt');
+  button.dataset.emptyStack=String(kind==='potion'&&player.pots<1);
   button.lastElementChild.textContent=kind==='potion'?String(player.pots):'';
   button.setAttribute('aria-label','F'+(slot+5)+(kind==='potion'?' 治癒藥水':kind==='bolt'?' 光箭':' 空白'));
   button.title=button.getAttribute('aria-label');
