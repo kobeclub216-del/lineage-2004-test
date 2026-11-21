@@ -428,10 +428,7 @@ window.addEventListener('keydown',e=>{
  if(e.repeat||e.ctrlKey||e.metaKey||e.altKey)return;
  if(worldEntered&&/^F(?:[5-9]|1[0-2])$/.test(e.key)){
   const slot=Number(e.key.slice(1))-5;
-  if(player?.potionHotkey===slot){
-   e.preventDefault();
-   usePotionHotkey(slot);
-  }
+  if(useActionHotkey(slot))e.preventDefault();
   return;
  }
  if(worldEntered&&e.key==='F4' &&villageProgress()){
@@ -1793,6 +1790,7 @@ function setSpellbookOpen(open){
  const learned=knowsEnergyBolt(player);
  spell.hidden=!open||!(scene?.dummy||learned);
  spell.disabled=!scene?.casts||!(scene.dummy||learned);
+ spell.draggable=open&&learned&&!spell.disabled;
  if(!spell.hidden){
   spell.title='光箭（'+ENERGY_BOLT_MP+' MP）';
   spell.setAttribute('aria-label',spell.title);
@@ -1805,13 +1803,19 @@ document.getElementById('a17rSpellbook').onclick=()=>{
  if(worldEntered)setSpellbookOpen(document.getElementById('spellbookWindow').hidden);
 };
 document.getElementById('spellbookClose').onclick=()=>setSpellbookOpen(false);
-document.getElementById('spellbookEnergyBolt').onclick=()=>{
+function selectEnergyBolt(){
  const scene=verifiedTalkingIslandScene;
  if(!worldEntered||!scene?.casts||!(scene.dummy||knowsEnergyBolt(player)))return;
  if(!scene.dummy&&villageTrial?.phase!=='fight'){msg('目前沒有可選的哥布林。');update();return;}
  setVillageSpellTargeting(true);
  msg(scene.dummy?'光箭：點選木人，Esc 取消。':'光箭：點選哥布林，Esc 取消。');
  update();
+}
+const energyBoltButton=document.getElementById('spellbookEnergyBolt');
+energyBoltButton.onclick=selectEnergyBolt;
+energyBoltButton.ondragstart=event=>{
+ if(!worldEntered||!knowsEnergyBolt(player)){event.preventDefault();return;}
+ event.dataTransfer.setData('application/x-lineage-energy-bolt',ENERGY_BOLT_ID);
 };
 document.getElementById('a17rHelp').onclick=()=>{const d=document.getElementById('desktopGameHelp');d.hidden=!d.hidden;};
 document.getElementById('a17rReturn').onclick=()=>document.getElementById('returnToCharacterSelect').click();
@@ -1821,16 +1825,38 @@ document.getElementById('a17rChatSize').onclick=event=>{
 };
 document.getElementById('a17rSlots').innerHTML='<span></span>'.repeat(32);
 var itemHotkeys=document.getElementById('itemHotkeys');
-function usePotionHotkey(slot){
- if(worldEntered&&player?.potionHotkey===slot)document.getElementById('a17rHeal').click();
+function actionHotkeyKind(character,slot){
+ if(character?.potionHotkey===slot)return 'potion';
+ if(character?.energyBoltHotkey===slot&&knowsEnergyBolt(character))return 'bolt';
+ return null;
+}
+function assignActionHotkey(character,slot,kind){
+ if(!character||!Number.isInteger(slot)||slot<0||slot>=8)return false;
+ if(kind==='potion'&&character.pots>0){
+  character.potionHotkey=slot;
+  if(character.energyBoltHotkey===slot)delete character.energyBoltHotkey;
+ }else if(kind==='bolt'&&knowsEnergyBolt(character)){
+  character.energyBoltHotkey=slot;
+  if(character.potionHotkey===slot)delete character.potionHotkey;
+ }else return false;
+ return true;
+}
+function useActionHotkey(slot){
+ if(!worldEntered)return false;
+ const kind=actionHotkeyKind(player,slot);
+ if(kind==='potion')document.getElementById('a17rHeal').click();
+ if(kind==='bolt')selectEnergyBolt();
+ return kind!==null;
 }
 function refreshItemHotkeys(){
  if(!itemHotkeys)return;
  for(const [slot,button] of Array.from(itemHotkeys.children).entries()){
-  const assigned=player?.potionHotkey===slot;
-  button.classList.toggle('item-potion',assigned);
-  button.lastElementChild.textContent=assigned?String(player.pots):'';
-  button.setAttribute('aria-label','F'+(slot+5)+(assigned?' 治癒藥水':' 空白'));
+  const kind=actionHotkeyKind(player,slot);
+  button.classList.toggle('item-potion',kind==='potion');
+  button.classList.toggle('item-energy-bolt',kind==='bolt');
+  button.lastElementChild.textContent=kind==='potion'?String(player.pots):'';
+  button.setAttribute('aria-label','F'+(slot+5)+(kind==='potion'?' 治癒藥水':kind==='bolt'?' 光箭':' 空白'));
+  button.title=button.getAttribute('aria-label');
  }
 }
 for(let slot=0;slot<8;slot++){
@@ -1839,15 +1865,17 @@ for(let slot=0;slot<8;slot++){
  const key=document.createElement('kbd');
  key.textContent='F'+(slot+5);
  button.append(key,document.createElement('span'));
- button.onclick=()=>usePotionHotkey(slot);
+ button.onclick=()=>useActionHotkey(slot);
  button.ondragover=event=>{
-  if(event.dataTransfer.types.includes('application/x-lineage-potion'))event.preventDefault();
+  if(event.dataTransfer.types.some(type=>type==='application/x-lineage-potion'||type==='application/x-lineage-energy-bolt'))event.preventDefault();
  };
  button.ondrop=event=>{
   event.preventDefault();
-  if(!worldEntered||!player?.pots||event.dataTransfer.getData('application/x-lineage-potion')!=='healing')return;
-  player.potionHotkey=slot;
-  refreshItemHotkeys();
+  if(!worldEntered)return;
+  const data=event.dataTransfer;
+  const kind=data.getData('application/x-lineage-energy-bolt')===ENERGY_BOLT_ID?'bolt':
+   data.getData('application/x-lineage-potion')==='healing'?'potion':null;
+  if(assignActionHotkey(player,slot,kind))refreshItemHotkeys();
  };
  itemHotkeys.append(button);
 }

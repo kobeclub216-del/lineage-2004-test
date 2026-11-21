@@ -393,3 +393,24 @@ test('goblin hit, death and attack animation only select their own atlas rows',(
  const png=fs.readFileSync(path.join(dir,'assets/db366be902fa0b49938a.png'));
  assert.deepEqual([png.readUInt32BE(16),png.readUInt32BE(20)],[119,93*25]);
 });
+
+test('learned light bolt and legacy potion can share the hotbar without sharing a slot',()=>{
+ const c=context(['knowsEnergyBolt','assignActionHotkey','actionHotkeyKind','useActionHotkey'],{
+  ENERGY_BOLT_ID:'energy-bolt',worldEntered:true,
+  player:{pots:2,potionHotkey:0},document:{getElementById:()=>({click:()=>actions.push('potion')})},
+  selectEnergyBolt:()=>actions.push('bolt')
+ });
+ const actions=[];
+ assert.equal(c.assignActionHotkey(c.player,1,'bolt'),false);
+ c.player.learnedSpells=['energy-bolt'];
+ assert.equal(c.assignActionHotkey(c.player,1,'bolt'),true);
+ assert.equal(c.useActionHotkey(0),true);
+ assert.equal(c.useActionHotkey(1),true);
+ assert.deepEqual(actions,['potion','bolt']);
+ assert.equal(c.assignActionHotkey(c.player,0,'bolt'),true);
+ assert.equal(c.player.potionHotkey,undefined);
+ assert.equal(c.actionHotkeyKind(c.player,1),null);
+ assert.equal(c.assignActionHotkey(c.player,0,'potion'),true);
+ assert.equal(c.player.energyBoltHotkey,undefined);
+ assert.equal(c.useActionHotkey(1),false);
+});
