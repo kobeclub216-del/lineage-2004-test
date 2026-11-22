@@ -5,8 +5,59 @@ const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
 // comparison values are NOT asserted to be original Lineage 1.82 measurements.
 // Scale the isometric X and Y axes together to preserve tile geometry.
 const visualParams=new URLSearchParams(location.search);
+const equipmentTestMode=visualParams.get('equipmentTest')==='1';
 const magicTestMode=visualParams.get('magicTest')==='1';
 const gerengTestMode=visualParams.get('gerengPreview')==='1'&&visualParams.get('gerengTest')==='1';
+// Test entries have no historical values, restrictions, or substitute art.
+const equipmentCatalog=new Map(equipmentTestMode?[
+ ['test-weapon',{name:'測試武器',slot:'weapon'}],
+ ['test-armor',{name:'測試防具',slot:'armor'}]
+]:[]);
+function toggleEquipmentItem(character,index){
+ const items=character.equipmentItems;
+ if(!Array.isArray(items)||!Number.isInteger(index))return null;
+ const item=items[index];
+ const entry=equipmentCatalog.get(item?.id);
+ if(!entry||!['weapon','armor'].includes(entry.slot))return null;
+ if(entry.jobs&&!entry.jobs.includes(character.job))return null;
+ const equipping=!item.equipped;
+ const equipmentItems=items.map((record,i)=>{
+  if(i===index)return {...record,equipped:equipping};
+  if(equipping&&record?.equipped&&equipmentCatalog.get(record.id)?.slot===entry.slot)
+   return {...record,equipped:false};
+  return record;
+ });
+ return {...character,equipmentItems};
+}
+function changeEquipment(index){
+ if(!worldEntered||!player||(localVillageEntered&&!villageProgress()))return;
+ const next=toggleEquipmentItem(player,index);
+ if(next&&commitVillagePlayer(next))update();
+}
+function refreshEquipmentBag(){
+ const slots=document.querySelectorAll('#a17rSlots > span');
+ const items=Array.isArray(player.equipmentItems)?player.equipmentItems:[];
+ for(let slot=2;slot<slots.length;slot++){
+  const index=slot-2,item=items[index],entry=equipmentCatalog.get(item?.id);
+  const cell=slots[slot];
+  let button=cell.firstElementChild;
+  if(!entry){if(button)button.remove();continue;}
+  if(!button){
+   button=document.createElement('button');
+   button.type='button';
+   button.className='equipment-bag-item';
+   button.onclick=()=>changeEquipment(index);
+   cell.append(button);
+  }
+  const equipped=item.equipped===true;
+  button.textContent=equipped?'已裝備':entry.name;
+  button.title=(equipped?'卸下':'裝備')+' '+entry.name;
+  button.setAttribute('aria-label',button.title);
+  button.setAttribute('aria-pressed',String(equipped));
+  button.disabled=!worldEntered||(localVillageEntered&&!villageProgress());
+ }
+}
+
 function visualScaleParam(name){
  const raw=visualParams.get(name);
  if(raw===null)return 1;
@@ -61,10 +112,10 @@ function a46LevelUp(){const g=a46Growth[player.job]||a46Growth.王族,con=player
 function newPlayer(name,job){if(!Object.prototype.hasOwnProperty.call(jobs,job)){alert('1.82 尚未開放此職業');return}name=String(name||'').normalize('NFKC').trim();const selected=a37PendingSlot;if(a43NameTaken(name,selected)){alert('角色名稱「'+name+'」已被使用，請更換名稱。');document.getElementById('name').focus();return}let a=jobs[job];if(creationRemaining()!==0){alert('請先分配全部能力值點數');return}const existing=a37Slots[selected];if(existing&&!confirm('此欄位已有角色，確定覆蓋？'))return;const stats=a.slice(0,6).map((v,i)=>v+creationPoints[i]);const vitals=a45StartingVitals(job,stats);player={dataVersion:'1.82',dataSchema:p04Schema,name,job,gender:document.getElementById('gender').value,x:10,y:10,hp:vitals.hp,maxHp:vitals.hp,mp:vitals.mp,maxMp:vitals.mp,lv:1,xp:0,pots:3,stats,path:[],step:0};drops=[];target=null;spawn();centerCamera();a37ActiveSlot=selected;a37Slots[selected]={player:structuredClone(player),drops:[],monsters:structuredClone(monsters)};a37Persist();document.getElementById('modal').style.display='none';showCharacterSelection();update()}
 let worldEntered=false;
 /* A37: eight independent browser-local character slots. A19 visual stage preserved. */
-const a37Key=magicTestMode?'lineage_182_magic_test_slots':gerengTestMode?'lineage_182_gereng_test_slots':'lineage_182_p01_character_slots';
+const a37Key=equipmentTestMode?'lineage_182_equipment_test_slots':magicTestMode?'lineage_182_magic_test_slots':gerengTestMode?'lineage_182_gereng_test_slots':'lineage_182_p01_character_slots';
 /* P04: retain P01-P03 key; backup before first P04 write and migrate in memory.
    No automatic destructive overwrite of old slots. Browser-local only. */
-const p04BackupKey=magicTestMode?'lineage_182_magic_test_backup':gerengTestMode?'lineage_182_gereng_test_backup':'lineage_182_pre_p04_backup_v1';
+const p04BackupKey=equipmentTestMode?'lineage_182_equipment_test_backup':magicTestMode?'lineage_182_magic_test_backup':gerengTestMode?'lineage_182_gereng_test_backup':'lineage_182_pre_p04_backup_v1';
 const p04Schema=2;
 function p04MigrateSlot(slot){
  if(!slot||!slot.player||typeof slot.player!=='object')return null;
@@ -91,6 +142,13 @@ if(magicTestMode&&!a37Slots.some(Boolean))a37Slots[0]={
  player:{dataVersion:'1.82',dataSchema:p04Schema,name:'光箭測試法師',job:'法師',gender:'男',
   x:10,y:10,hp:24,maxHp:24,mp:7,maxMp:7,lv:4,xp:0,pots:3,adena:100,
   stats:[8,7,18,18,16,8],path:[],step:0,learnedSpells:[]},
+ drops:[],monsters:[]
+};
+if(equipmentTestMode&&!a37Slots.some(Boolean))a37Slots[0]={
+ player:{dataVersion:'1.82',dataSchema:p04Schema,name:'裝備測試角色',job:'騎士',gender:'男',
+  x:10,y:10,hp:16,maxHp:16,mp:1,maxMp:1,lv:1,xp:0,pots:3,
+  stats:jobs.騎士.slice(0,6),path:[],step:0,
+  equipmentItems:[{id:'test-weapon',equipped:false},{id:'test-armor',equipped:false}]},
  drops:[],monsters:[]
 };
 function a37Persist(){try{p04MakeBackup();localStorage.setItem(a37Key,JSON.stringify(a37Slots))}catch(e){alert('儲存失敗：請確認瀏覽器空間或隱私設定')}}
@@ -1682,6 +1740,7 @@ function a17rRefresh(){
   potionSlot.draggable=player.pots>0;
  }
  refreshItemHotkeys();
+ refreshEquipmentBag();
  put('a17rHp',hp+'/'+maxHp);const mp=verifiedTalkingIslandScene?.previewMp??player.mp;
  put('a17rMp',mp+'/'+player.maxMp);
  if(document.getElementById('characterStatusDialog').open)refreshCharacterStatus();
