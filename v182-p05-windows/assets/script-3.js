@@ -10,8 +10,9 @@ const magicTestMode=visualParams.get('magicTest')==='1';
 const gerengTestMode=visualParams.get('gerengPreview')==='1'&&visualParams.get('gerengTest')==='1';
 // Test entries have no historical values, restrictions, or substitute art.
 const equipmentCatalog=new Map(equipmentTestMode?[
- ['test-weapon',{name:'測試武器',slot:'weapon'}],
- ['test-armor',{name:'測試防具',slot:'armor'}]
+ ['test-weapon',{name:'匕首',slot:'weapon'}],
+ ['test-armor',{name:'皮夾克',slot:'armor'}],
+ ['test-elven-dagger',{name:'精靈匕首',slot:'weapon'}]
 ]:[]);
 function toggleEquipmentItem(character,index){
  const items=character.equipmentItems;
@@ -28,6 +29,15 @@ function toggleEquipmentItem(character,index){
   return record;
  });
  return {...character,equipmentItems};
+}
+function grantEquipmentTestKit(){
+ if(!equipmentTestMode||!worldEntered||!player)return false;
+ const items=Array.isArray(player.equipmentItems)?player.equipmentItems:[];
+ const missing=[...equipmentCatalog.keys()].filter(id=>!items.some(item=>item?.id===id));
+ if(!missing.length)return true;
+ return commitVillagePlayer({
+  ...player,equipmentItems:[...items,...missing.map(id=>({id,equipped:false}))]
+ });
 }
 function changeEquipment(index){
  if(!worldEntered||!player||(localVillageEntered&&!villageProgress()))return;
@@ -50,7 +60,7 @@ function refreshEquipmentBag(){
    cell.append(button);
   }
   const equipped=item.equipped===true;
-  button.textContent=equipped?'已裝備':entry.name;
+  button.textContent=entry.name;
   button.title=(equipped?'卸下':'裝備')+' '+entry.name;
   button.setAttribute('aria-label',button.title);
   button.setAttribute('aria-pressed',String(equipped));
@@ -147,8 +157,7 @@ if(magicTestMode&&!a37Slots.some(Boolean))a37Slots[0]={
 if(equipmentTestMode&&!a37Slots.some(Boolean))a37Slots[0]={
  player:{dataVersion:'1.82',dataSchema:p04Schema,name:'裝備測試角色',job:'騎士',gender:'男',
   x:10,y:10,hp:16,maxHp:16,mp:1,maxMp:1,lv:1,xp:0,pots:3,
-  stats:jobs.騎士.slice(0,6),path:[],step:0,
-  equipmentItems:[{id:'test-weapon',equipped:false},{id:'test-armor',equipped:false}]},
+  stats:jobs.騎士.slice(0,6),path:[],step:0},
  drops:[],monsters:[]
 };
 function a37Persist(){try{p04MakeBackup();localStorage.setItem(a37Key,JSON.stringify(a37Slots))}catch(e){alert('儲存失敗：請確認瀏覽器空間或隱私設定')}}
@@ -244,7 +253,12 @@ async function enterSelectedCharacter(){
  // Initial page load may have warmed only the default male-knight frames.
  // Do not alter sprites or substitute any placeholder image.
  if(!localVillageEntered)initializeKnightPreview();
- worldEntered=true;a17rRefresh();
+ worldEntered=true;
+ if(equipmentTestMode&&grantEquipmentTestKit()){
+  setInventoryOpen(true);
+  msg('裝備測試：點擊背包中的匕首、皮夾克或精靈匕首。金框表示已裝備。');
+ }
+ a17rRefresh();
  if(visualParams.get('smokeTest')==='1'&&window.startLineageSmokeTest){
   window.startLineageSmokeTest();
  }

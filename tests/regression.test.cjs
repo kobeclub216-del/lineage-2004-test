@@ -547,12 +547,18 @@ test('equipment writes to the selected isolated character slot and restores from
   return c;
  }
  const first=open('?equipmentTest=1');
- vm.runInContext("a37Slots[1]={player:{...player,name:'另一位',equipmentItems:[]}};changeEquipment(0);changeEquipment(1);",first);
+ vm.runInContext("a37Slots[1]={player:{...player,name:'另一位',equipmentItems:[]}};grantEquipmentTestKit();grantEquipmentTestKit();changeEquipment(0);changeEquipment(1);",first);
  const second=open('?equipmentTest=1');
- assert.equal(vm.runInContext('a37Slots[0].player.equipmentItems.every(item=>item.equipped)',second),true);
+ assert.equal(vm.runInContext("a37Slots[0].player.equipmentItems.map(item=>item.equipped).join(',')",second),'true,true,false');
  assert.equal(vm.runInContext('a37Slots[1].player.equipmentItems.length',second),0);
- vm.runInContext('changeEquipment(0)',second);
- assert.equal(vm.runInContext('a37Slots[0].player.equipmentItems[0].equipped',open('?equipmentTest=1')),false);
+ vm.runInContext('changeEquipment(2)',second);
+ assert.equal(vm.runInContext("a37Slots[0].player.equipmentItems.map(item=>item.equipped).join(',')",open('?equipmentTest=1')),'false,true,true');
+ vm.runInContext('changeEquipment(2)',second);
+ assert.equal(vm.runInContext('a37Slots[0].player.equipmentItems[2].equipped',open('?equipmentTest=1')),false);
  assert.equal(values.get('lineage_182_p01_character_slots'),'[]');
  assert.equal(vm.runInContext('a37Slots[0]',open('')),null);
+ assert.equal(vm.runInContext('grantEquipmentTestKit()',open('')),false);
+ const guide=fs.readFileSync(path.join(dir,'Equipment-Test.html'),'utf8');
+ assert.match(guide,/href="Start\.html\?equipmentTest=1"/);
+ assert.match(source,/if\(equipmentTestMode&&grantEquipmentTestKit\(\)\)\{\s*setInventoryOpen\(true\)/);
 });
