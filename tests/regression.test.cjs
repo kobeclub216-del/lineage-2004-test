@@ -509,3 +509,50 @@ test('goblin death of the player uses the existing return and restores HUD healt
  assert.deepEqual(calls,['HUD',[2,3],scene,scene,'status']);
  assert.deepEqual([c.player.hp,c.player.mp,c.player.pots],[20,3,4]);
 });
+
+
+test('equipment changes ownership state without moving, cloning or losing inventory records',()=>{
+ const c=context(['toggleEquipmentItem'],{
+  equipmentCatalog:new Map([
+   ['sword',{slot:'weapon',jobs:['騎士']}],['axe',{slot:'weapon'}],['armor',{slot:'armor'}]
+  ])
+ });
+ const p={job:'騎士',pots:3,equipmentItems:[
+  {id:'sword',equipped:true},{id:'axe',equipped:false},{id:'armor',equipped:true},{id:'unknown'}
+ ]};
+ const next=c.toggleEquipmentItem(p,1);
+ assert.deepEqual(next.equipmentItems.map(i=>i.id),p.equipmentItems.map(i=>i.id));
+ assert.equal(next.equipmentItems[0].equipped,false);
+ assert.equal(next.equipmentItems[1].equipped,true);
+ assert.equal(next.equipmentItems[2].equipped,true);
+ assert.equal(next.equipmentItems[3],p.equipmentItems[3]);
+ assert.equal(p.equipmentItems[0].equipped,true);
+ assert.equal(c.toggleEquipmentItem(next,1).equipmentItems[1].equipped,false);
+ assert.equal(c.toggleEquipmentItem({...p,job:'法師'},0),null);
+ assert.equal(c.toggleEquipmentItem(p,3),null);
+ assert.equal(c.toggleEquipmentItem({job:'騎士'},0),null);
+});
+
+test('equipment writes to the selected isolated character slot and restores from serialized storage',()=>{
+ const values=new Map([['lineage_182_p01_character_slots','[]']]);
+ const localStorage={getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,v)};
+ const section=(start,end)=>source.slice(source.indexOf(start),source.indexOf(end));
+ function open(search){
+  const c=context([], {URLSearchParams,location:{search},localStorage,
+   jobs:{騎士:[16,12,14,8,9,12,4]},msg(){},update(){},worldEntered:true,localVillageEntered:false});
+  vm.runInContext(section('const visualParams=','function visualScaleParam')+
+   section('const a37Key=','function a37Snapshot'),c);
+  vm.runInContext(functionSource('commitVillagePlayer')+
+   'let player=a37Slots[0]?.player,drops=[],monsters=[];',c);
+  return c;
+ }
+ const first=open('?equipmentTest=1');
+ vm.runInContext("a37Slots[1]={player:{...player,name:'另一位',equipmentItems:[]}};changeEquipment(0);changeEquipment(1);",first);
+ const second=open('?equipmentTest=1');
+ assert.equal(vm.runInContext('a37Slots[0].player.equipmentItems.every(item=>item.equipped)',second),true);
+ assert.equal(vm.runInContext('a37Slots[1].player.equipmentItems.length',second),0);
+ vm.runInContext('changeEquipment(0)',second);
+ assert.equal(vm.runInContext('a37Slots[0].player.equipmentItems[0].equipped',open('?equipmentTest=1')),false);
+ assert.equal(values.get('lineage_182_p01_character_slots'),'[]');
+ assert.equal(vm.runInContext('a37Slots[0]',open('')),null);
+});
