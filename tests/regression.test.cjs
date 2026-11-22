@@ -562,3 +562,33 @@ test('equipment writes to the selected isolated character slot and restores from
  assert.match(guide,/href="Start\.html\?equipmentTest=1"/);
  assert.match(source,/if\(equipmentTestMode&&grantEquipmentTestKit\(\)\)\{\s*setInventoryOpen\(true\)/);
 });
+
+test('Pandora equipment purchase saves the debit and bag entries together',()=>{
+ const writes=[];
+ const c=context(['buyVillageEquipment','shopBalance','commitVillagePlayer','toggleEquipmentItem'],{
+  equipmentCatalog:new Map([['dagger',{slot:'weapon',pandoraPrice:8}],['jacket',{slot:'armor',pandoraPrice:22}],['test-only',{slot:'weapon'}]]),
+  equipmentBagCapacity:30,villageProgress:()=>true,verifiedTalkingIslandScene:{merchant:{}},
+  verifiedTalkingIslandMovement:{position:{x:1,y:1}},PANDORA:{x:1,y:1},
+  player:{pots:3},a37Slots:[{},{}],a37ActiveSlot:1,a37Key:'slots',drops:[],monsters:[],
+  p04MakeBackup(){},msg(){},localStorage:{setItem:(k,v)=>writes.push(JSON.parse(v))}
+ });
+ assert.equal(c.buyVillageEquipment('dagger',2),true);
+ assert.equal(c.buyVillageEquipment('jacket',1),true);
+ assert.equal(c.player.adena,42);
+ assert.equal(c.player.pots,3);
+ assert.deepEqual(writes[1][1].player.equipmentItems,[
+  {id:'dagger',equipped:false},{id:'dagger',equipped:false},{id:'jacket',equipped:false}
+ ]);
+ assert.equal(c.toggleEquipmentItem(c.player,2).equipmentItems[2].equipped,true);
+ assert.equal(c.buyVillageEquipment('test-only',1),false);
+ assert.equal(c.buyVillageEquipment('jacket',2),false);
+ c.verifiedTalkingIslandMovement.position.x=4;
+ assert.equal(c.buyVillageEquipment('dagger',1),false);
+ c.verifiedTalkingIslandMovement.position.x=1;
+ c.localStorage.setItem=()=>{throw Error('storage');};
+ assert.equal(c.buyVillageEquipment('dagger',1),false);
+ assert.equal(c.player.adena,42);
+ assert.equal(c.player.equipmentItems.length,3);
+ c.player.equipmentItems=Array(30).fill({id:'dagger'});
+ assert.equal(c.buyVillageEquipment('dagger',1),false);
+});

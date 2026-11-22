@@ -1087,6 +1087,7 @@ body.a17r-world #c{height:0;aspect-ratio:auto}
  padding:0 calc(2 * var(--shop-pixel));font:inherit;
  color:#eee3c3;background:#222127;border:1px solid #5e5448;border-radius:0;
 }
+#villageShopItem{font:inherit;color:#eee3c3;background:#222127;border:1px solid #5e5448;max-width:100%}
 #villageShopQuantity:focus-visible{outline:1px solid #bca173;outline-offset:-1px}
 #villageShopBalanceLine{
  left:calc(17 * var(--shop-pixel));top:calc(274 * var(--shop-pixel));
@@ -1143,7 +1144,7 @@ body.a17r-world #c{height:0;aspect-ratio:auto}
 <button class="pandoraFrameControl" type="button" id="pandoraScrollDown" aria-label="向下捲動對話">向下</button>
 <form id="villageShopForm" novalidate hidden>
 <button id="closeVillageShopFrame" type="button" aria-label="關閉商店">關閉</button>
-<div id="pandoraPotionRow"><span id="pandoraPotionIcon" aria-hidden="true"></span><span>治癒藥水 <small id="pandoraPotionStock" hidden></small></span><span><span id="villageShopPrice"></span> 天幣／瓶</span></div>
+<div id="pandoraPotionRow"><span id="pandoraPotionIcon" aria-hidden="true"></span><span><select id="villageShopItem" aria-label="購買品項"><option value="potion">治癒藥水</option></select><span id="villageShopSellName" hidden>治癒藥水</span> <small id="pandoraPotionStock" hidden></small></span><span><span id="villageShopPrice"></span> 天幣／<span id="villageShopUnit">瓶</span></span></div>
 <div id="villageShopBalanceLine">持有天幣　<span id="villageShopBalance"></span></div>
 <label id="villageShopQuantityLabel"><span id="shopQuantityLabel">購買數量</span><input id="villageShopQuantity" type="number" min="1" step="1" value="1" required></label>
 <div id="villageShopTotalLine"><span id="shopTotalLabel">購買總額</span><span id="villageShopTotal"></span></div>

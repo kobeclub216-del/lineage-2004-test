@@ -8,12 +8,13 @@ const visualParams=new URLSearchParams(location.search);
 const equipmentTestMode=visualParams.get('equipmentTest')==='1';
 const magicTestMode=visualParams.get('magicTest')==='1';
 const gerengTestMode=visualParams.get('gerengPreview')==='1'&&visualParams.get('gerengTest')==='1';
-// Test entries have no historical values, restrictions, or substitute art.
-const equipmentCatalog=new Map(equipmentTestMode?[
- ['test-weapon',{name:'匕首',slot:'weapon'}],
- ['test-armor',{name:'皮夾克',slot:'armor'}],
- ['test-elven-dagger',{name:'精靈匕首',slot:'weapon'}]
-]:[]);
+// Listed prices are from the undated legacy Pandora guide, not verified 1.82 prices.
+const equipmentCatalog=new Map([
+ ['test-weapon',{name:'匕首',slot:'weapon',pandoraPrice:8}],
+ ['test-armor',{name:'皮夾克',slot:'armor',pandoraPrice:22}]
+]);
+if(equipmentTestMode)equipmentCatalog.set('test-elven-dagger',{name:'精靈匕首',slot:'weapon'});
+const equipmentBagCapacity=30; // Existing 32 cells minus potion and currency.
 function toggleEquipmentItem(character,index){
  const items=character.equipmentItems;
  if(!Array.isArray(items)||!Number.isInteger(index))return null;
@@ -908,6 +909,19 @@ function buyVillagePotion(quantity){
     quantity>Math.floor(balance/POTION_PRICE)||!Number.isSafeInteger(player.pots+quantity))return false;
  return commitVillagePlayer({...player,adena:balance-quantity*POTION_PRICE,pots:player.pots+quantity});
 }
+function buyVillageEquipment(id,quantity){
+ const price=equipmentCatalog.get(id)?.pandoraPrice;
+ if(!price||!villageProgress()||!verifiedTalkingIslandScene.merchant||
+    !Number.isSafeInteger(quantity)||quantity<1)return false;
+ const {x,y}=verifiedTalkingIslandMovement.position;
+ if(Math.max(Math.abs(x-PANDORA.x),Math.abs(y-PANDORA.y))>1)return false;
+ const balance=shopBalance();
+ const items=Array.isArray(player.equipmentItems)?player.equipmentItems:[];
+ if(quantity>equipmentBagCapacity-items.length||
+    !Number.isSafeInteger(balance)||quantity>Math.floor(balance/price))return false;
+ const purchased=Array.from({length:quantity},()=>({id,equipped:false}));
+ return commitVillagePlayer({...player,adena:balance-quantity*price,equipmentItems:[...items,...purchased]});
+}
 const villageShop=document.getElementById('villageShop');
 const pandoraDialogue=document.getElementById('pandoraDialogue');
 const villageShopForm=document.getElementById('villageShopForm');
@@ -967,16 +981,27 @@ function showVillageTrade(selling){
  pandoraDialogue.hidden=true;
  villageShopForm.hidden=false;
  villageShopQuantity.value='1';
+ villageShopItem.value='potion';
+ villageShopItem.hidden=selling;
+ document.getElementById('villageShopSellName').hidden=!selling;
  villageShopMessage.textContent=refreshVillageShop().error;
  villageShopQuantity.focus();
 };
+const villageShopItem=document.getElementById('villageShopItem');
+for(const [id,entry] of equipmentCatalog){
+ if(entry.pandoraPrice)villageShopItem.add(new Option(entry.name,id));
+}
 const villageShopQuantity=document.getElementById('villageShopQuantity');
 const villageShopMessage=document.getElementById('villageShopMessage');
 function refreshVillageShop(){
  const q=villageShopQuantity.value.trim();
  const quantity=/^\d+$/.test(q)?Number(q):NaN;
  const valid=Number.isSafeInteger(quantity)&&quantity>0&&quantity<=Math.floor(Number.MAX_SAFE_INTEGER/POTION_PRICE);
- const price=villageShopSelling?POTION_SELL_PRICE:POTION_PRICE;
+ const item=villageShopSelling?null:equipmentCatalog.get(villageShopItem.value);
+ const price=villageShopSelling?POTION_SELL_PRICE:item?.pandoraPrice??POTION_PRICE;
+ const noSpace=Boolean(item&&quantity>equipmentBagCapacity-(player.equipmentItems?.length??0));
+ document.getElementById('pandoraPotionIcon').style.visibility=item?'hidden':'';
+ document.getElementById('villageShopUnit').textContent=item?'件':'瓶';
  const affordable=valid&&(villageShopSelling?quantity<=player.pots&&quantity<=Math.floor((Number.MAX_SAFE_INTEGER-shopBalance())/price):quantity<=Math.floor(shopBalance()/price));
  const stock=document.getElementById('pandoraPotionStock');
  stock.hidden=!villageShopSelling;
@@ -988,8 +1013,8 @@ function refreshVillageShop(){
  document.getElementById('villageShopPrice').textContent=price;
  document.getElementById('villageShopBalance').textContent=shopBalance();
  document.getElementById('villageShopTotal').textContent=valid?quantity*price+' 天幣':'—';
- document.getElementById('buyVillageShop').disabled=!valid||(villageShopSelling&&!affordable);
- return {quantity,insufficientFunds:valid&&!villageShopSelling&&!affordable,error:!valid?'請輸入正整數數量':!affordable?(villageShopSelling?'藥水不足或金額超出上限':'天幣不足'):''};
+ document.getElementById('buyVillageShop').disabled=!valid||noSpace||(villageShopSelling&&!affordable);
+ return {quantity,insufficientFunds:valid&&!villageShopSelling&&!affordable,error:!valid?'請輸入正整數數量':noSpace?'背包空間不足':!affordable?(villageShopSelling?'藥水不足或金額超出上限':'天幣不足'):''};
 }
 function openVillageShop(){
  if(villageShop.open)return;
@@ -1004,6 +1029,7 @@ function openVillageShop(){
  villageShop.showModal();
  document.getElementById('pandoraBuy').focus();
 }
+villageShopItem.addEventListener('change',()=>{villageShopMessage.textContent=refreshVillageShop().error;});
 villageShopQuantity.addEventListener('input',()=>{villageShopMessage.textContent=refreshVillageShop().error;});
 document.getElementById('closeVillageShop').onclick=()=>{showPandoraDialogue();document.getElementById('pandoraBuy').focus();};
 document.getElementById('villageShopForm').onsubmit=event=>{
@@ -1016,9 +1042,11 @@ document.getElementById('villageShopForm').onsubmit=event=>{
   return;
  }
  if(error)return;
- const success=villageShopSelling?sellVillagePotion(quantity):buyVillagePotion(quantity);
- if(!success){villageShopMessage.textContent='請靠近潘朵拉後再購買';return;}
- const message=(villageShopSelling?'賣出':'購買')+'治癒藥水 ×'+quantity+'，剩餘 '+player.adena+' 天幣';
+ const id=villageShopItem.value;
+ const equipment=villageShopSelling?null:equipmentCatalog.get(id);
+ const success=villageShopSelling?sellVillagePotion(quantity):equipment?buyVillageEquipment(id,quantity):buyVillagePotion(quantity);
+ if(!success){villageShopMessage.textContent='交易未完成，請確認距離、背包及存檔';return;}
+ const message=(villageShopSelling?'賣出':'購買')+(equipment?.name??'治癒藥水')+' ×'+quantity+'，剩餘 '+player.adena+' 天幣';
  msg(message);
  update();
  refreshVillageShop();
