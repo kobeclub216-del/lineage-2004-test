@@ -1076,7 +1076,10 @@ function cancelVillageCast(now=performance.now()){
  if(now-villageCastPreview.startedAt<release)villageCastPreview=null;
 }
 const GOBLIN=Object.freeze({level:2,hp:3,mp:10,exp:5});
-const VILLAGE_TRIAL_ENEMY={x:32953,y:32569};
+const outskirtsHunt=visualParams.get('outskirtsHunt')==='1'&&
+ !magicTestMode&&!equipmentTestMode&&visualParams.get('gerengPreview')!=='1'&&
+ visualParams.get('spellPreview')!=='1'&&visualParams.get('villageProgress')!=='0'&&visualParams.get('villageTrial')!=='0';
+const VILLAGE_TRIAL_ENEMY=outskirtsHunt?goblinEncounters.outskirts:goblinEncounters.village;
 const VILLAGE_TRIAL_DAMAGE=8;
 const TRIAL_PLAYER_HP=12;
 const GOBLIN_DAMAGE=3;
@@ -1093,7 +1096,7 @@ function startVillageTrial(scene){
 }
 function showVillageTrialStatus(){
  const messages={
-  fight:'開發測試｜點擊哥布林測試近戰',
+  fight:outskirtsHunt?'周邊狩獵測試｜從出生點往畫面左下尋找哥布林':'開發測試｜點擊哥布林測試近戰',
   dying:'開發測試｜哥布林已擊倒',
   defeated:'開發測試｜近戰測試完成'
  };

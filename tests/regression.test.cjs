@@ -614,3 +614,28 @@ test('scene loader shares pending and decoded assets and retries failed reads',a
  assert.deepEqual([stats.imageHits,stats.imageMisses,stats.imageFailures,stats.imageLoadMs],[2,2,1,8]);
  assert.deepEqual([stats.sceneLoads,stats.lastSceneMs,stats.meanDrawMs,stats.maxDrawMs],[1,4,3,4]);
 });
+
+test('outskirts encounter reuses the existing map, has ground coverage, and is reachable from the village',()=>{
+ const config=fs.readFileSync(path.join(dir,'assets/goblin-animation.js'),'utf8');
+ const points=vm.runInNewContext(config+';goblinEncounters');
+ assert.equal(points.village.x,32953);
+ assert.equal(points.village.y,32569);
+ const data=readAssetJson('shop-scene.json'),{c}=scene();
+ const r=new c.TalkingIslandLayerRenderer({width:800,height:600,getContext:()=>({})},
+  {tileWidth:data.tileSize.width,tileHeight:data.tileSize.height});
+ r.setScene({bounds:data.bounds,layers:[]});
+ r.setCollision(data);
+ const movement=new c.TalkingIslandMovementController(r);
+ movement.spawn(data.spawn.x,data.spawn.y);
+ const {x,y}=points.outskirts;
+ assert.ok(movement.moveTo(x,y));
+ assert.ok(movement.route.length>0);
+ const ground=data.imagePlacement;
+ const anchor=r.project(ground.x,ground.y);
+ const target=r.project(x,y);
+ const left=anchor.x+(ground.offsetX??0)-ground.width/2;
+ const top=anchor.y+(ground.offsetY??0)-ground.height;
+ assert.ok(target.x>=left&&target.x<left+ground.width);
+ assert.ok(target.y>=top&&target.y<top+ground.height);
+ assert.ok(y>=readAssetJson('village-scene.json').bounds.maxY);
+});

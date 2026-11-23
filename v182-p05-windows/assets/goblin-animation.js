@@ -8,3 +8,10 @@ const goblinAnimation = {
  death:{start:9,count:12,ms:75},
  attack:{start:21,count:4,ms:125}
 };
+
+// Both encounters use the same species and animation atlas.
+const goblinEncounters = Object.freeze({
+ village:Object.freeze({x:32953,y:32569}),
+ // Development placement on an existing walkable cell of the shop scene.
+ outskirts:Object.freeze({x:32946,y:32598})
+});
