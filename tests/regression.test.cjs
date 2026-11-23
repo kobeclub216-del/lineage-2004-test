@@ -639,3 +639,30 @@ test('outskirts encounter reuses the existing map, has ground coverage, and is r
  assert.ok(target.y>=top&&target.y<top+ground.height);
  assert.ok(y>=readAssetJson('village-scene.json').bounds.maxY);
 });
+
+test('Gereng visit uses a reachable existing teacher cell and returns to the same encounter',async()=>{
+ const data=readAssetJson('gereng-scene.json'),{c}=scene();
+ const r=new c.TalkingIslandLayerRenderer({width:800,height:600,getContext:()=>({})});
+ r.setScene({bounds:data.bounds,layers:[]});r.setCollision(data);
+ assert.ok(r.canWalk(data.npc.x,data.npc.y+1));
+ assert.ok(data.roofCells.some(([x,y])=>x===data.npc.x&&y===data.npc.y+1));
+ for(const asset of [data.npc,data.ground,data.roof])assert.ok(fs.existsSync(path.join(dir,asset.uri)));
+ const village={},teacher={teacher:{}},trial={phase:'defeated',dropAvailable:true},player={job:'法師'};
+ const elements={pandoraVisitGereng:{},gerengReturnVillage:{},a11EntryStatus:{},gerengDialog:{close(){}}};
+ const scope=vm.createContext({
+  document:{getElementById:id=>elements[id]},worldEntered:true,villageShop:{open:true,close(){}},
+  player,villageProgress:()=>true,villageTrial:trial,verifiedTalkingIslandScene:village,
+  villageSpriteBases:{法師:{男:'wizard-male'}},villageCastPreview:null,update(){},openGerengDialogue(){},
+  showVillageTrialStatus(){}, prepareLocalVillage:async(sprite,trial,visit)=>{
+   assert.deepEqual([sprite,trial,visit],['wizard-male',false,true]);return teacher;
+  }
+ });
+ scope.activateTalkingIslandScene=scene=>{scope.verifiedTalkingIslandScene=scene;};
+ vm.runInContext(source.slice(source.indexOf('let villageReturn=null;'),source.indexOf('function openGerengDialogue()')),scope);
+ await elements.pandoraVisitGereng.onclick();
+ assert.equal(scope.verifiedTalkingIslandScene,teacher);
+ assert.equal(scope.villageTrial,null);
+ elements.gerengReturnVillage.onclick();
+ assert.equal(scope.verifiedTalkingIslandScene,village);
+ assert.equal(scope.villageTrial,trial);
+});
