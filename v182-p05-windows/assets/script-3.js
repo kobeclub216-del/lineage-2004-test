@@ -1330,14 +1330,14 @@ function activateTalkingIslandScene(scene){
  verifiedTalkingIslandWasMoving=false;
  verifiedTalkingIslandLastScreenFacing=null;
 }
-async function prepareGerengScene(loadSprite,nearTeacher=false){
+async function prepareGerengScene(loadSprite,loadLocalImage,nearTeacher=false){
  const data=await islandResources.json('./assets/gereng-scene.json');
  const [ground,roof,teacher,[spriteConfig,actor]]=await Promise.all([
-  verifiedImageLoader(data.ground.uri),verifiedImageLoader(data.roof.uri),
-  verifiedImageLoader(data.npc.uri),loadSprite('atlas')
+  loadLocalImage(data.ground.asset),loadLocalImage(data.roof.asset),
+  loadLocalImage(data.npc.asset),loadSprite('atlas')
  ]);
- const {uri:groundUri,...groundPlacement}=data.ground;
- const {uri:roofUri,...roofPlacement}=data.roof;
+ const {asset:groundAsset,...groundPlacement}=data.ground;
+ const {asset:roofAsset,...roofPlacement}=data.roof;
  const renderer=new TalkingIslandLayerRenderer(canvas,{tileWidth:48,tileHeight:24});
  renderer.setScene({bounds:data.bounds,layers:[{id:'ground',depth:0,images:[{...groundPlacement,image:ground}]}]});
  renderer.setCollision(data);
@@ -1362,7 +1362,7 @@ async function loadLocalVillage(spriteBase,trial,visitTeacher){
   json(spriteBase+'-'+action+'.json'),loadLocalImage(spriteBase+'-'+action+'.png')
  ]);
  const loadLocalImage=name=>verifiedImageLoader(localImages[name]);
- if(visitTeacher||visualParams.get('gerengPreview')==='1')return prepareGerengScene(loadSprite,visitTeacher);
+ if(visitTeacher||visualParams.get('gerengPreview')==='1')return prepareGerengScene(loadSprite,loadLocalImage,visitTeacher);
  const castPreview=visualParams.get('spellPreview')==='1'&&spriteBase.startsWith('wizard-');
  const shop=trial&&visualParams.get('villageProgress')!=='0';
  const learnedCast=shop&&spriteBase.startsWith('wizard-');

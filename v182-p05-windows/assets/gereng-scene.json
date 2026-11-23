@@ -4122,7 +4122,7 @@
  "npc": {
   "x": 33082,
   "y": 32589,
-  "uri": "./assets/bea8f6beb2965bb60ef4.png"
+  "asset": "gereng-npc"
  },
  "roofCells": [
   [
@@ -4293,7 +4293,7 @@
   "height": 3071,
   "offsetX": 360.0,
   "offsetY": 2471,
-  "uri": "./assets/e65ba2f27667039cc45d.webp"
+  "asset": "gereng-ground"
  },
  "roof": {
   "x": 32945,
@@ -4302,6 +4302,6 @@
   "height": 287,
   "offsetX": 2963.5,
   "offsetY": 1888,
-  "uri": "./assets/61e1dfacb23f56cf97bf.webp"
+  "asset": "gereng-roof"
  }
 }

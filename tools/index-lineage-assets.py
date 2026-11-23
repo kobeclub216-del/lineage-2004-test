@@ -1,0 +1,136 @@
+"""Index local Lineage asset packs without extracting archives or publishing files."""
+
+import argparse
+import hashlib
+import json
+import struct
+import zipfile
+from pathlib import Path, PurePosixPath
+
+FORMATS = {'.map', '.spr', '.png', '.webp', '.json'}
+CATEGORIES = {'character', 'monster', 'npc', 'map', 'item', 'interface'}
+DIRECTIONS = {'N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'}
+LIMIT = 32 * 1024 ** 2
+
+
+def safe_name(name):
+    path = PurePosixPath(name)
+    return bool(name and path.parts and not path.is_absolute() and
+                '..' not in path.parts and '\\' not in name and ':' not in name)
+
+
+def inputs(path):
+    if path.suffix.lower() == '.zip':
+        with zipfile.ZipFile(path) as archive:
+            names = set()
+            for member in archive.infolist():
+                if member.is_dir():
+                    continue
+                name = member.filename
+                if not safe_name(name) or name in names:
+                    raise ValueError(f'Unsafe or duplicate ZIP member: {name!r}')
+                names.add(name)
+                if Path(name).suffix.lower() in FORMATS:
+                    if member.file_size > LIMIT:
+                        raise ValueError(f'File exceeds 32 MiB: {name}')
+                    with archive.open(member) as stream:
+                        yield name, stream.read(LIMIT + 1)
+        return
+    files = sorted(path.rglob('*')) if path.is_dir() else [path]
+    for file in files:
+        if file.is_symlink() or not file.is_file() or file.suffix.lower() not in FORMATS:
+            continue
+        if file.stat().st_size > LIMIT:
+            raise ValueError(f'File exceeds 32 MiB: {file.name}')
+        name = file.relative_to(path).as_posix() if path.is_dir() else file.name
+        if not safe_name(name):
+            raise ValueError(f'Unsafe filename: {name!r}')
+        with file.open('rb') as stream:
+            yield name, stream.read(LIMIT + 1)
+
+
+def inspect(name, raw):
+    if len(raw) > LIMIT:
+        raise ValueError(f'File exceeds 32 MiB: {name}')
+    ext = Path(name).suffix.lower()
+    if ext == '.png':
+        if (len(raw) < 33 or raw[:8] != b'\x89PNG\r\n\x1a\n' or
+                raw[8:16] != b'\x00\x00\x00\rIHDR'):
+            return {'status': 'invalid-png'}
+        width, height = struct.unpack('>II', raw[16:24])
+        if not width or not height:
+            return {'status': 'invalid-png'}
+        return {'status': 'png-header-read', 'width': width, 'height': height}
+    if ext == '.json':
+        try:
+            json.loads(raw)
+        except (ValueError, UnicodeError):
+            return {'status': 'invalid-json'}
+        return {'status': 'json-parsed'}
+    return {'status': 'decoder-required'}
+
+
+def metadata(info, digest, shape):
+    if not info:
+        return {}
+    if info.get('sha256') != digest or info.get('category') not in CATEGORIES:
+        raise ValueError('Metadata requires matching SHA-256 and a supported category')
+    for field in ('source', 'version', 'rights'):
+        if not isinstance(info.get(field), str) or not info[field].strip():
+            raise ValueError(f'Metadata requires {field}')
+    clips = info.get('animations', {})
+    if not isinstance(clips, dict):
+        raise ValueError('Animations must be an object')
+    for clip, directions in clips.items():
+        if not isinstance(directions, dict) or not directions or not directions.keys() <= DIRECTIONS:
+            raise ValueError(f'Invalid directions for {clip}')
+        for frames in directions.values():
+            if not isinstance(frames, list) or not frames:
+                raise ValueError(f'Empty frames for {clip}')
+            for frame in frames:
+                keys = ('x', 'y', 'width', 'height', 'ms')
+                if not isinstance(frame, dict) or any(type(frame.get(k)) is not int for k in keys):
+                    raise ValueError(f'Invalid frame for {clip}')
+                x, y, w, h, ms = (frame[k] for k in keys)
+                if (min(x, y) < 0 or min(w, h, ms) < 1 or
+                        x+w > shape.get('width', 0) or y+h > shape.get('height', 0)):
+                    raise ValueError(f'Frame exceeds atlas or has invalid time: {clip}')
+    return {field: info[field] for field in ('category', 'source', 'version', 'rights')} | {'animations': clips}
+
+
+def build(paths, annotations, existing):
+    records = {}
+    for path in paths:
+        for name, raw in inputs(path):
+            digest = hashlib.sha256(raw).hexdigest()
+            shape = inspect(name, raw)
+            record = records.setdefault(digest, {
+                'sha256': digest, 'bytes': len(raw), 'locations': [],
+                'category': 'map' if Path(name).suffix.lower() == '.map' else 'unclassified',
+                'alreadyIndexed': digest in existing, **shape
+            })
+            record['locations'].append({'input': str(path), 'member': name})
+            record.update(metadata(annotations.get(digest), digest, shape))
+    return {'schemaVersion': 1, 'assets': list(records.values())}
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('inputs', nargs='+', type=Path)
+    parser.add_argument('--metadata', type=Path, help='JSON object keyed by asset SHA-256')
+    parser.add_argument('--existing', type=Path, help='Existing manifest.json used for deduplication')
+    args = parser.parse_args()
+    try:
+        for source in args.inputs:
+            if not source.exists():
+                raise ValueError(f'Input not found: {source}')
+        annotations = json.loads(args.metadata.read_text(encoding='utf-8')) if args.metadata else {}
+        known = json.loads(args.existing.read_text(encoding='utf-8'))['assets'] if args.existing else []
+        print(json.dumps(build(args.inputs, annotations, {item['sha256'] for item in known}),
+                         ensure_ascii=True, indent=2))
+    except (OSError, ValueError, KeyError, TypeError, RuntimeError, zipfile.BadZipFile) as error:
+        parser.exit(2, f'{error}\n')
+
+
+if __name__ == '__main__':
+    main()

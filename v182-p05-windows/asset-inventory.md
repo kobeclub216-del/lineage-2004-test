@@ -18,3 +18,17 @@ Windows 素材清單共 61 件（58 PNG、2 WebP、1 WOFF），其中 PNG 數包
 - [巴哈姆特舊《天堂》說話之島百科](https://wiki2.gamer.com.tw/wiki.php?n=1512%3A%E8%AA%AA%E8%A9%B1%E4%B9%8B%E5%B3%B6)支持潘朵拉是商人、吉倫傳授魔法。內容混有後期改版，未作為 1.82 怪物或地圖數據證據。
 - [回憶天堂 1.82 網頁版](https://play.forlineage.com/guide/map/0/)可供尋找候選怪物，為現代復刻且部分內容已改版，數字未匯入。
 - 潘朵拉對話新增通往既有吉倫場景的開發入口，可原地返回村莊並續用原遭遇與掉落狀態。吉倫場景沿用其原有背景、碰撞及 NPC 圖片，轉成獨立 JSON。本輪沒有新增怪物來源、歷史數值或地圖圖片。
+
+## 新素材批次索引
+
+在倉庫根目錄使用 Python 3.9 或更新版本：
+
+```sh
+python tools/index-lineage-assets.py path/to/assets.zip path/to/loose-assets --existing v182-p05-windows/assets/manifest.json --metadata reviewed-assets.json > asset-index.json
+```
+
+`--existing` 與 `--metadata` 可省略。索引依 SHA-256 合併同一檔案的來源位置。PNG 讀取標頭尺寸，JSON 檢查可解析性，MAP、SPR 和 WebP 原檔保留待解碼狀態。索引不會解壓到遊戲目錄或將內容發布。
+
+審查註記是以 SHA-256 為鍵的 JSON 物件。每筆包含 `sha256`、`category`（character、monster、npc、map、item、interface）、`source`、`version`、`rights`，以及選填的 `animations`（動作 → 方向 → 影格陣列，每格含 x、y、width、height、ms）。工具檢查圖集邊界，影格與授權仍依來源資料審查。確認地圖的碰撞、出生格與圖層後再接入場景 JSON。
+
+吉倫的 NPC、地面與屋頂三項現有資源已接到共用場景索引。PC 中尚未取得的資源包可以原始 MAP／SPR、相對應的解碼規格或已匯出的 PNG 圖集、影格表及版本和可使用來源補足。

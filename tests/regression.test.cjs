@@ -646,7 +646,8 @@ test('Gereng visit uses a reachable existing teacher cell and returns to the sam
  r.setScene({bounds:data.bounds,layers:[]});r.setCollision(data);
  assert.ok(r.canWalk(data.npc.x,data.npc.y+1));
  assert.ok(data.roofCells.some(([x,y])=>x===data.npc.x&&y===data.npc.y+1));
- for(const asset of [data.npc,data.ground,data.roof])assert.ok(fs.existsSync(path.join(dir,asset.uri)));
+ const assetIndex=readAssetJson('scene-assets.json');
+ for(const asset of [data.npc,data.ground,data.roof])assert.ok(fs.existsSync(path.join(dir,assetIndex[asset.asset])));
  const village={},teacher={teacher:{}},trial={phase:'defeated',dropAvailable:true},player={job:'法師'};
  const elements={pandoraVisitGereng:{},gerengReturnVillage:{},a11EntryStatus:{},gerengDialog:{close(){}}};
  const scope=vm.createContext({

@@ -34,5 +34,8 @@
  "wizard-female-pickup.png": "./assets/e62e192228f50e8d0634.png",
  "shop-ground.png": "./assets/1dad1a18aa85f88edd5e.png",
  "shop-objects.png": "./assets/2562756ce69f89869e32.png",
- "pandora.png": "./assets/36997a170e7cb2af75ee.png"
+ "pandora.png": "./assets/36997a170e7cb2af75ee.png",
+ "gereng-npc": "./assets/bea8f6beb2965bb60ef4.png",
+ "gereng-ground": "./assets/e65ba2f27667039cc45d.webp",
+ "gereng-roof": "./assets/61e1dfacb23f56cf97bf.webp"
 }
