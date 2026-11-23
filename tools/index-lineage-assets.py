@@ -7,7 +7,8 @@ import struct
 import zipfile
 from pathlib import Path, PurePosixPath
 
-FORMATS = {'.map', '.spr', '.png', '.webp', '.json'}
+FORMATS = {'.map', '.spr', '.png', '.webp', '.json', '.s32', '.seg', '.pak', '.idx'}
+MAP_FORMATS = {'.map', '.s32', '.seg'}
 CATEGORIES = {'character', 'monster', 'npc', 'map', 'item', 'interface'}
 DIRECTIONS = {'N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'}
 LIMIT = 32 * 1024 ** 2
@@ -49,10 +50,36 @@ def inputs(path):
             yield name, stream.read(LIMIT + 1)
 
 
+def inspect_s32(raw):
+    # l1j-client 83052f6, layout facts only. The object layer is not decoded.
+    half_tiles = 64 * 64 * 2
+    floor_bytes = half_tiles * 4
+    if len(raw) < floor_bytes + 2:
+        return {'status': 's32-truncated-prefix'}
+    extra_count, = struct.unpack_from('<H', raw, floor_bytes)
+    attributes_offset = floor_bytes + 2 + extra_count * 6
+    objects_offset = attributes_offset + half_tiles * 2
+    if len(raw) < objects_offset + 4:
+        return {'status': 's32-truncated-prefix'}
+    floor_ids = {value for value, in struct.iter_unpack('<I', raw[:floor_bytes])}
+    attributes = {value for value, in struct.iter_unpack(
+        '<H', raw[attributes_offset:objects_offset])}
+    return {
+        'status': 's32-prefix-read',
+        'map': {'tilesWide': 64, 'tilesHigh': 64, 'halfTilesPerTile': 2,
+                'distinctFloorValues': len(floor_ids),
+                'distinctAttributeValues': len(attributes),
+                'unknownRecordCount': extra_count,
+                'declaredObjectCount': struct.unpack_from('<I', raw, objects_offset)[0]},
+    }
+
+
 def inspect(name, raw):
     if len(raw) > LIMIT:
         raise ValueError(f'File exceeds 32 MiB: {name}')
     ext = Path(name).suffix.lower()
+    if ext == '.s32':
+        return inspect_s32(raw)
     if ext == '.png':
         if (len(raw) < 33 or raw[:8] != b'\x89PNG\r\n\x1a\n' or
                 raw[8:16] != b'\x00\x00\x00\rIHDR'):
@@ -106,7 +133,7 @@ def build(paths, annotations, existing):
             shape = inspect(name, raw)
             record = records.setdefault(digest, {
                 'sha256': digest, 'bytes': len(raw), 'locations': [],
-                'category': 'map' if Path(name).suffix.lower() == '.map' else 'unclassified',
+                'category': 'map' if Path(name).suffix.lower() in MAP_FORMATS else 'unclassified',
                 'alreadyIndexed': digest in existing, **shape
             })
             record['locations'].append({'input': str(path), 'member': name})

@@ -32,3 +32,20 @@ python tools/index-lineage-assets.py path/to/assets.zip path/to/loose-assets --e
 審查註記是以 SHA-256 為鍵的 JSON 物件。每筆包含 `sha256`、`category`（character、monster、npc、map、item、interface）、`source`、`version`、`rights`，以及選填的 `animations`（動作 → 方向 → 影格陣列，每格含 x、y、width、height、ms）。工具檢查圖集邊界，影格與授權仍依來源資料審查。確認地圖的碰撞、出生格與圖層後再接入場景 JSON。
 
 吉倫的 NPC、地面與屋頂三項現有資源已接到共用場景索引。PC 中尚未取得的資源包可以原始 MAP／SPR、相對應的解碼規格或已匯出的 PNG 圖集、影格表及版本和可使用來源補足。
+
+## 跨版本素材與格式
+
+以素材完整度、畫風與使用授權決定是否接入。優先順序不限地區。外部遊戲的數值不納入 1.82 資料。
+
+| 候選來源與版本 | 方向與影格 | 授權查核及結果 |
+| --- | --- | --- |
+| [L1MapViewer S32 測試區塊](https://github.com/tony1223/L1MapViewer/tree/364fcff15ea019e5a9329170aaf7e245404ebba6/tests/assets/8100)，遊戲版本未標明 | 地圖區塊，無角色動畫 | 倉庫未找到授權檔，測試區塊僅在本機讀取驗證，未收錄。 |
+| [Flare Fantasycore 哥布林](https://github.com/flareteam/flare-game/blob/c641d2ac2801617f6be3e327454de39250d489b9/mods/fantasycore/animations/enemies/goblin.txt)，版本以該提交為準 | 8 方向。每方向待機 4、跑步 8、揮擊 3、受傷 2、死亡 6 | [Flare 授權與署名](https://github.com/flareteam/flare-game/wiki/Credits)列出美術整體採 CC BY-SA 3.0 或更新版本。立體渲染風格與既有圖層不同，未接入。 |
+| [Isometric Painted Game Assets](https://lpc.opengameart.org/content/isometric-painted-game-assets)，2012 年發布 | 騎士有 4 方向行走，來源頁未列影格數 | 來源頁標註 CC0。卡通畫風與方向完整度不符，未接入。 |
+
+### 解析工具查核
+
+- [Lineage1/l1j-client](https://github.com/Lineage1/l1j-client/tree/83052f6b1c5bda59d4c4cbaf01aa2e72ea409853)，GPL-3.0。公開程式含編號 SPR、配對 IDX／PAK，以及 S32／SEG 讀取路徑。未確認任一客戶端版本與 1.82 檔案完全相容。匯入器只依 S32 格式資訊實作，未引入第三方程式碼或素材。
+- [L1MapViewer](https://github.com/tony1223/L1MapViewer/tree/364fcff15ea019e5a9329170aaf7e245404ebba6) 文件列出 S32 圖層及 Tile.idx 圖磚讀取。實際測試 `7fff8000.s32` 可讀取 64 × 64 格的區塊前段，每格兩半，樣本宣告 1 個物件。物件內容、地圖碰撞語意、圖磚與 1.82 相容性仍需核對。
+
+批次指令：`python3 -B tools/index-lineage-assets.py /path/to/pack.zip /path/to/local-assets`。支援 ZIP 與資料夾，依 SHA-256 去重。JSON 可解析，PNG 可讀取圖頭尺寸，S32 可讀取地板值、屬性值及宣告物件數的摘要。輸出 `s32-prefix-read` 只代表前段足夠長且可讀。SPR、PAK、IDX、MAP、SEG、WebP 先索引為待解碼。要接入場景仍需有授權且可配對的圖磚、物件圖層與碰撞資料。
