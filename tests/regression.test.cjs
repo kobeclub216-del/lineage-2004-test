@@ -175,14 +175,11 @@ test('goblin defeat awards EXP/drop once through the common progression function
  c.applyVillageGoblinDamage(9,100,'hit','damage');c.applyVillageGoblinDamage(9,200,'hit','damage');
  assert.equal(awarded,5);assert.equal(c.villageTrial.hp,0);assert.equal(c.villageTrial.phase,'dying');assert.equal(c.villageTrial.dropAvailable,true);
 });
-function localObject(name){
- const marker='const '+name+'=';
- const start=source.indexOf(marker)+marker.length;
- assert.ok(start>=marker.length);
- return JSON.parse(source.slice(start,source.indexOf(';\n',start)));
+function readAssetJson(name){
+ return JSON.parse(fs.readFileSync(path.join(dir,'assets',name),'utf8'));
 }
 test('all 28 supplied character animation configurations fit their eight-direction atlases',()=>{
- const data=localObject('localData'),images=localObject('localImages');let checked=0;
+ const data=readAssetJson('character-animations.json'),images=readAssetJson('scene-assets.json');let checked=0;
  for(const [name,config] of Object.entries(data)){
   if(!config.directions)continue;
   const png=fs.readFileSync(path.join(dir,images[name.replace('.json','.png')]));
@@ -200,7 +197,7 @@ test('all 28 supplied character animation configurations fit their eight-directi
 });
 test('both supplied village maps validate collision edges and allow their actual spawn',()=>{
  for(const name of ['village-scene.json','shop-scene.json']){
-  const data=localObject('localData')[name],{r,c}=scene();
+  const data=readAssetJson(name),{r,c}=scene();
   r.setScene({bounds:data.bounds,layers:[]});r.setCollision(data);
   const movement=new c.TalkingIslandMovementController(r);movement.spawn(data.spawn.x,data.spawn.y);
   assert.ok(r.canWalk(data.spawn.x,data.spawn.y));
@@ -379,8 +376,9 @@ test('light bolt waits until the last frame of an attack atlas with uniform timi
 
 test('goblin hit, death and attack animation only select their own atlas rows',()=>{
  const c=context(['villageGoblinFrame']);
+ vm.runInContext(fs.readFileSync(path.join(dir,'assets/goblin-animation.js'),'utf8'),c);
  for(const name of ['GOBLIN_HIT_FRAMES','GOBLIN_FRAME_MS','GOBLIN_DEATH_FRAMES','GOBLIN_ATTACK_FRAMES','GOBLIN_ATTACK_FRAME_MS'])
-  vm.runInContext(source.match(new RegExp('const '+name+'=[0-9]+;'))[0],c);
+  vm.runInContext(source.match(new RegExp('const '+name+'=[^;]+;'))[0],c);
  const fight={phase:'fight',goblinAttackAt:null,hitUntil:1360};
  for(const [now,row] of [[999,0],[1000,7],[1074,7],[1075,8],[1149,8],[1150,1]])
   assert.equal(c.villageGoblinFrame(fight,now),row);
@@ -591,4 +589,28 @@ test('Pandora equipment purchase saves the debit and bag entries together',()=>{
  assert.equal(c.player.equipmentItems.length,3);
  c.player.equipmentItems=Array(30).fill({id:'dagger'});
  assert.equal(c.buyVillageEquipment('dagger',1),false);
+});
+
+test('scene loader shares pending and decoded assets and retries failed reads',async()=>{
+ const code=fs.readFileSync(path.join(dir,'assets/island-resources.js'),'utf8');
+ const create=vm.runInNewContext(code.slice(0,code.indexOf('const islandResources='))+'createIslandResources',{URL});
+ let reads=0,now=0,failed=true;
+ const resources=create({
+  base:'https://example.test/game/Start.html',
+  clock:()=>now,
+  readJson:async url=>({url}),
+  readImage:async url=>{reads++;now+=4;if(failed)throw Error('load');return {url};}
+ });
+ const first=resources.image('./a.png');
+ assert.equal(first,resources.image('a.png'));
+ await assert.rejects(first,/load/);
+ failed=false;
+ const image=await resources.measureScene(()=>resources.image('./a.png'));
+ assert.equal(await resources.image('a.png'),image);
+ assert.equal(reads,2);
+ assert.equal(resources.json('scene.json'),resources.json('./scene.json'));
+ resources.recordDraw(2);resources.recordDraw(4);
+ const stats=resources.snapshot();
+ assert.deepEqual([stats.imageHits,stats.imageMisses,stats.imageFailures,stats.imageLoadMs],[2,2,1,8]);
+ assert.deepEqual([stats.sceneLoads,stats.lastSceneMs,stats.meanDrawMs,stats.maxDrawMs],[1,4,3,4]);
 });

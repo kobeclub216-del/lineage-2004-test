@@ -1,0 +1,555 @@
+{
+ "knight-atlas.json": {
+  "columns": 5,
+  "directions": [
+   "NE",
+   "NW",
+   "N",
+   "E",
+   "SE",
+   "S",
+   "SW",
+   "W"
+  ],
+  "frameDuration": 65,
+  "walkStartsAt": 1,
+  "drawHeight": 73,
+  "footAnchorY": 0.8082191780821918
+ },
+ "knight-attack.json": {
+  "columns": 6,
+  "directions": [
+   "NE",
+   "NW",
+   "N",
+   "E",
+   "SE",
+   "S",
+   "SW",
+   "W"
+  ],
+  "frameDuration": 58,
+  "drawHeight": 128,
+  "footAnchorY": 0.75
+ },
+ "knight-female-atlas.json": {
+  "columns": 5,
+  "directions": [
+   "NW",
+   "N",
+   "NE",
+   "E",
+   "SE",
+   "S",
+   "SW",
+   "W"
+  ],
+  "frameDuration": 42,
+  "drawHeight": 132,
+  "footAnchorY": 0.6666666666666666,
+  "walkStartsAt": 1
+ },
+ "knight-female-attack.json": {
+  "columns": 4,
+  "directions": [
+   "NW",
+   "N",
+   "NE",
+   "E",
+   "SE",
+   "S",
+   "SW",
+   "W"
+  ],
+  "frameDuration": 58,
+  "drawHeight": 132,
+  "footAnchorY": 0.6666666666666666,
+  "impactFrame": 3
+ },
+ "royal-male-atlas.json": {
+  "columns": 5,
+  "directions": [
+   "NW",
+   "N",
+   "NE",
+   "E",
+   "SE",
+   "S",
+   "SW",
+   "W"
+  ],
+  "frameDuration": 42,
+  "walkStartsAt": 1,
+  "drawHeight": 116,
+  "footAnchorY": 0.7586206896551724
+ },
+ "royal-female-atlas.json": {
+  "columns": 5,
+  "directions": [
+   "NW",
+   "N",
+   "NE",
+   "E",
+   "SE",
+   "S",
+   "SW",
+   "W"
+  ],
+  "frameDuration": 42,
+  "walkStartsAt": 1,
+  "drawHeight": 116,
+  "footAnchorY": 0.7586206896551724
+ },
+ "elf-male-atlas.json": {
+  "columns": 5,
+  "directions": [
+   "NW",
+   "N",
+   "NE",
+   "E",
+   "SE",
+   "S",
+   "SW",
+   "W"
+  ],
+  "frameDuration": 42,
+  "walkStartsAt": 1,
+  "drawHeight": 116,
+  "footAnchorY": 0.7586206896551724
+ },
+ "elf-female-atlas.json": {
+  "columns": 5,
+  "directions": [
+   "NW",
+   "N",
+   "NE",
+   "E",
+   "SE",
+   "S",
+   "SW",
+   "W"
+  ],
+  "frameDuration": 42,
+  "walkStartsAt": 1,
+  "drawHeight": 116,
+  "footAnchorY": 0.7586206896551724
+ },
+ "wizard-male-atlas.json": {
+  "columns": 5,
+  "directions": [
+   "NW",
+   "N",
+   "NE",
+   "E",
+   "SE",
+   "S",
+   "SW",
+   "W"
+  ],
+  "frameDuration": 42,
+  "walkStartsAt": 1,
+  "drawHeight": 116,
+  "footAnchorY": 0.7586206896551724
+ },
+ "wizard-female-atlas.json": {
+  "columns": 5,
+  "directions": [
+   "NW",
+   "N",
+   "NE",
+   "E",
+   "SE",
+   "S",
+   "SW",
+   "W"
+  ],
+  "frameDuration": 42,
+  "walkStartsAt": 1,
+  "drawHeight": 116,
+  "footAnchorY": 0.7586206896551724
+ },
+ "royal-male-attack.json": {
+  "columns": 4,
+  "directions": [
+   "NW",
+   "N",
+   "NE",
+   "E",
+   "SE",
+   "S",
+   "SW",
+   "W"
+  ],
+  "frameDuration": 58,
+  "impactFrame": 3,
+  "drawHeight": 132,
+  "footAnchorY": 0.6666666666666666
+ },
+ "royal-female-attack.json": {
+  "columns": 4,
+  "directions": [
+   "NW",
+   "N",
+   "NE",
+   "E",
+   "SE",
+   "S",
+   "SW",
+   "W"
+  ],
+  "frameDuration": 58,
+  "impactFrame": 3,
+  "drawHeight": 132,
+  "footAnchorY": 0.6666666666666666
+ },
+ "elf-male-attack.json": {
+  "columns": 4,
+  "directions": [
+   "NW",
+   "N",
+   "NE",
+   "E",
+   "SE",
+   "S",
+   "SW",
+   "W"
+  ],
+  "frameDuration": 58,
+  "impactFrame": 3,
+  "drawHeight": 132,
+  "footAnchorY": 0.6666666666666666
+ },
+ "elf-female-attack.json": {
+  "columns": 4,
+  "directions": [
+   "NW",
+   "N",
+   "NE",
+   "E",
+   "SE",
+   "S",
+   "SW",
+   "W"
+  ],
+  "frameDuration": 58,
+  "impactFrame": 3,
+  "drawHeight": 132,
+  "footAnchorY": 0.6666666666666666
+ },
+ "wizard-male-attack.json": {
+  "columns": 5,
+  "directions": [
+   "NW",
+   "N",
+   "NE",
+   "E",
+   "SE",
+   "S",
+   "SW",
+   "W"
+  ],
+  "frameDuration": 42,
+  "frameEnds": [
+   167,
+   333,
+   625,
+   750,
+   1000
+  ],
+  "impactFrame": 4,
+  "drawHeight": 132,
+  "footAnchorY": 0.6666666666666666
+ },
+ "wizard-female-attack.json": {
+  "columns": 6,
+  "directions": [
+   "NW",
+   "N",
+   "NE",
+   "E",
+   "SE",
+   "S",
+   "SW",
+   "W"
+  ],
+  "frameDuration": 42,
+  "frameEnds": [
+   167,
+   333,
+   542,
+   625,
+   875,
+   1042
+  ],
+  "impactFrame": 4,
+  "drawHeight": 132,
+  "footAnchorY": 0.6666666666666666
+ },
+ "wizard-male-cast-direction.json": {
+  "columns": 8,
+  "directions": [
+   "NW",
+   "N",
+   "NE",
+   "E",
+   "SE",
+   "S",
+   "SW",
+   "W"
+  ],
+  "frameDuration": 42,
+  "frameEnds": [
+   167,
+   333,
+   583,
+   1042,
+   1167,
+   1292,
+   1417,
+   1708
+  ],
+  "drawHeight": 132,
+  "footAnchorY": 0.6666666666666666
+ },
+ "wizard-male-cast-no-direction.json": {
+  "columns": 8,
+  "directions": [
+   "NW",
+   "N",
+   "NE",
+   "E",
+   "SE",
+   "S",
+   "SW",
+   "W"
+  ],
+  "frameDuration": 42,
+  "frameEnds": [
+   167,
+   333,
+   583,
+   1083,
+   1208,
+   1333,
+   1708,
+   2000
+  ],
+  "drawHeight": 132,
+  "footAnchorY": 0.6666666666666666
+ },
+ "wizard-female-cast-direction.json": {
+  "columns": 9,
+  "directions": [
+   "NW",
+   "N",
+   "NE",
+   "E",
+   "SE",
+   "S",
+   "SW",
+   "W"
+  ],
+  "frameDuration": 42,
+  "frameEnds": [
+   167,
+   375,
+   542,
+   792,
+   917,
+   1042,
+   1292,
+   1458,
+   1667
+  ],
+  "drawHeight": 132,
+  "footAnchorY": 0.6666666666666666
+ },
+ "wizard-female-cast-no-direction.json": {
+  "columns": 10,
+  "directions": [
+   "NW",
+   "N",
+   "NE",
+   "E",
+   "SE",
+   "S",
+   "SW",
+   "W"
+  ],
+  "frameDuration": 42,
+  "frameEnds": [
+   167,
+   375,
+   542,
+   792,
+   1000,
+   1167,
+   1292,
+   1583,
+   1750,
+   1958
+  ],
+  "drawHeight": 132,
+  "footAnchorY": 0.6666666666666666
+ },
+ "knight-female-pickup.json": {
+  "columns": 3,
+  "frameEnds": [
+   167,
+   667,
+   833
+  ],
+  "directions": [
+   "NW",
+   "N",
+   "NE",
+   "E",
+   "SE",
+   "S",
+   "SW",
+   "W"
+  ],
+  "drawHeight": 132,
+  "footAnchorY": 0.6666666666666666
+ },
+ "knight-pickup.json": {
+  "columns": 3,
+  "frameEnds": [
+   167,
+   667,
+   833
+  ],
+  "directions": [
+   "NW",
+   "N",
+   "NE",
+   "E",
+   "SE",
+   "S",
+   "SW",
+   "W"
+  ],
+  "drawHeight": 132,
+  "footAnchorY": 0.6666666666666666
+ },
+ "royal-male-pickup.json": {
+  "columns": 3,
+  "frameEnds": [
+   167,
+   667,
+   833
+  ],
+  "directions": [
+   "NW",
+   "N",
+   "NE",
+   "E",
+   "SE",
+   "S",
+   "SW",
+   "W"
+  ],
+  "drawHeight": 132,
+  "footAnchorY": 0.6666666666666666
+ },
+ "royal-female-pickup.json": {
+  "columns": 3,
+  "frameEnds": [
+   167,
+   667,
+   833
+  ],
+  "directions": [
+   "NW",
+   "N",
+   "NE",
+   "E",
+   "SE",
+   "S",
+   "SW",
+   "W"
+  ],
+  "drawHeight": 132,
+  "footAnchorY": 0.6666666666666666
+ },
+ "elf-male-pickup.json": {
+  "columns": 3,
+  "frameEnds": [
+   167,
+   417,
+   542
+  ],
+  "directions": [
+   "NW",
+   "N",
+   "NE",
+   "E",
+   "SE",
+   "S",
+   "SW",
+   "W"
+  ],
+  "drawHeight": 132,
+  "footAnchorY": 0.6666666666666666
+ },
+ "elf-female-pickup.json": {
+  "columns": 3,
+  "frameEnds": [
+   167,
+   667,
+   833
+  ],
+  "directions": [
+   "NW",
+   "N",
+   "NE",
+   "E",
+   "SE",
+   "S",
+   "SW",
+   "W"
+  ],
+  "drawHeight": 132,
+  "footAnchorY": 0.6666666666666666
+ },
+ "wizard-male-pickup.json": {
+  "columns": 3,
+  "frameEnds": [
+   167,
+   500,
+   667
+  ],
+  "directions": [
+   "NW",
+   "N",
+   "NE",
+   "E",
+   "SE",
+   "S",
+   "SW",
+   "W"
+  ],
+  "drawHeight": 132,
+  "footAnchorY": 0.6666666666666666
+ },
+ "wizard-female-pickup.json": {
+  "columns": 3,
+  "frameEnds": [
+   167,
+   500,
+   667
+  ],
+  "directions": [
+   "NW",
+   "N",
+   "NE",
+   "E",
+   "SE",
+   "S",
+   "SW",
+   "W"
+  ],
+  "drawHeight": 132,
+  "footAnchorY": 0.6666666666666666
+ }
+}
