@@ -185,7 +185,37 @@ def build(paths, annotations, existing):
             })
             record['locations'].append({'input': str(path), 'member': name})
             record.update(metadata(annotations.get(digest), digest, shape))
-    return {'schemaVersion': 1, 'assets': list(records.values())}
+    assets = list(records.values())
+    # Match only within the same input and directory; capacity is not proof
+    # of format compatibility or successful image decoding.
+    pak_locations = {}
+    for asset in assets:
+        for loc in asset['locations']:
+            member = PurePosixPath(loc['member'])
+            if member.suffix.lower() == '.pak':
+                key = (loc['input'], str(member.parent), member.stem.casefold())
+                pak_locations.setdefault(key, []).append((loc, asset))
+    for asset in assets:
+        if asset.get('status') != 'idx-layout-read':
+            continue
+        pairs = []
+        for loc in asset['locations']:
+            member = PurePosixPath(loc['member'])
+            key = (loc['input'], str(member.parent), member.stem.casefold())
+            candidates = pak_locations.get(key, [])
+            required = asset['index']['requiredPakBytes']
+            status = 'missing-pak'
+            if len(candidates) > 1:
+                status = 'ambiguous-pak'
+            elif candidates:
+                status = ('capacity-compatible' if candidates[0][1]['bytes'] >= required
+                          else 'pak-too-small')
+            pairs.append({'idx': loc, 'status': status,
+                          'requiredPakBytes': required,
+                          'candidates': [{'location': p, 'bytes': a['bytes'],
+                                          'sha256': a['sha256']} for p, a in candidates]})
+        asset['pakPairs'] = pairs
+    return {'schemaVersion': 1, 'assets': assets}
 
 
 def main():
