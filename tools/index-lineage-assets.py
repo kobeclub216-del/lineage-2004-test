@@ -20,6 +20,19 @@ def safe_name(name):
                 '..' not in path.parts and '\\' not in name and ':' not in name)
 
 
+def fingerprint_stream(stream):
+    digest = hashlib.sha256()
+    size = 0
+    while True:
+        chunk = stream.read(1024 * 1024)
+        if not chunk:
+            break
+        digest.update(chunk)
+        size += len(chunk)
+    return {'sha256': digest.hexdigest(), 'bytes': size,
+            'status': 'decoder-required'}
+
+
 def inputs(path):
     if path.suffix.lower() == '.zip':
         with zipfile.ZipFile(path) as archive:
@@ -32,6 +45,10 @@ def inputs(path):
                     raise ValueError(f'Unsafe or duplicate ZIP member: {name!r}')
                 names.add(name)
                 if Path(name).suffix.lower() in FORMATS:
+                    if Path(name).suffix.lower() == '.pak':
+                        with archive.open(member) as stream:
+                            yield name, fingerprint_stream(stream)
+                        continue
                     if member.file_size > LIMIT:
                         raise ValueError(f'File exceeds 32 MiB: {name}')
                     with archive.open(member) as stream:
@@ -41,11 +58,15 @@ def inputs(path):
     for file in files:
         if file.is_symlink() or not file.is_file() or file.suffix.lower() not in FORMATS:
             continue
-        if file.stat().st_size > LIMIT:
-            raise ValueError(f'File exceeds 32 MiB: {file.name}')
         name = file.relative_to(path).as_posix() if path.is_dir() else file.name
         if not safe_name(name):
             raise ValueError(f'Unsafe filename: {name!r}')
+        if file.suffix.lower() == '.pak':
+            with file.open('rb') as stream:
+                yield name, fingerprint_stream(stream)
+            continue
+        if file.stat().st_size > LIMIT:
+            raise ValueError(f'File exceeds 32 MiB: {file.name}')
         with file.open('rb') as stream:
             yield name, stream.read(LIMIT + 1)
 
@@ -129,10 +150,16 @@ def build(paths, annotations, existing):
     records = {}
     for path in paths:
         for name, raw in inputs(path):
-            digest = hashlib.sha256(raw).hexdigest()
-            shape = inspect(name, raw)
+            if isinstance(raw, dict):
+                digest = raw['sha256']
+                size = raw['bytes']
+                shape = {'status': raw['status']}
+            else:
+                digest = hashlib.sha256(raw).hexdigest()
+                size = len(raw)
+                shape = inspect(name, raw)
             record = records.setdefault(digest, {
-                'sha256': digest, 'bytes': len(raw), 'locations': [],
+                'sha256': digest, 'bytes': size, 'locations': [],
                 'category': 'map' if Path(name).suffix.lower() in MAP_FORMATS else 'unclassified',
                 'alreadyIndexed': digest in existing, **shape
             })
