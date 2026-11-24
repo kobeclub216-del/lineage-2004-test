@@ -95,10 +95,30 @@ def inspect_s32(raw):
     }
 
 
+def inspect_idx(raw):
+    if len(raw) < 4:
+        return {'status': 'idx-invalid-length'}
+    count, = struct.unpack_from('<I', raw)
+    if len(raw) != 4 + count * 28:
+        return {'status': 'idx-unsupported-layout'}
+    extensions = {}
+    end = 0
+    for offset, name, size in struct.iter_unpack('<I20sI', raw[4:]):
+        name = name.split(b'\0', 1)[0].decode('ascii', errors='replace')
+        ext = PurePosixPath(name).suffix.lower() or '(none)'
+        extensions[ext] = extensions.get(ext, 0) + 1
+        end = max(end, offset + size)
+    return {'status': 'idx-layout-read', 'index': {
+        'entryCount': count, 'requiredPakBytes': end,
+        'extensions': extensions}}
+
+
 def inspect(name, raw):
     if len(raw) > LIMIT:
         raise ValueError(f'File exceeds 32 MiB: {name}')
     ext = Path(name).suffix.lower()
+    if ext == '.idx':
+        return inspect_idx(raw)
     if ext == '.s32':
         return inspect_s32(raw)
     if ext == '.png':
