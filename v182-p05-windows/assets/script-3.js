@@ -751,6 +751,9 @@ function initializeKnightPreview(){
 function drawKnightSprite(px,py,now){
  const attack=now<spriteAttackUntil,pickup=now<spritePickupUntil,move=now<spriteMovingUntil;
  const action=attack?'attack':pickup?'idle':move?'walk':'idle',spec=activeSpriteSpec(action);
+ // Optional local original-art renderer. No original assets are distributed.
+ if(window.lineageLocalSprites && window.lineageLocalSprites.draw(ctx,{job:player.job,gender:player.gender||'男',facing:spriteFacing,action,now,x:px,y:py,hit:now<spriteHitUntil}))return;
+
  // Complete one full walk cycle per tile step and one attack cycle per attack.
  // The previous fixed-ms calculation skipped frames on short movement/attack windows.
  // Walk animation must continue across adjacent map steps rather than
