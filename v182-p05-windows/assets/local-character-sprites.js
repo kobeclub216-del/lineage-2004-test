@@ -3,7 +3,7 @@
 "use strict";
 let roles=new Map(), epoch=0;
 async function load(manifest,files){
- const token=++epoch, next=new Map(), byPath=new Map(Array.from(files,f=>[f.webkitRelativePath||f.name,f]));
+ const token=++epoch, next=new Map(), byPath=new Map(Array.from(files,f=>[f.path||f.webkitRelativePath||f.name,f.file||f]));
  if(manifest.schemaVersion!==1||!Array.isArray(manifest.roles))throw Error("Invalid character manifest");
  for(const role of manifest.roles){
  const actions={};
@@ -30,7 +30,7 @@ function draw(ctx,p){
  let f=frames[0];for(const candidate of frames){f=candidate;if(t<f.ms)break;t-=f.ms;}
  ctx.save();ctx.imageSmoothingEnabled=false;
  ctx.drawImage(f.img,Math.round(p.x+f.x),Math.round(p.y+f.y));
- if(p.hit){ctx.globalAlpha=.18;ctx.fillStyle="#ff5656";ctx.fillRect(Math.round(p.x+f.x),Math.round(p.y+f.y),f.img.width,f.img.height);}
+ 
  ctx.restore();return true;
 }
 root.lineageLocalSprites={load,draw,clear(){epoch++;roles=new Map();}};
