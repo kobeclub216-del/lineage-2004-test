@@ -752,7 +752,7 @@ function drawKnightSprite(px,py,now){
  const attack=now<spriteAttackUntil,pickup=now<spritePickupUntil,move=now<spriteMovingUntil;
  const action=attack?'attack':pickup?'idle':move?'walk':'idle',spec=activeSpriteSpec(action);
  // Optional local original-art renderer. No original assets are distributed.
- if(window.lineageLocalSprites && window.lineageLocalSprites.draw(ctx,{job:player.job,gender:player.gender||'男',facing:spriteFacing,action,now,x:px,y:py,hit:now<spriteHitUntil}))return;
+ if(window.lineageLocalSprites && window.lineageLocalSprites.draw(ctx,{job:player.job,gender:player.gender||'男',facing:spriteFacing,action:now<spriteHitUntil?'hit':action,now,x:px,y:py,hit:now<spriteHitUntil}))return;
 
  // Complete one full walk cycle per tile step and one attack cycle per attack.
  // The previous fixed-ms calculation skipped frames on short movement/attack windows.
@@ -1252,6 +1252,7 @@ function advanceGoblinAttack(trial,movement,ts,inRange){
  if(!inRange)return false;
  trial.playerHp=Math.max(0,(villageProgress()?player.hp:trial.playerHp)-GOBLIN_DAMAGE);
  if(villageProgress())player.hp=trial.playerHp||player.maxHp;
+ spriteHitUntil=ts+240;
  a17rRefresh();
  if(trial.playerHp>0){
   msg('哥布林反擊，造成 '+GOBLIN_DAMAGE+' 點測試傷害');
