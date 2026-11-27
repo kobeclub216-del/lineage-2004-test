@@ -1632,7 +1632,11 @@ function drawFrame(){ctx.clearRect(0,0,canvas.width,canvas.height);
   const onDraw=actors.length?(item,left,top)=>{
    if(!ground.has(item)&&item!==bolt)draws.push({item,left,top});
   }:undefined;
-  renderer.render({cameraX:c.cameraX,cameraY:c.cameraY,actors,onDraw,player:{image:actor,x:p.x,y:p.y,width,height,offsetY,depth:1,...(sourceRect?{sourceRect}:{})}});
+  const localFacing=['E','SE','S','SW','W','NW','N','NE'].indexOf(animation.screenFacing);
+  const localAction=pendingSpriteDeath?'death':now<spriteHitUntil?'hit':pickingUp?'pickup':attacking?'attack':casting?'cast':visuallyMoving?'walk':'idle';
+  const localFrame=player&&localFacing>=0?window.lineageLocalSprites?.frame({job:player.job,gender:player.gender||'男',weapon:equippedAnimationWeapon(player),facing:localFacing,action:localAction,now}):null;
+  const playerActor=localFrame?{image:localFrame.img,x:p.x,y:p.y,width:localFrame.img.width,height:localFrame.img.height,offsetX:localFrame.x+localFrame.img.width/2,offsetY:localFrame.y+localFrame.img.height,depth:1}:{image:actor,x:p.x,y:p.y,width,height,offsetY,depth:1,...(sourceRect?{sourceRect}:{})};
+  renderer.render({cameraX:c.cameraX,cameraY:c.cameraY,actors,onDraw,player:playerActor});
   if(enemy&&villageTrial.phase==='fight')labels.push({item:enemy,name:villageTrialTargetLabel(),
    font:'14px sans-serif',point:renderer.project(enemy.x,enemy.y,c.cameraX,c.cameraY),offset:36});
   displayedIslandFrame={camera:c,enemy,draws,labels};
