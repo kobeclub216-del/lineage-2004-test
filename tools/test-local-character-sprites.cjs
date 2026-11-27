@@ -12,3 +12,19 @@ test('V3 weapon selection, damage alias and death duration',async()=>{const {api
 test('weapon damage alias takes precedence over generic damage',async()=>{const {api,ctx,calls}=setup(),{manifest,files}=fixture();const a=manifest.roles[0].actions;a.damage=a.walk;a.bow_damage=a.walk.map(dir=>dir.map(f=>({...f,x:-80})));await api.load(manifest,files);const p={job:'王族',gender:'男',facing:0,now:0,x:100,y:100,action:'hit'};assert.equal(api.draw(ctx,{...p,weapon:'bow'}),true);assert.equal(calls.at(-1)[1],20);assert.equal(api.draw(ctx,{...p,weapon:'axe'}),true);assert.equal(calls.at(-1)[1],76);});
 
 test('island frame API returns native image and calibrated offsets',async()=>{const {api}=setup(),{manifest,files}=fixture();await api.load(manifest,files);const p={job:'王族',gender:'男',facing:0,now:0,action:'walk'};const f=api.frame(p);assert.equal(f.img.id,'3-0');assert.equal(f.x,-24);assert.equal(f.y,-72);assert.equal(api.frame({...p,action:'cast'}),null);api.clear();assert.equal(api.frame(p),null);});
+
+test('weapon attack, cast and pickup follow the scene action window after a hit',async()=>{
+ const {api}=setup(),{manifest,files}=fixture();
+ const actions=manifest.roles[0].actions;
+ actions.bow_attack=actions.walk;
+ actions.hit=actions.walk;
+ actions.cast=actions.walk;
+ actions.pickup=actions.walk;
+ await api.load(manifest,files);
+ const actor={job:'王族',gender:'男',weapon:'bow',facing:0,now:1000};
+ for(const action of ['attack','cast','pickup']){
+  assert.equal(api.frame({...actor,action,elapsed:299,actionDuration:600}).img.id,'3-0');
+  api.frame({...actor,action:'hit',now:1010});
+  assert.equal(api.frame({...actor,action,now:1100,elapsed:300,actionDuration:600}).img.id,'3-1');
+ }
+});

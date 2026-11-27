@@ -492,15 +492,15 @@ test('potion uses one stack entry, clamps healing, and leaves HP and stack intac
 test('goblin death of the player uses the existing return and restores HUD health without spending potions',()=>{
  const calls=[];
  const scene={};
- const c=context(['advanceGoblinAttack'],{
+ const c=context(['advanceGoblinAttack','queueSpriteDeath','islandSpriteFacing'],{
   GOBLIN_ATTACK_FRAME_MS:125,GOBLIN_ATTACK_FRAMES:4,GOBLIN_DAMAGE:3,
   player:{hp:2,maxHp:20,mp:3,pots:4},verifiedTalkingIslandScene:scene,
   villageProgress:()=>true,a17rRefresh:()=>calls.push('HUD'),
   activateTalkingIslandScene:s=>calls.push(s),startVillageTrial:s=>calls.push(s),
-  showVillageTrialStatus:()=>calls.push('status'),msg(){}
+  showVillageTrialStatus:()=>calls.push('status'),msg(){},window:{}
  });
  const trial={goblinAttackAt:100,home:{x:2,y:3}};
- const movement={spawn:(x,y)=>calls.push([x,y])};
+ const movement={spawn:(x,y)=>calls.push([x,y]),getScreenFacing:()=> 'E'};
  assert.equal(c.advanceGoblinAttack(trial,movement,599,true),false);
  assert.equal(c.player.hp,2);
  assert.equal(c.advanceGoblinAttack(trial,movement,600,true),true);
@@ -508,6 +508,43 @@ test('goblin death of the player uses the existing return and restores HUD healt
  assert.deepEqual([c.player.hp,c.player.mp,c.player.pots],[20,3,4]);
 });
 
+test('island death resolves equipped weapon and screen direction, and cancels movement',()=>{
+ let requested,cancelled=false;
+ const player={job:'騎士',gender:'女',path:[1]};
+ const movement={getScreenFacing:()=> 'NW',cancel(){cancelled=true;}};
+ const c=context(['queueSpriteDeath','localSpriteParams','islandSpriteFacing'],{
+  player,spriteFacing:0,equippedAnimationWeapon:()=> 'bow',
+  window:{lineageLocalSprites:{duration(p){requested=p;return 300;}}},
+ });
+ const revive=()=>assert.fail('must wait for animation');
+ c.queueSpriteDeath(500,revive,movement);
+ assert.deepEqual({...requested},{job:'騎士',gender:'女',weapon:'bow',facing:5,action:'death'});
+ assert.equal(cancelled,true);
+ assert.equal(player.path.length,0);
+ assert.equal(c.pendingSpriteDeath.startedAt,500);
+ assert.equal(c.pendingSpriteDeath.until,880);
+ assert.equal(c.pendingSpriteDeath.revive,revive);
+});
+
+test('pickup uses the existing gameplay window or the local clip when the atlas is absent',()=>{
+ const player={job:'騎士'};
+ const movement={getScreenFacing:()=> 'SW'};
+ const c=context(['islandPickupDuration','localSpriteParams','islandSpriteFacing'],{
+  player,equippedAnimationWeapon:()=> 'axe',
+  verifiedTalkingIslandScene:{pickupSprite:[{frameEnds:[100,340]}]},
+  window:{lineageLocalSprites:{duration(p){
+   assert.equal(p.action,'pickup');
+   assert.equal(p.weapon,'axe');
+   assert.equal(p.facing,3);
+   return 420;
+  }}},
+ });
+ assert.equal(c.islandPickupDuration(movement),340);
+ delete c.verifiedTalkingIslandScene.pickupSprite;
+ assert.equal(c.islandPickupDuration(movement),420);
+ delete c.window.lineageLocalSprites;
+ assert.equal(c.islandPickupDuration(movement),0);
+});
 
 test('equipment changes ownership state without moving, cloning or losing inventory records',()=>{
  const c=context(['toggleEquipmentItem'],{
@@ -547,10 +584,10 @@ test('equipment writes to the selected isolated character slot and restores from
  const first=open('?equipmentTest=1');
  vm.runInContext("a37Slots[1]={player:{...player,name:'另一位',equipmentItems:[]}};grantEquipmentTestKit();grantEquipmentTestKit();changeEquipment(0);changeEquipment(1);",first);
  const second=open('?equipmentTest=1');
- assert.equal(vm.runInContext("a37Slots[0].player.equipmentItems.map(item=>item.equipped).join(',')",second),'true,true,false');
+ assert.equal(vm.runInContext("a37Slots[0].player.equipmentItems.map(item=>item.equipped).join(',')",second),'true,true,false,false,false,false,false,false');
  assert.equal(vm.runInContext('a37Slots[1].player.equipmentItems.length',second),0);
  vm.runInContext('changeEquipment(2)',second);
- assert.equal(vm.runInContext("a37Slots[0].player.equipmentItems.map(item=>item.equipped).join(',')",open('?equipmentTest=1')),'false,true,true');
+ assert.equal(vm.runInContext("a37Slots[0].player.equipmentItems.map(item=>item.equipped).join(',')",open('?equipmentTest=1')),'false,true,true,false,false,false,false,false');
  vm.runInContext('changeEquipment(2)',second);
  assert.equal(vm.runInContext('a37Slots[0].player.equipmentItems[2].equipped',open('?equipmentTest=1')),false);
  assert.equal(values.get('lineage_182_p01_character_slots'),'[]');

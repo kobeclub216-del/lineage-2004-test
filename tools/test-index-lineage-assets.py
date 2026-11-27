@@ -59,7 +59,8 @@ class AssetIndexTests(unittest.TestCase):
             'unknownRecordCount': 1, 'declaredObjectCount': 3,
         })
         self.assertEqual(assets[1]['status'], 's32-truncated-prefix')
-        self.assertTrue(all(item['status'] == 'decoder-required' for item in assets[2:]))
+        self.assertEqual([item['status'] for item in assets[2:]],
+                         ['decoder-required', 'idx-unsupported-layout', 'decoder-required'])
 
 
     def test_archive_with_unsafe_paths_is_rejected(self):

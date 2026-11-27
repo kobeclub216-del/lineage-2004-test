@@ -535,7 +535,20 @@ window.addEventListener('keydown',e=>{
  if(e.key==='Escape'){setVillageSpellTargeting(false);cancelVillageCast();if(villageTrial){villageTrial.pickup=false;villageTrial.pickupStartedAt=null;villageTrial.target=null;villageTrial.attackStartedAt=-Infinity;villageTrial.attackPending=false;}if(talkingIslandMode()&&worldEntered&&verifiedTalkingIslandMovement)verifiedTalkingIslandMovement.cancel();target=null;if(player)player.path=[];msg('已取消目前的移動或追擊指令');e.preventDefault();}
  if(e.key==='F1'||e.key==='?'){const help=document.getElementById('desktopGameHelp');help.hidden=!help.hidden;e.preventDefault();}
 });window.addEventListener('keyup',e=>keys[e.key]=false);let pendingSpriteDeath=null;
-function queueSpriteDeath(ts,revive){const duration=window.lineageLocalSprites?.duration({job:player.job,gender:player.gender||'男',facing:spriteFacing,action:'death'})||0;if(!duration){revive();return;}pendingSpriteDeath={until:ts+duration+80,revive,owner:player};player.path=[];target=null;verifiedTalkingIslandMovement?.stop?.();}
+function localSpriteParams(facing,action){
+ return {job:player.job,gender:player.gender||'男',weapon:equippedAnimationWeapon(player),facing,action};
+}
+function islandSpriteFacing(movement){
+ return ['E','SE','S','SW','W','NW','N','NE'].indexOf(movement.getScreenFacing());
+}
+function queueSpriteDeath(ts,revive,movement){
+ const facing=movement?islandSpriteFacing(movement):spriteFacing;
+ const duration=window.lineageLocalSprites?.duration(localSpriteParams(facing,'death'))||0;
+ if(!duration){revive();return;}
+ pendingSpriteDeath={startedAt:ts,until:ts+duration+80,revive,owner:player};
+ player.path=[];target=null;
+ movement?.cancel();
+}
 function loop(ts){if(pendingSpriteDeath){const d=pendingSpriteDeath;if(d.owner!==player){pendingSpriteDeath=null;}else if(ts<d.until){last=ts;draw();requestAnimationFrame(loop);return;}else{pendingSpriteDeath=null;d.revive();spriteHitUntil=0;spriteAttackUntil=0;spriteMovingUntil=0;spritePickupUntil=0;last=ts;draw();requestAnimationFrame(loop);return;}}let dt=Math.min(.05,(ts-last)/1000||0);last=ts;if(talkingIslandMode()&&worldEntered&&verifiedTalkingIslandMovement){
   if(!verifiedTalkingIslandLastStep)verifiedTalkingIslandLastStep=ts;
   if(ts-verifiedTalkingIslandLastStep>=VERIFIED_SCENE_STEP_MS){
@@ -756,7 +769,18 @@ function drawKnightSprite(px,py,now){
  const attack=now<spriteAttackUntil,pickup=now<spritePickupUntil,move=now<spriteMovingUntil;
  const action=attack?'attack':pickup?'idle':move?'walk':'idle',spec=activeSpriteSpec(action);
  // Optional local original-art renderer. No original assets are distributed.
- if(window.lineageLocalSprites && window.lineageLocalSprites.draw(ctx,{job:player.job,gender:player.gender||'男',facing:spriteFacing,weapon:equippedAnimationWeapon(player),action:pendingSpriteDeath?'death':now<spriteHitUntil?'hit':pickup&&!attack?'pickup':action,elapsed:attack&&!pendingSpriteDeath&&now>=spriteHitUntil?Math.max(0,280-(spriteAttackUntil-now)):undefined,actionDuration:attack?280:undefined,now,x:px,y:py,hit:now<spriteHitUntil}))return;
+ const localAction=pendingSpriteDeath?'death':now<spriteHitUntil?'hit':pickup&&!attack?'pickup':action;
+ const timing={
+  death:[now-(pendingSpriteDeath?.startedAt??now)],
+  hit:[now-(spriteHitUntil-240),240],
+  attack:[now-(spriteAttackUntil-280),280],
+  pickup:[now-(spritePickupUntil-340),340],
+  walk:[now-spriteMoveStart],
+ };
+ const [localElapsed,actionDuration]=timing[localAction]??[];
+ if(window.lineageLocalSprites?.draw(ctx,{
+  ...localSpriteParams(spriteFacing,localAction),elapsed:localElapsed,actionDuration,now,x:px,y:py,
+ }))return;
 
  // Complete one full walk cycle per tile step and one attack cycle per attack.
  // The previous fixed-ms calculation skipped frames on short movement/attack windows.
@@ -1195,7 +1219,7 @@ function advanceVillageTrial(ts){
  if(trial.pickup&&trial.dropAvailable&&atTarget){
   if(verifiedTalkingIslandStepTo&&ts-verifiedTalkingIslandLastStep<VERIFIED_SCENE_STEP_MS)return;
   trial.pickupStartedAt??=ts;
-  if(ts-trial.pickupStartedAt<verifiedTalkingIslandScene.pickupSprite[0].frameEnds.at(-1))return;
+  if(ts-trial.pickupStartedAt<islandPickupDuration(movement))return;
   trial.pickupStartedAt=null;
   trial.pickup=false;
   trial.dropAvailable=false;
@@ -1268,8 +1292,12 @@ function advanceGoblinAttack(trial,movement,ts,inRange){
  startVillageTrial(verifiedTalkingIslandScene);
  showVillageTrialStatus();
  msg('角色倒下，已回村恢復，可重新挑戰');
- });
+ },movement);
  return true;
+}
+function islandPickupDuration(movement){
+ return verifiedTalkingIslandScene.pickupSprite?.[0].frameEnds.at(-1) ??
+  (window.lineageLocalSprites?.duration(localSpriteParams(islandSpriteFacing(movement),'pickup'))||0);
 }
 function villageAttackDuration(config){
  return config ? config.frameEnds?.at(-1)??config.columns*config.frameDuration : 0;
@@ -1600,15 +1628,17 @@ function drawFrame(){ctx.clearRect(0,0,canvas.width,canvas.height);
   const interrupted=visuallyMoving||attacking||villageTrial?.target;
   const {casting,bolt}=advanceVillageCast(now,interrupted);
   const pickupElapsed=now-(villageTrial?.pickupStartedAt??-Infinity);
-  const pickingUp=pickupElapsed>=0&&pickupElapsed<(verifiedTalkingIslandScene.pickupSprite?.[0].frameEnds.at(-1)??0);
-  if(pickingUp)[spriteConfig,actor]=verifiedTalkingIslandScene.pickupSprite;
+  const pickupDuration=pickupElapsed>=0&&Number.isFinite(pickupElapsed)?islandPickupDuration(movement):0;
+  const pickingUp=pickupElapsed>=0&&pickupElapsed<pickupDuration;
+  const legacyPickup=pickingUp&&verifiedTalkingIslandScene.pickupSprite;
+  if(legacyPickup)[spriteConfig,actor]=legacyPickup;
   else if(attacking)[spriteConfig,actor]=attack;
   else if(villageCastPreview&&casting)[spriteConfig,actor]=villageCastPreview.sprite;
   let sourceRect;
   if(spriteConfig){
    const first=spriteConfig.walkStartsAt??0;
    let col=0;
-   if(pickingUp)col=spriteConfig.frameEnds.findIndex(end=>pickupElapsed<end);
+   if(legacyPickup)col=spriteConfig.frameEnds.findIndex(end=>pickupElapsed<end);
    else if(attacking)col=spriteConfig.frameEnds
     ? spriteConfig.frameEnds.findIndex(end=>attackElapsed<end)
     : Math.floor(attackElapsed/spriteConfig.frameDuration);
@@ -1632,9 +1662,20 @@ function drawFrame(){ctx.clearRect(0,0,canvas.width,canvas.height);
   const onDraw=actors.length?(item,left,top)=>{
    if(!ground.has(item)&&item!==bolt)draws.push({item,left,top});
   }:undefined;
-  const localFacing=['E','SE','S','SW','W','NW','N','NE'].indexOf(animation.screenFacing);
+  const localFacing=islandSpriteFacing(movement);
   const localAction=pendingSpriteDeath?'death':now<spriteHitUntil?'hit':pickingUp?'pickup':attacking?'attack':casting?'cast':visuallyMoving?'walk':'idle';
-  const localFrame=player&&localFacing>=0?window.lineageLocalSprites?.frame({job:player.job,gender:player.gender||'男',weapon:equippedAnimationWeapon(player),facing:localFacing,action:localAction,now,elapsed:localAction==='attack'?attackElapsed:localAction==='pickup'?pickupElapsed:localAction==='cast'?castElapsed:undefined,actionDuration:localAction==='attack'?attackDuration:localAction==='pickup'?verifiedTalkingIslandScene.pickupSprite?.[0].frameEnds.at(-1):localAction==='cast'?villageCastPreview?.sprite[0].frameEnds.at(-1):undefined}):null;
+  const timing={
+   attack:[attackElapsed,attackDuration],
+   pickup:[pickupElapsed,pickupDuration],
+   cast:[castElapsed,villageCastPreview?.sprite[0].frameEnds.at(-1)],
+   death:[now-(pendingSpriteDeath?.startedAt??now)],
+   hit:[now-(spriteHitUntil-240),240],
+   walk:[now-verifiedTalkingIslandWalkStart],
+  };
+  const [elapsed,actionDuration]=timing[localAction]??[];
+  const localFrame=player&&localFacing>=0?window.lineageLocalSprites?.frame({
+   ...localSpriteParams(localFacing,localAction),now,elapsed,actionDuration,
+  }):null;
   const playerActor=localFrame?{image:localFrame.img,x:p.x,y:p.y,width:localFrame.img.width,height:localFrame.img.height,offsetX:localFrame.x+localFrame.img.width/2,offsetY:localFrame.y+localFrame.img.height,depth:1}:{image:actor,x:p.x,y:p.y,width,height,offsetY,depth:1,...(sourceRect?{sourceRect}:{})};
   renderer.render({cameraX:c.cameraX,cameraY:c.cameraY,actors,onDraw,player:playerActor});
   if(enemy&&villageTrial.phase==='fight')labels.push({item:enemy,name:villageTrialTargetLabel(),
