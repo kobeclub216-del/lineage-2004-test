@@ -446,7 +446,7 @@ function pathfind(sx,sy,gx,gy){if(!pass(gx,gy))return [];let start=sx+sy*W,goal=
    return;
   }
   if(hit==='enemy'){
-   const {x,y}=VILLAGE_TRIAL_ENEMY;
+   const {x,y}=villageTrial.position;
    if(!villageTrial.target&&movement.moveTo(x,y))villageTrial.target=true;
    return;
   }
@@ -1092,14 +1092,14 @@ function requestVillagePickup(nearbyOnly){
  if(!villageProgress()||trial.phase!=='defeated'||!trial.dropAvailable)return false;
  if(trial.pickupStartedAt!=null)return true;
  const movement=verifiedTalkingIslandMovement;
- const {x,y}=VILLAGE_TRIAL_ENEMY;
+ const {x,y}=trial.position;
  const {x:fromX,y:fromY}=movement.position;
  if(nearbyOnly&&(fromX!==x||fromY!==y)&&!movement.renderer.canStep(fromX,fromY,x,y))return false;
  trial.pickup=movement.moveTo(x,y);
  return trial.pickup;
 }
 function villageDropPosition(camera){
- const {x,y}=VILLAGE_TRIAL_ENEMY;
+ const {x,y}=villageTrial.position;
  return verifiedTalkingIslandMovement.renderer.project(x,y,camera.cameraX,camera.cameraY);
 }
 let villageCastPreview=null;
@@ -1118,20 +1118,31 @@ const TRIAL_PLAYER_HP=12;
 const GOBLIN_DAMAGE=3;
 const GOBLIN_ATTACK_FRAMES=goblinAnimation.attack.count;
 const GOBLIN_ATTACK_FRAME_MS=goblinAnimation.attack.ms;
-function startVillageTrial(scene){
- if(!scene.renderer.canWalk(VILLAGE_TRIAL_ENEMY.x,VILLAGE_TRIAL_ENEMY.y))return;
+function startVillageTrial(scene,position=VILLAGE_TRIAL_ENEMY,home=scene.movement.position){
+ if(!scene.renderer.canWalk(position.x,position.y))return false;
  // The isolated magic test must survive two maximum-damage light bolts.
  const maxHp=magicTestMode?Math.max(GOBLIN.hp,40):GOBLIN.hp;
  if(magicTestMode)player.mp=player.maxMp;
  villageTrial={phase:'fight',hp:maxHp,maxHp,target:null,nextAttack:0,attackStartedAt:-Infinity,attackPending:false,
   playerHp:TRIAL_PLAYER_HP,goblinAttackAt:null,goblinReadyAt:0,provoked:false,exp:0,
-  home:{...scene.movement.position}};
+  position,home:{...home}};
+ return true;
+}
+function advanceOutskirtsHunt(trial,scene){
+ if(!outskirtsHunt||trial.phase!=='defeated'||trial.dropAvailable||trial.pickup||!scene?.goblin)return false;
+ const {x,y}=scene.movement.position;
+ if(Math.max(Math.abs(x-trial.position.x),Math.abs(y-trial.position.y))<4)return false;
+ const next=trial.position===goblinEncounters.outskirts?goblinEncounters.outskirtsDeep:goblinEncounters.outskirts;
+ if(!startVillageTrial(scene,next,trial.home))return false;
+ showVillageTrialStatus();
+ msg(next===goblinEncounters.outskirtsDeep?'下一隻哥布林出現在狩獵區深處。':'村莊外圍再次出現哥布林。');
+ return true;
 }
 function showVillageTrialStatus(){
  const messages={
   fight:outskirtsHunt?'周邊狩獵測試｜從出生點往畫面左下尋找哥布林':'開發測試｜點擊哥布林測試近戰',
   dying:'開發測試｜哥布林已擊倒',
-  defeated:'開發測試｜近戰測試完成'
+  defeated:outskirtsHunt?'周邊狩獵測試｜拾取戰利品後離開原地，繼續狩獵':'開發測試｜近戰測試完成'
  };
  document.getElementById('a11EntryStatus').textContent=messages[villageTrial.phase];
  a17rRefresh();
@@ -1208,13 +1219,14 @@ function isOpaqueIslandPixel({item,left,top},sx,sy){
 }
 function advanceVillageTrial(ts){
  const trial=villageTrial;
+ if(advanceOutskirtsHunt(trial,verifiedTalkingIslandScene))return;
  if(trial.phase==='dying'&&ts-trial.deathStartedAt>=GOBLIN_DEATH_FRAMES*GOBLIN_FRAME_MS){
   trial.phase='defeated';
   showVillageTrialStatus();
  }
  const movement=verifiedTalkingIslandMovement;
  const {x,y}=movement.position;
- const {x:tx,y:ty}=VILLAGE_TRIAL_ENEMY;
+ const {x:tx,y:ty}=trial.position;
  const atTarget=x===tx&&y===ty;
  if(trial.pickup&&trial.dropAvailable&&atTarget){
   if(verifiedTalkingIslandStepTo&&ts-verifiedTalkingIslandLastStep<VERIFIED_SCENE_STEP_MS)return;
@@ -1325,13 +1337,13 @@ function villageTrialActors(now,goblin){
  // The supplied atlas uses 119×93 frames with idle feet at y=80.
  const {height,width,offsetX,offsetY}=goblinAnimation;
  const row=villageGoblinFrame(trial,now);
- return [{...VILLAGE_TRIAL_ENEMY,image:goblin,width,height,offsetX,offsetY,
+ return [{...trial.position,image:goblin,width,height,offsetX,offsetY,
   sourceRect:{x:0,y:row*height,width,height}}];
 }
 function drawVillageTrial(renderer,camera){
  const trial=villageTrial;
  if(trial.phase==='defeated')return;
- const position=VILLAGE_TRIAL_ENEMY;
+ const position=trial.position;
  const p=renderer.project(position.x,position.y,camera.cameraX,camera.cameraY);
  ctx.save();
  ctx.textAlign='center';
@@ -1399,6 +1411,7 @@ async function loadLocalVillage(spriteBase,trial,visitTeacher){
  const loadSprite=action=>Promise.all([
   json(spriteBase+'-'+action+'.json'),loadLocalImage(spriteBase+'-'+action+'.png')
  ]);
+ const pickupAvailable=localData[spriteBase+'-pickup.json']&&localImages[spriteBase+'-pickup.png'];
  const loadLocalImage=name=>verifiedImageLoader(localImages[name]);
  if(visitTeacher||visualParams.get('gerengPreview')==='1')return prepareGerengScene(loadSprite,loadLocalImage,visitTeacher);
  const castPreview=visualParams.get('spellPreview')==='1'&&spriteBase.startsWith('wizard-');
@@ -1410,7 +1423,7 @@ async function loadLocalVillage(spriteBase,trial,visitTeacher){
   castPreview?Promise.all([loadSprite('cast-direction'),loadSprite('cast-no-direction')]):learnedCast?Promise.all([loadSprite('cast-direction')]):null,
   castPreview||learnedCast?loadLocalImage('energy-bolt.png'):null,
   castPreview?loadLocalImage('scarecrow.png'):null,
-  trial&&visualParams.get('villageProgress')!=='0'?loadSprite('pickup'):null,
+  trial&&pickupAvailable&&visualParams.get('villageProgress')!=='0'?loadSprite('pickup'):null,
   shop?loadLocalImage('pandora.png'):null
  ]);
  const renderer=new TalkingIslandLayerRenderer(canvas,{tileWidth:data.tileSize.width,tileHeight:data.tileSize.height});
@@ -1443,6 +1456,7 @@ async function loadLocalVillage(spriteBase,trial,visitTeacher){
   if(goblin.naturalWidth!==goblinAnimation.width||goblin.naturalHeight!==goblinAnimation.height*(goblinAnimation.attack.start+GOBLIN_ATTACK_FRAMES))
    throw Error('哥布林圖集尺寸不符');
  }
+ if(pickupSprite)validateSprite(pickupSprite,'角色拾取');
  for(const cast of casts??[])validateSprite(cast,'法師施法');
  return {renderer,movement,actor,spriteConfig,attack,goblin,casts,boltImage,pickupSprite,merchant:merchantImage?{...PANDORA,image:merchantImage,width:120,height:120,offsetY:32}:null,dummy:dummyImage?{x:32953,y:32568,image:dummyImage,width:45,height:65}:null,imagePixels:new WeakMap()};
 }
@@ -1998,7 +2012,7 @@ function targetVillageSpell(sx,sy){
  if(!dummy&&(!villageProgress()||!knowsEnergyBolt(player)))return false;
  const hit=pickVillageActor(sx,sy,true);
  if(hit!==(dummy?'dummy':'enemy'))return false;
- const target=dummy??VILLAGE_TRIAL_ENEMY;
+ const target=dummy??villageTrial?.position;
  setVillageSpellTargeting(false);
  return playVillageCastPreview(true,target);
 }

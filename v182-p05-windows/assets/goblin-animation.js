@@ -13,5 +13,6 @@ const goblinAnimation = {
 const goblinEncounters = Object.freeze({
  village:Object.freeze({x:32953,y:32569}),
  // Development placement on an existing walkable cell of the shop scene.
- outskirts:Object.freeze({x:32946,y:32598})
+ outskirts:Object.freeze({x:32946,y:32598}),
+ outskirtsDeep:Object.freeze({x:32947,y:32608})
 });

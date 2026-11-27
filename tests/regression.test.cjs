@@ -282,11 +282,10 @@ function pointerScene(){
  Object.assign(teacher,{x:3,y:4});
  Object.assign(merchant,{x:4,y:3});
  const c=context(['pickVillageActor','isOpaqueIslandPixel','isVillageActorLabelHit','clickAt'],{
-  canvas:{width:200,height:100},villageTrial:{phase:'fight'},
+  canvas:{width:200,height:100},villageTrial:{phase:'fight',position:{x:9,y:9}},
   displayedIslandFrame:{draws,enemy,camera,labels:[]},
   verifiedTalkingIslandScene:{imagePixels,merchant,teacher},
   verifiedTalkingIslandMovement:movement,
-  VILLAGE_TRIAL_ENEMY:{x:9,y:9},
   talkingIslandMode:()=>true,villageSpellTargeting:false,villageProgress:()=>true,
   openGerengDialogue:()=>calls.push(['teacher']),openVillageShop:()=>calls.push(['merchant'])
  });
@@ -675,6 +674,38 @@ test('outskirts encounter reuses the existing map, has ground coverage, and is r
  assert.ok(target.x>=left&&target.x<left+ground.width);
  assert.ok(target.y>=top&&target.y<top+ground.height);
  assert.ok(y>=readAssetJson('village-scene.json').bounds.maxY);
+ movement.spawn(x,y);
+ assert.ok(movement.moveTo(points.outskirtsDeep.x,points.outskirtsDeep.y));
+ const deep=r.project(points.outskirtsDeep.x,points.outskirtsDeep.y);
+ assert.ok(deep.x>=left&&deep.x<left+ground.width);
+ assert.ok(deep.y>=top&&deep.y<top+ground.height);
+});
+
+test('outskirts hunt alternates only after loot is picked up and the player leaves the site',()=>{
+ const outskirts={x:10,y:10},outskirtsDeep={x:18,y:16};
+ const home={x:1,y:2},player={mp:3,pots:4};
+ const scene={goblin:{},renderer:{canWalk:()=>true},movement:{position:{x:14,y:10}}};
+ const c=context(['startVillageTrial','advanceOutskirtsHunt'],{
+  outskirtsHunt:true,magicTestMode:false,goblinEncounters:{outskirts,outskirtsDeep},
+  GOBLIN:{hp:3},TRIAL_PLAYER_HP:12,player,showVillageTrialStatus(){},msg(){},
+ });
+ const first={phase:'defeated',dropAvailable:true,position:outskirts,home};
+ assert.equal(c.advanceOutskirtsHunt(first,scene),false);
+ first.dropAvailable=false;
+ scene.movement.position.x=13;
+ assert.equal(c.advanceOutskirtsHunt(first,scene),false);
+ scene.movement.position.x=14;
+ assert.equal(c.advanceOutskirtsHunt(first,scene),true);
+ assert.equal(c.villageTrial.position,outskirtsDeep);
+ assert.deepEqual({...c.villageTrial.home},home);
+ assert.equal(c.villageTrial.phase,'fight');
+ assert.equal(c.advanceOutskirtsHunt(c.villageTrial,scene),false);
+ c.villageTrial.phase='defeated';
+ assert.equal(c.advanceOutskirtsHunt(c.villageTrial,scene),true);
+ assert.equal(c.villageTrial.position,outskirts);
+ assert.deepEqual(player,{mp:3,pots:4});
+ c.outskirtsHunt=false;
+ assert.equal(c.advanceOutskirtsHunt(first,scene),false);
 });
 
 test('Gereng visit uses a reachable existing teacher cell and returns to the same encounter',async()=>{
