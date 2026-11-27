@@ -33,7 +33,7 @@ function duration(p){const frames=resolveFrames(p);return frames?.reduce((sum,f)
 function frame(p){
  const frames=resolveFrames(p);
  if(!frames?.length){lastAction=null;return null;}
- const total=frames.reduce((s,f)=>s+f.ms,0);const key=p.job+':'+p.gender+':'+(p.weapon||'')+':'+p.action;if(key!==lastAction){lastAction=key;started=p.now;}const elapsed=Math.max(0,p.now-started);let t=['attack','hit','death','pickup','cast'].includes(p.action)?Math.min(total-0.001,elapsed):elapsed%total;
+ const total=frames.reduce((s,f)=>s+f.ms,0);const key=p.job+':'+p.gender+':'+(p.weapon||'')+':'+p.action;if(key!==lastAction){lastAction=key;started=p.now;}const elapsed=Math.max(0,Number.isFinite(p.elapsed)?p.elapsed:p.now-started);let t=['attack','hit','death','pickup','cast'].includes(p.action)?Math.min(total-0.001,Number.isFinite(p.actionDuration)&&p.actionDuration>0?elapsed*total/p.actionDuration:elapsed):elapsed%total;
  let f=frames[0];for(const candidate of frames){f=candidate;if(t<f.ms)break;t-=f.ms;}
  return f;
 }
