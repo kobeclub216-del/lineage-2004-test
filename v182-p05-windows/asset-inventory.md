@@ -37,6 +37,12 @@ python tools/index-lineage-assets.py path/to/assets.zip path/to/loose-assets --e
 
 ### 本機素材批次提取清單
 
+在 Windows 雙擊 `tools/windows-sprite-batch.bat`，依序選擇原有 PakViewer CLI、客戶端資料夾及同版本匯出的 `list.spr`。工具需要 Python 3 的 `py.exe`，結果存於桌面的 `Lineage-sprite-batch-*`。若尚未匯出 `list.spr`，可用現有 `windows-list-spr-test.bat` 先擷取一次。
+
+預設清單涵蓋 24 個怪物名稱、12 個 NPC 名稱和 8 種職業性別組合。這些是搜尋候選。程式僅從本機索引的唯一名稱匹配讀取編號，重名與找不到的條目會列入 `sprite-batch-plan.json`，供人工核對。若客戶端使用其他語系，可在 `list.spr` 旁放置 `sprite-batch-catalog.json`，欄位使用 `name`、`kind`、`aliases`、`actions`。
+
+本批共用單一去重佇列並保留原始方向、影格編號、時間與事件。相同客戶端路徑和索引再次執行時，會重用該批次目錄中符合完成標記的 PNG。PakViewer 的輸出狀態可查 `frames/report.csv`。規劃列出的方向數來自索引旗標，實際缺檔或解碼錯誤以匯出結果為準。
+
 先用同一版本客戶端的 `list.spr` 和對應的 IDX 檔建立索引，核對名稱與動作後，再用 `tools/plan-spr-export.py` 一次傳入所有已確認的條目編號。每批附客戶端版本、原始編號、動作表、方向順序、影格時間和錨點。未核對的編號先留空。
 
 | 對象 | 同批準備 |

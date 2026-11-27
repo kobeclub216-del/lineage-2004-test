@@ -15,8 +15,31 @@ def load(name):
 
 index = load('index-lineage-assets')
 extractor = load('extract-lineage-entries')
+batch = load('plan-sprite-batch')
 
 class AssetTests(unittest.TestCase):
+    def test_sprite_batch_uses_index_ids_and_reports_incomplete_actions(self):
+        text = (
+            '#310 7=999 goblin\n'
+            '0.walk(1 1, 8.0:4)\n1.attack(1 2, 8.0:4 broken)\n'
+            '2.death(0 1, 8.0:6)\n'
+            '#420 3 pandora\n0.stand(0 1, 4.0:10)\n'
+            '#421 3 pandora\n0.stand(0 1, 4.0:10)\n'
+            '#500 2 knight male\n0.pick up(0 1, 5.0:7)\n'
+        )
+        result = batch.build(batch.parse(text), batch.default_catalog())
+        candidates = {entry['candidate']: entry for entry in result['candidates']}
+        self.assertEqual(candidates['goblin']['entryId'], 310)
+        self.assertEqual(candidates['goblin']['spriteId'], 999)
+        self.assertEqual(candidates['goblin']['missing'], ['attack', 'hit', 'idle'])
+        self.assertIn('death', candidates['goblin']['missingEightDirections'])
+        self.assertEqual(len(candidates['goblin']['rejected']), 1)
+        self.assertEqual(candidates['pandora']['status'], 'ambiguous')
+        self.assertEqual(candidates['gereng']['status'], 'unmatched')
+        self.assertEqual(candidates['male knight']['entryId'], 500)
+        self.assertEqual(set(result['files']), {'500-5.spr'} |
+                         {f'999-{direction}.spr' for direction in range(8, 16)})
+
     def test_pipeline(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

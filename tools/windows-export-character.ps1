@@ -23,7 +23,8 @@ foreach ($name in $queue) {
  $info = Join-Path $dest 'info.txt'
  $log = Join-Path $dest 'export.txt'
  $count = @(Get-ChildItem -LiteralPath $dest -Filter '*.png' -File).Count
- if (!(Test-Path -LiteralPath $marker) -or !$count -or !(Test-Path -LiteralPath $info)) {
+ $savedCount = if (Test-Path -LiteralPath $marker) { (Get-Content -LiteralPath $marker -Raw).Trim() }
+ if (!$count -or $savedCount -ne [string]$count -or !(Test-Path -LiteralPath $info)) {
    Remove-Item -LiteralPath $marker -ErrorAction SilentlyContinue
    Get-ChildItem -LiteralPath $dest -Filter '*.png' -File | Remove-Item
    $ErrorActionPreference = 'Continue'
