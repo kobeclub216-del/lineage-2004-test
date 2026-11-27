@@ -28,7 +28,7 @@ async function load(manifest,files){
  release(bitmaps);bitmaps=owned;roles=next;lastAction=null;return true;
  }catch(error){await Promise.allSettled(cache.values());release(owned);throw error;}
 }
-function resolveFrames(p){const actions=roles.get(p.job+':'+p.gender),dir=(p.facing+3)%8;return (p.weapon&&actions?.[p.weapon+'_'+p.action]?.[dir])||actions?.[p.action]?.[dir]||(p.action==='hit'?actions?.damage?.[dir]:null);}
+function resolveFrames(p){const actions=roles.get(p.job+':'+p.gender),dir=(p.facing+3)%8;return (p.weapon&&actions?.[p.weapon+'_'+p.action]?.[dir])||(p.weapon&&p.action==='hit'&&actions?.[p.weapon+'_damage']?.[dir])||actions?.[p.action]?.[dir]||(p.action==='hit'?actions?.damage?.[dir]:null);}
 function duration(p){const frames=resolveFrames(p);return frames?.reduce((sum,f)=>sum+f.ms,0)||0;}
 function draw(ctx,p){
  const frames=resolveFrames(p);
