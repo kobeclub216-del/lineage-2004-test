@@ -1,9 +1,12 @@
 /* Local-only character animation adapter. Manifest coordinates must be calibrated by importer. */
 (function(root){
 "use strict";
-let roles=new Map(), epoch=0, lastAction=null, started=0;
+let roles=new Map(), epoch=0, lastAction=null, started=0, bitmaps=new Set();
+function release(set){for(const img of set)img.close?.();}
 async function load(manifest,files){
  const token=++epoch, next=new Map(), byPath=new Map(Array.from(files,f=>[f.path||f.webkitRelativePath||f.name,f.file||f]));
+ const cache=new Map(), owned=new Set();
+ try {
  if(manifest.schemaVersion!==1||!Array.isArray(manifest.roles))throw Error("Invalid character manifest");
  for(const role of manifest.roles){
  const actions={};
@@ -14,14 +17,16 @@ async function load(manifest,files){
  return Promise.all(frames.map(async f=>{
  if(![f.x,f.y,f.ms].every(Number.isFinite)||f.ms<=0)throw Error("Invalid frame coordinates or timing");
  const file=byPath.get(f.path);if(!file)throw Error("Missing "+f.path);
- const img=await createImageBitmap(file);return {...f,img};
+ if(!cache.has(f.path))cache.set(f.path,Promise.resolve().then(()=>createImageBitmap(file)).then(img=>{owned.add(img);return img;}));
+ const img=await cache.get(f.path);return {...f,img};
  }));
  }));
  }
  next.set(role.job+":"+role.gender,actions);
  }
- if(token!==epoch)return false;
- roles=next;lastAction=null;return true;
+ if(token!==epoch){release(owned);return false;}
+ release(bitmaps);bitmaps=owned;roles=next;lastAction=null;return true;
+ }catch(error){await Promise.allSettled(cache.values());release(owned);throw error;}
 }
 function draw(ctx,p){
  const actions=roles.get(p.job+":"+p.gender), frames=actions?.[p.action]?.[(p.facing+3)%8];
@@ -33,5 +38,5 @@ function draw(ctx,p){
  
  ctx.restore();return true;
 }
-root.lineageLocalSprites={load,draw,clear(){epoch++;roles=new Map();lastAction=null;}};
+root.lineageLocalSprites={load,draw,clear(){epoch++;release(bitmaps);bitmaps=new Set();roles=new Map();lastAction=null;}};
 })(window);
