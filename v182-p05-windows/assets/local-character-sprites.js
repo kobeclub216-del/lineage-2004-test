@@ -28,15 +28,16 @@ async function load(manifest,files){
  release(bitmaps);bitmaps=owned;roles=next;lastAction=null;return true;
  }catch(error){await Promise.allSettled(cache.values());release(owned);throw error;}
 }
+function duration(p){const frames=roles.get(p.job+':'+p.gender)?.[p.action]?.[(p.facing+3)%8];return frames?.reduce((sum,f)=>sum+f.ms,0)||0;}
 function draw(ctx,p){
  const actions=roles.get(p.job+":"+p.gender), frames=actions?.[p.action]?.[(p.facing+3)%8];
  if(!frames?.length)return false;
- const total=frames.reduce((s,f)=>s+f.ms,0);const key=p.job+':'+p.gender+':'+p.action;if(key!==lastAction){lastAction=key;started=p.now;}const elapsed=Math.max(0,p.now-started);let t=p.action==='attack'?Math.min(total-0.001,elapsed):elapsed%total;
+ const total=frames.reduce((s,f)=>s+f.ms,0);const key=p.job+':'+p.gender+':'+p.action;if(key!==lastAction){lastAction=key;started=p.now;}const elapsed=Math.max(0,p.now-started);let t=['attack','hit','death','pickup','cast'].includes(p.action)?Math.min(total-0.001,elapsed):elapsed%total;
  let f=frames[0];for(const candidate of frames){f=candidate;if(t<f.ms)break;t-=f.ms;}
  ctx.save();ctx.imageSmoothingEnabled=false;
  ctx.drawImage(f.img,Math.round(p.x+f.x),Math.round(p.y+f.y));
  
  ctx.restore();return true;
 }
-root.lineageLocalSprites={load,draw,clear(){epoch++;release(bitmaps);bitmaps=new Set();roles=new Map();lastAction=null;}};
+root.lineageLocalSprites={load,draw,duration,clear(){epoch++;release(bitmaps);bitmaps=new Set();roles=new Map();lastAction=null;}};
 })(window);
