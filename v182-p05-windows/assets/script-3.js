@@ -756,7 +756,7 @@ function drawKnightSprite(px,py,now){
  const attack=now<spriteAttackUntil,pickup=now<spritePickupUntil,move=now<spriteMovingUntil;
  const action=attack?'attack':pickup?'idle':move?'walk':'idle',spec=activeSpriteSpec(action);
  // Optional local original-art renderer. No original assets are distributed.
- if(window.lineageLocalSprites && window.lineageLocalSprites.draw(ctx,{job:player.job,gender:player.gender||'男',facing:spriteFacing,weapon:equippedAnimationWeapon(player),action:pendingSpriteDeath?'death':now<spriteHitUntil?'hit':pickup&&!attack?'pickup':action,now,x:px,y:py,hit:now<spriteHitUntil}))return;
+ if(window.lineageLocalSprites && window.lineageLocalSprites.draw(ctx,{job:player.job,gender:player.gender||'男',facing:spriteFacing,weapon:equippedAnimationWeapon(player),action:pendingSpriteDeath?'death':now<spriteHitUntil?'hit':pickup&&!attack?'pickup':action,elapsed:attack&&!pendingSpriteDeath&&now>=spriteHitUntil?Math.max(0,280-(spriteAttackUntil-now)):undefined,actionDuration:attack?280:undefined,now,x:px,y:py,hit:now<spriteHitUntil}))return;
 
  // Complete one full walk cycle per tile step and one attack cycle per attack.
  // The previous fixed-ms calculation skipped frames on short movement/attack windows.
@@ -1634,7 +1634,7 @@ function drawFrame(){ctx.clearRect(0,0,canvas.width,canvas.height);
   }:undefined;
   const localFacing=['E','SE','S','SW','W','NW','N','NE'].indexOf(animation.screenFacing);
   const localAction=pendingSpriteDeath?'death':now<spriteHitUntil?'hit':pickingUp?'pickup':attacking?'attack':casting?'cast':visuallyMoving?'walk':'idle';
-  const localFrame=player&&localFacing>=0?window.lineageLocalSprites?.frame({job:player.job,gender:player.gender||'男',weapon:equippedAnimationWeapon(player),facing:localFacing,action:localAction,now}):null;
+  const localFrame=player&&localFacing>=0?window.lineageLocalSprites?.frame({job:player.job,gender:player.gender||'男',weapon:equippedAnimationWeapon(player),facing:localFacing,action:localAction,now,elapsed:localAction==='attack'?attackElapsed:localAction==='pickup'?pickupElapsed:localAction==='cast'?castElapsed:undefined,actionDuration:localAction==='attack'?attackDuration:localAction==='pickup'?verifiedTalkingIslandScene.pickupSprite?.[0].frameEnds.at(-1):localAction==='cast'?villageCastPreview?.sprite[0].frameEnds.at(-1):undefined}):null;
   const playerActor=localFrame?{image:localFrame.img,x:p.x,y:p.y,width:localFrame.img.width,height:localFrame.img.height,offsetX:localFrame.x+localFrame.img.width/2,offsetY:localFrame.y+localFrame.img.height,depth:1}:{image:actor,x:p.x,y:p.y,width,height,offsetY,depth:1,...(sourceRect?{sourceRect}:{})};
   renderer.render({cameraX:c.cameraX,cameraY:c.cameraY,actors,onDraw,player:playerActor});
   if(enemy&&villageTrial.phase==='fight')labels.push({item:enemy,name:villageTrialTargetLabel(),
