@@ -14,6 +14,8 @@ const equipmentCatalog=new Map([
  ['test-armor',{name:'皮夾克',slot:'armor',pandoraPrice:22}]
 ]);
 if(equipmentTestMode)equipmentCatalog.set('test-elven-dagger',{name:'精靈匕首',slot:'weapon'});
+if(equipmentTestMode)for(const [animationWeapon,name] of [['sword','單手劍'],['axe','斧頭'],['bow','弓箭'],['spear','長槍'],['staff','法杖']])equipmentCatalog.set('animation-test-'+animationWeapon,{name:name+'（動畫測試）',slot:'weapon',animationWeapon});
+function equippedAnimationWeapon(character){const item=character?.equipmentItems?.find(record=>record.equipped&&equipmentCatalog.get(record.id)?.slot==='weapon');return equipmentCatalog.get(item?.id)?.animationWeapon||null;}
 const equipmentBagCapacity=30; // Existing 32 cells minus potion and currency.
 function toggleEquipmentItem(character,index){
  const items=character.equipmentItems;
@@ -754,7 +756,7 @@ function drawKnightSprite(px,py,now){
  const attack=now<spriteAttackUntil,pickup=now<spritePickupUntil,move=now<spriteMovingUntil;
  const action=attack?'attack':pickup?'idle':move?'walk':'idle',spec=activeSpriteSpec(action);
  // Optional local original-art renderer. No original assets are distributed.
- if(window.lineageLocalSprites && window.lineageLocalSprites.draw(ctx,{job:player.job,gender:player.gender||'男',facing:spriteFacing,action:pendingSpriteDeath?'death':now<spriteHitUntil?'hit':action,now,x:px,y:py,hit:now<spriteHitUntil}))return;
+ if(window.lineageLocalSprites && window.lineageLocalSprites.draw(ctx,{job:player.job,gender:player.gender||'男',facing:spriteFacing,weapon:equippedAnimationWeapon(player),action:pendingSpriteDeath?'death':now<spriteHitUntil?'hit':action,now,x:px,y:py,hit:now<spriteHitUntil}))return;
 
  // Complete one full walk cycle per tile step and one attack cycle per attack.
  // The previous fixed-ms calculation skipped frames on short movement/attack windows.
