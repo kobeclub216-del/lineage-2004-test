@@ -136,7 +136,7 @@
    // Foreground overlays can use a higher explicit depth.
    entries.sort((a,b)=>a.depth-b.depth||a.footY-b.footY);
    for(const {item} of entries){
-    if(!item.image.complete||!item.image.naturalWidth)continue;
+    if(item.image.complete===false||!(item.image.naturalWidth||item.image.width))continue;
     const p=this.project(item.x,item.y,cameraX,cameraY);
     const left=p.x+(item.offsetX??0)-item.width/2,top=p.y+(item.offsetY??0)-item.height;
     if(left>this.canvas.width||left+item.width<0||top>this.canvas.height||top+item.height<0)continue;
