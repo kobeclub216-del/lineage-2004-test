@@ -532,7 +532,9 @@ window.addEventListener('keydown',e=>{
  if(e.key==='Escape'&&!villageSpellTargeting&&closeActiveGamePanel()){e.preventDefault();return;}
  if(e.key==='Escape'){setVillageSpellTargeting(false);cancelVillageCast();if(villageTrial){villageTrial.pickup=false;villageTrial.pickupStartedAt=null;villageTrial.target=null;villageTrial.attackStartedAt=-Infinity;villageTrial.attackPending=false;}if(talkingIslandMode()&&worldEntered&&verifiedTalkingIslandMovement)verifiedTalkingIslandMovement.cancel();target=null;if(player)player.path=[];msg('已取消目前的移動或追擊指令');e.preventDefault();}
  if(e.key==='F1'||e.key==='?'){const help=document.getElementById('desktopGameHelp');help.hidden=!help.hidden;e.preventDefault();}
-});window.addEventListener('keyup',e=>keys[e.key]=false);function loop(ts){let dt=Math.min(.05,(ts-last)/1000||0);last=ts;if(talkingIslandMode()&&worldEntered&&verifiedTalkingIslandMovement){
+});window.addEventListener('keyup',e=>keys[e.key]=false);let pendingSpriteDeath=null;
+function queueSpriteDeath(ts,revive){const duration=window.lineageLocalSprites?.duration({job:player.job,gender:player.gender||'男',facing:spriteFacing,action:'death'})||0;if(!duration){revive();return;}pendingSpriteDeath={until:ts+duration+80,revive,owner:player};player.path=[];target=null;verifiedTalkingIslandMovement?.stop?.();}
+function loop(ts){if(pendingSpriteDeath){const d=pendingSpriteDeath;if(d.owner!==player){pendingSpriteDeath=null;}else if(ts<d.until){last=ts;draw();requestAnimationFrame(loop);return;}else{pendingSpriteDeath=null;d.revive();spriteHitUntil=0;spriteAttackUntil=0;spriteMovingUntil=0;spritePickupUntil=0;last=ts;draw();requestAnimationFrame(loop);return;}}let dt=Math.min(.05,(ts-last)/1000||0);last=ts;if(talkingIslandMode()&&worldEntered&&verifiedTalkingIslandMovement){
   if(!verifiedTalkingIslandLastStep)verifiedTalkingIslandLastStep=ts;
   if(ts-verifiedTalkingIslandLastStep>=VERIFIED_SCENE_STEP_MS){
    const before={...verifiedTalkingIslandMovement.position};
@@ -547,7 +549,7 @@ window.addEventListener('keydown',e=>{
   }
   if(villageTrial)advanceVillageTrial(ts);
   draw();requestAnimationFrame(loop);return;
- }if(!player||!worldEntered){if(worldEntered)draw();requestAnimationFrame(loop);return;}if(player){if(keys.ArrowLeft)cam.x-=350*dt;if(keys.ArrowRight)cam.x+=350*dt;if(keys.ArrowUp)cam.y-=350*dt;if(keys.ArrowDown)cam.y+=350*dt;player.step+=dt;if(target){let o=target.ref;if(target.type==='monster'&&!o.alive)target=null;else{let distance=Math.max(Math.abs(player.x-o.x),Math.abs(player.y-o.y));if(distance<=1){player.path=[];if(target.type==='drop'){spriteFacing=direction8(o.x-player.x,o.y-player.y);spritePickupUntil=ts+340;drops=drops.filter(v=>v!==o);player.pots++;msg('拾取治癒藥水（測試掉落）');target=null;update()}else if(ts>attackTimer){attackTimer=ts+700;spriteFacing=direction8(o.x-player.x,o.y-player.y);spriteAttackUntil=ts+280;o.hp-=8+Math.floor(rand()*9);msg('攻擊 '+o.name+'，造成測試傷害');if(o.hp<=0){o.alive=false;if(rand()<.45)drops.push({x:o.x,y:o.y});p03AwardExp(o);target=null}update()}}else if(player.path.length===0||player.path[player.path.length-1].x!==o.x||player.path[player.path.length-1].y!==o.y)player.path=pathfind(player.x,player.y,o.x,o.y)}}}if(player.step>.17&&player.path.length){player.step=0;let p=player.path.shift();if(pass(p.x,p.y)){spriteFacing=direction8(p.x-player.x,p.y-player.y);spriteMoveFrom={x:player.x,y:player.y};spriteMoveTo={x:p.x,y:p.y};spriteMoveStart=ts;player.x=p.x;player.y=p.y;spriteMovingUntil=ts+SPRITE_STEP_MS;update()}}for(let m of monsters){if(!m.alive)continue;m.cool-=dt;if(Math.max(Math.abs(m.x-player.x),Math.abs(m.y-player.y))<=1&&m.cool<=0){m.cool=2.3;spriteHitUntil=ts+240;player.hp=Math.max(0,player.hp-3);if(player.hp===0){player.hp=player.maxHp;player.x=10;player.y=10;player.path=[];target=null;msg('角色倒下，返回起點（測試規則）')}update()}}draw();requestAnimationFrame(loop)}function diamond(x,y,fill){ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+TW/2,y+TH/2);ctx.lineTo(x,y+TH);ctx.lineTo(x-TW/2,y+TH/2);ctx.closePath();ctx.fillStyle=fill;ctx.fill();/* No visible diamond grid borders; coordinates and collision remain unchanged. */}
+ }if(!player||!worldEntered){if(worldEntered)draw();requestAnimationFrame(loop);return;}if(player){if(keys.ArrowLeft)cam.x-=350*dt;if(keys.ArrowRight)cam.x+=350*dt;if(keys.ArrowUp)cam.y-=350*dt;if(keys.ArrowDown)cam.y+=350*dt;player.step+=dt;if(target){let o=target.ref;if(target.type==='monster'&&!o.alive)target=null;else{let distance=Math.max(Math.abs(player.x-o.x),Math.abs(player.y-o.y));if(distance<=1){player.path=[];if(target.type==='drop'){spriteFacing=direction8(o.x-player.x,o.y-player.y);spritePickupUntil=ts+340;drops=drops.filter(v=>v!==o);player.pots++;msg('拾取治癒藥水（測試掉落）');target=null;update()}else if(ts>attackTimer){attackTimer=ts+700;spriteFacing=direction8(o.x-player.x,o.y-player.y);spriteAttackUntil=ts+280;o.hp-=8+Math.floor(rand()*9);msg('攻擊 '+o.name+'，造成測試傷害');if(o.hp<=0){o.alive=false;if(rand()<.45)drops.push({x:o.x,y:o.y});p03AwardExp(o);target=null}update()}}else if(player.path.length===0||player.path[player.path.length-1].x!==o.x||player.path[player.path.length-1].y!==o.y)player.path=pathfind(player.x,player.y,o.x,o.y)}}}if(player.step>.17&&player.path.length){player.step=0;let p=player.path.shift();if(pass(p.x,p.y)){spriteFacing=direction8(p.x-player.x,p.y-player.y);spriteMoveFrom={x:player.x,y:player.y};spriteMoveTo={x:p.x,y:p.y};spriteMoveStart=ts;player.x=p.x;player.y=p.y;spriteMovingUntil=ts+SPRITE_STEP_MS;update()}}for(let m of monsters){if(!m.alive)continue;m.cool-=dt;if(Math.max(Math.abs(m.x-player.x),Math.abs(m.y-player.y))<=1&&m.cool<=0){m.cool=2.3;spriteHitUntil=ts+240;player.hp=Math.max(0,player.hp-3);if(player.hp===0){queueSpriteDeath(ts,()=>{player.hp=player.maxHp;player.x=10;player.y=10;player.path=[];target=null;msg('角色倒下，返回起點（測試規則）');update()});break;}update()}}draw();requestAnimationFrame(loop)}function diamond(x,y,fill){ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+TW/2,y+TH/2);ctx.lineTo(x,y+TH);ctx.lineTo(x-TW/2,y+TH/2);ctx.closePath();ctx.fillStyle=fill;ctx.fill();/* No visible diamond grid borders; coordinates and collision remain unchanged. */}
 // v0.03 knight animation study: original canvas-drawn sprite, no extracted game assets.
 // Direction order: E, SE, S, SW, W, NW, N, NE in screen coordinates.
 function direction8(dx,dy){let sx=dx-dy,sy=dx+dy;let a=Math.atan2(sy,sx);return (Math.round(a/(Math.PI/4))+8)%8}
@@ -752,7 +754,7 @@ function drawKnightSprite(px,py,now){
  const attack=now<spriteAttackUntil,pickup=now<spritePickupUntil,move=now<spriteMovingUntil;
  const action=attack?'attack':pickup?'idle':move?'walk':'idle',spec=activeSpriteSpec(action);
  // Optional local original-art renderer. No original assets are distributed.
- if(window.lineageLocalSprites && window.lineageLocalSprites.draw(ctx,{job:player.job,gender:player.gender||'男',facing:spriteFacing,action:now<spriteHitUntil?'hit':action,now,x:px,y:py,hit:now<spriteHitUntil}))return;
+ if(window.lineageLocalSprites && window.lineageLocalSprites.draw(ctx,{job:player.job,gender:player.gender||'男',facing:spriteFacing,action:pendingSpriteDeath?'death':now<spriteHitUntil?'hit':action,now,x:px,y:py,hit:now<spriteHitUntil}))return;
 
  // Complete one full walk cycle per tile step and one attack cycle per attack.
  // The previous fixed-ms calculation skipped frames on short movement/attack windows.
@@ -1258,11 +1260,13 @@ function advanceGoblinAttack(trial,movement,ts,inRange){
   msg('哥布林反擊，造成 '+GOBLIN_DAMAGE+' 點測試傷害');
   return false;
  }
+ queueSpriteDeath(ts,()=>{
  movement.spawn(trial.home.x,trial.home.y);
  activateTalkingIslandScene(verifiedTalkingIslandScene);
  startVillageTrial(verifiedTalkingIslandScene);
  showVillageTrialStatus();
  msg('角色倒下，已回村恢復，可重新挑戰');
+ });
  return true;
 }
 function villageAttackDuration(config){
