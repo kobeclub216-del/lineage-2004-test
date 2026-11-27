@@ -32,7 +32,7 @@ function resolveFrames(p){const actions=roles.get(p.job+':'+p.gender),dir=(p.fac
 function duration(p){const frames=resolveFrames(p);return frames?.reduce((sum,f)=>sum+f.ms,0)||0;}
 function frame(p){
  const frames=resolveFrames(p);
- if(!frames?.length)return null;
+ if(!frames?.length){lastAction=null;return null;}
  const total=frames.reduce((s,f)=>s+f.ms,0);const key=p.job+':'+p.gender+':'+(p.weapon||'')+':'+p.action;if(key!==lastAction){lastAction=key;started=p.now;}const elapsed=Math.max(0,p.now-started);let t=['attack','hit','death','pickup','cast'].includes(p.action)?Math.min(total-0.001,elapsed):elapsed%total;
  let f=frames[0];for(const candidate of frames){f=candidate;if(t<f.ms)break;t-=f.ms;}
  return f;
