@@ -30,15 +30,19 @@ async function load(manifest,files){
 }
 function resolveFrames(p){const actions=roles.get(p.job+':'+p.gender),dir=(p.facing+3)%8;return (p.weapon&&actions?.[p.weapon+'_'+p.action]?.[dir])||(p.weapon&&p.action==='hit'&&actions?.[p.weapon+'_damage']?.[dir])||actions?.[p.action]?.[dir]||(p.action==='hit'?actions?.damage?.[dir]:null);}
 function duration(p){const frames=resolveFrames(p);return frames?.reduce((sum,f)=>sum+f.ms,0)||0;}
-function draw(ctx,p){
+function frame(p){
  const frames=resolveFrames(p);
- if(!frames?.length)return false;
+ if(!frames?.length)return null;
  const total=frames.reduce((s,f)=>s+f.ms,0);const key=p.job+':'+p.gender+':'+(p.weapon||'')+':'+p.action;if(key!==lastAction){lastAction=key;started=p.now;}const elapsed=Math.max(0,p.now-started);let t=['attack','hit','death','pickup','cast'].includes(p.action)?Math.min(total-0.001,elapsed):elapsed%total;
  let f=frames[0];for(const candidate of frames){f=candidate;if(t<f.ms)break;t-=f.ms;}
+ return f;
+}
+function draw(ctx,p){
+ const f=frame(p);if(!f)return false;
  ctx.save();ctx.imageSmoothingEnabled=false;
  ctx.drawImage(f.img,Math.round(p.x+f.x),Math.round(p.y+f.y));
  
  ctx.restore();return true;
 }
-root.lineageLocalSprites={load,draw,duration,clear(){epoch++;release(bitmaps);bitmaps=new Set();roles=new Map();lastAction=null;}};
+root.lineageLocalSprites={load,draw,frame,duration,clear(){epoch++;release(bitmaps);bitmaps=new Set();roles=new Map();lastAction=null;}};
 })(window);
