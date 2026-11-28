@@ -5,6 +5,7 @@ import struct
 import tempfile
 import unittest
 import zipfile
+from unittest.mock import patch
 from pathlib import Path
 
 def load(name):
@@ -17,8 +18,39 @@ index = load('index-lineage-assets')
 extractor = load('extract-lineage-entries')
 batch = load('plan-sprite-batch')
 maps = load('bundle-local-maps')
+map_decoder = load('decode-local-maps')
 
 class AssetTests(unittest.TestCase):
+    def test_map_decoder_stages_same_s32_set_for_image_and_collision(self):
+        manifest = {
+            'schemaVersion': 1,
+            'maps': [{'path': 'map/4/80008001.S32', 'mapId': '4'},
+                     {'path': 'map/4/80008002.seg', 'mapId': '4'},
+                     {'path': 'map/4.map', 'mapId': None}],
+            'tilePairs': [{'idx': 'Tile.idx', 'pak': 'Tile.pak'}],
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            bundle = root / 'input.zip'
+            with zipfile.ZipFile(bundle, 'w') as archive:
+                archive.writestr('local-map-bundle.json', map_decoder.json.dumps(manifest))
+                for name in ('map/4/80008001.S32', 'Tile.idx', 'Tile.pak'):
+                    archive.writestr(name, 'fixture')
+            calls = []
+            def viewer(args, **kwargs):
+                folder = Path(args[3])
+                self.assertEqual([p.name for p in folder.iterdir()], ['80008001.s32'])
+                self.assertTrue((folder.parents[1] / 'Tile.pak').is_file())
+                calls.append(args[2])
+                Path(args[4]).write_bytes(b'fixture')
+                return map_decoder.subprocess.CompletedProcess(args, 0)
+            with patch.object(map_decoder.subprocess, 'run', side_effect=viewer):
+                result = map_decoder.decode(bundle, root / 'out', root / 'viewer.exe', ['0', '4'])
+            self.assertEqual([entry['status'] for entry in result], ['skipped', 'exported'])
+            self.assertEqual(calls, ['export-fullmap', 'export-passability'])
+            self.assertEqual(result[1]['excludedSeg'], 1)
+            self.assertEqual(map_decoder.catalog(manifest)['maps']['4']['formats'], ['s32', 'seg', 'map'])
+
     def test_collects_selected_map_ids_and_same_directory_tile_pairs(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

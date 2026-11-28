@@ -37,6 +37,10 @@ python tools/index-lineage-assets.py path/to/assets.zip path/to/loose-assets --e
 
 ### 歷史怪物數值與本機地圖收集
 
+新版 `tools/windows-decode-maps.bat` 使用 Python 3 與已安裝的 L1MapViewer。雙擊後選原本的 ZIP，或取消 ZIP 選擇後選解壓資料夾，再選 L1MapViewer 執行檔。桌面輸出包含完整格式分類、ID 0 和 4 的 PNG、方向通行表及個別記錄。Python 命令可用 `--ids` 指定其他地圖。
+
+L1MapViewer `364fcff` 的 `export-fullmap` 會渲染地板與物件，但只載入 S32。雖然 `export-passability` 另可解 SEG，本工具以同一組 S32 為兩者輸入，避免把未繪製的區塊當成可行走區。PNG 為合成預覽，還需驗證像素原點、縮放、方向通行表及物件深度才能接入遊戲。索引的副檔名可辨識格式，客戶端版本仍待核實。
+
 `assets/historical-monsters.json` 為七種測試怪物記錄候選來源。地區、發表日期及明確版本各自記錄，資料頁沒有給版本時保留空值。依據兩份史料，Orc／妖魔的 HP 6、EXP 5 互相吻合，仍缺可用的台版戰鬥資料編號、攻擊與掉落機率。候選數據不進入正式戰鬥。
 
 Windows 雙擊 `tools/windows-map-bundle.bat`，選客戶端資料夾和本機 ZIP 儲存位置。需要 Python 3 的 `py.exe`。工具一次收集鬆散的 MAP、S32、SEG 與同目錄的 Tile.idx／Tile.pak 配對，保留地圖相對路徑。也可運行 `py -3 tools/bundle-local-maps.py CLIENT OUTPUT.zip 4 7` 只選特定數字資料夾。輸出可交給現有索引器讀取 S32 前段。ZIP 須留在本機。
