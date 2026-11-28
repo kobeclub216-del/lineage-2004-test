@@ -7,8 +7,11 @@
   [56,'妖魔'],[1096,'骷髏弓箭手'],[52,'殭屍'],[1020,'食人妖精'],
   [1477,'豺狼人'],[1152,'小惡魔'],[54,'矮人'],
  ]);
+ function rosterSprites(sprites){
+  return sprites.filter(sprite=>sprite.kind==='monster'&&roster.has(sprite.spriteId)&&sprite.name!=='ghoul');
+ }
  function create(renderer, sprites, cells, onAttack){
-  const actors=sprites.filter(sprite=>sprite.kind==='monster'&&roster.has(sprite.spriteId)&&sprite.name!=='ghoul')
+  const actors=rosterSprites(sprites)
    .slice(0,cells.length).map((sprite,index)=>{
     const movement=new root.TalkingIslandMovementController(renderer), home=cells[index];
     movement.spawn(home.x,home.y);
@@ -83,5 +86,5 @@
   const direction=directions.indexOf(actor.movement.getScreenFacing());
   return root.lineageLocalActors.select(actor.sprite,actor.action,direction,(now-actor.started)/40);
  }
- root.lineageLocalHunt={create,frame,interval};
+ root.lineageLocalHunt={create,frame,interval,rosterSprites};
 })(globalThis);

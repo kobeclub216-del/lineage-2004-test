@@ -1,7 +1,40 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const vm=require('node:vm');
 require('../v182-p05-windows/assets/script-2.js');
 require('../v182-p05-windows/assets/local-hunt.js');
+
+test('seven hunt spawns are reachable and fit their idle frames in the initial camera',()=>{
+ const dir=path.join(__dirname,'../v182-p05-windows/assets');
+ const canvas={width:800,height:600,getContext:()=>({})};
+ const c=vm.createContext({
+  document:{getElementById:id=>id==='field'?canvas:{}},requestAnimationFrame(){},
+  data:JSON.parse(fs.readFileSync(path.join(dir,'shop-scene.json'),'utf8')),
+ });
+ for(const script of ['script-1','script-2','hunt-test'])
+  vm.runInContext(fs.readFileSync(path.join(dir,script+'.js'),'utf8'),c);
+ const result=vm.runInContext(`
+  renderer.tileWidth=data.tileSize.width;
+  renderer.tileHeight=data.tileSize.height;
+  renderer.setScene({bounds:data.bounds,layers:[]});
+  renderer.setCollision(data);
+  const initial=new TalkingIslandMovementController(renderer);
+  initial.spawn(data.spawn.x,data.spawn.y);
+  const frames=[{x:-24,y:-65,width:72,height:84}];
+  const sprites=Array.from({length:7},()=>({clips:{idle:Array(8).fill(frames)}}));
+  const cameraStart=initial.camera();
+  spawnCells(data,sprites,initial).map(({x,y})=>({
+   ...renderer.project(x,y,cameraStart.cameraX,cameraStart.cameraY),reachable:initial.moveTo(x,y),
+  }));
+ `,c);
+ assert.equal(result.length,7);
+ for(const p of result){
+  assert.ok(p.reachable);
+  assert.ok(p.x-24>=0&&p.x+48<=800&&p.y-87>=0&&p.y+19<=600);
+ }
+});
 
 test('archer attacks from range while melee pursues, and defeats respawn independently',()=>{
  const renderer={

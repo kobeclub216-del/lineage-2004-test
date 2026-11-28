@@ -4,7 +4,7 @@ const field=document.getElementById('field');
 const statusText=document.getElementById('status');
 const ctx=field.getContext('2d');
 const renderer=new TalkingIslandLayerRenderer(field);
-let assets, player, hunt, camera, painted=[], last=0, hits=0;
+let assets, player, hunt, camera, painted=[], last=0, hits=0, started=false;
 
 async function json(path){
  const response=await fetch(path);
@@ -17,14 +17,43 @@ async function picture(path){
  await image.decode();
  return image;
 }
-function spawnCells(data){
+function spawnCells(data, sprites, initialPlayer){
  const search=new TalkingIslandMovementController(renderer);
+ search.spawn(data.spawn.x,data.spawn.y);
+ const {cameraX,cameraY}=initialPlayer.camera();
+ const rect=(item,x,y)=>({left:x,top:y,right:x+item.width,bottom:y+item.height});
+ const overlaps=(a,b)=>a.left<b.right&&a.right>b.left&&a.top<b.bottom&&a.bottom>b.top;
+ const obstacles=data.objects.map(item=>{
+  const p=renderer.project(item.x,item.y,cameraX,cameraY);
+  return {...rect(item,p.x+(item.offsetX??0)-item.width/2,p.y+(item.offsetY??0)-item.height),
+   depth:item.footY??item.x+item.y};
+ });
+ const candidates=[];
+ for(let y=data.bounds.minY;y<data.bounds.maxY;y++){
+  for(let x=data.bounds.minX;x<data.bounds.maxX;x++){
+   const p=renderer.project(x,y,cameraX,cameraY);
+   const distance=Math.hypot((p.x-field.width/2)/2,p.y-field.height/2);
+   if(distance<45||p.x<35||p.x>field.width-35||p.y<80||p.y>field.height-32)continue;
+   if(search.moveTo(x,y))candidates.push({x,y,p,distance});
+  }
+ }
+ candidates.sort((a,b)=>a.distance-b.distance);
  const cells=[];
- for(let y=data.bounds.maxY-2;y>data.bounds.minY&&cells.length<7;y--){
-  for(let x=data.bounds.minX+1;x<data.bounds.maxX&&cells.length<7;x++){
-   if(cells.some(cell=>Math.max(Math.abs(cell.x-x),Math.abs(cell.y-y))<4))continue;
-   search.spawn(data.spawn.x,data.spawn.y);
-   if(search.moveTo(x,y)&&search.route.length>=5)cells.push({x,y});
+ const occupied=[];
+ for(const sprite of sprites){
+  const frames=sprite.clips.idle[6]; // The movement controller spawns facing screen SW.
+  const cell=candidates.find(({x,y,p})=>frames.every(frame=>{
+   const box=rect(frame,p.x+frame.x,p.y+frame.y);
+   const label={left:p.x-56,right:p.x+56,top:box.top-22,bottom:box.top};
+   return box.left>=0&&box.right<=field.width&&label.top>=0&&box.bottom<=field.height&&
+    !obstacles.some(object=>object.depth>x+y&&overlaps(box,object))&&
+    !occupied.some(other=>overlaps(other,box)||overlaps(other,label));
+  }));
+  if(!cell)throw Error('初始視野內找不到無遮擋的怪物出生點');
+  cells.push({x:cell.x,y:cell.y});
+  for(const frame of frames){
+   const box=rect(frame,cell.p.x+frame.x,cell.p.y+frame.y);
+   occupied.push(box,{left:cell.p.x-56,right:cell.p.x+56,top:box.top-22,bottom:box.top});
   }
  }
  return cells;
@@ -49,13 +78,14 @@ batch.onchange=async()=>{
   renderer.setCollision(data);
   const nextPlayer=new TalkingIslandMovementController(renderer);
   nextPlayer.spawn(data.spawn.x,data.spawn.y);
-  const nextHunt=lineageLocalHunt.create(renderer,next.actors,spawnCells(data),actor=>{
+  const sprites=lineageLocalHunt.rosterSprites(next.actors);
+  const nextHunt=lineageLocalHunt.create(renderer,sprites,spawnCells(data,sprites,nextPlayer),actor=>{
    hits++;
    statusText.textContent=actor.name+' 命中｜本場受擊 '+hits+' 次';
   });
   if(!nextHunt.actors.length)throw Error('找不到可用的八方向怪物');
   assets?.close();
-  assets=next;player=nextPlayer;hunt=nextHunt;hits=0;
+  assets=next;player=nextPlayer;hunt=nextHunt;hits=0;last=performance.now();started=false;
   statusText.textContent='已生成 '+hunt.actors.length+' 種怪物。';
  }catch(error){
   next?.close();
@@ -70,6 +100,7 @@ field.onclick=event=>{
  const hit=painted.find(({left,top,item})=>x>=left&&x<left+item.width&&y>=top&&y<top+item.height);
  if(hit){
   if(lineageLocalHunt.strike(hit.item.actor,player.position,performance.now())){
+   started=true;
    statusText.textContent='攻擊 '+hit.item.actor.name;
   }else{
    statusText.textContent='請先走到怪物旁邊。';
@@ -77,11 +108,11 @@ field.onclick=event=>{
   return;
  }
  const cell=player.pick(x,y,camera.cameraX,camera.cameraY);
- if(cell)player.moveTo(cell.x,cell.y);
+ if(cell&&player.moveTo(cell.x,cell.y)&&player.moving)started=true;
 };
 function draw(now){
  if(hunt){
-  if(now-last>=lineageLocalHunt.interval){
+  if(started&&now-last>=lineageLocalHunt.interval){
    last=now;
    const next=player.route[0];
    if(next&&hunt.actors.some(actor=>actor.movement.position.x===next.x&&actor.movement.position.y===next.y))player.cancel();
@@ -97,6 +128,16 @@ function draw(now){
     offsetX:frame.x+frame.width/2,offsetY:frame.y+frame.height}];
   });
   renderer.render({...camera,actors,onDraw(item,left,top){if(item.actor?.action!=='death'&&item.actor)painted.unshift({item,left,top});}});
+  ctx.font='bold 15px sans-serif';
+  ctx.textAlign='center';
+  ctx.lineWidth=3;
+  ctx.strokeStyle='#151515';
+  ctx.fillStyle='#ffe6a4';
+  for(const {item,top} of painted){
+   const p=renderer.project(item.x,item.y,camera.cameraX,camera.cameraY);
+   ctx.strokeText(item.actor.name,p.x,top-5);
+   ctx.fillText(item.actor.name,p.x,top-5);
+  }
   ctx.fillStyle='#7ad7ff';
   ctx.beginPath();ctx.arc(field.width/2,field.height/2,4,0,Math.PI*2);ctx.fill();
  }
