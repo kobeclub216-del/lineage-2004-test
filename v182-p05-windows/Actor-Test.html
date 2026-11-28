@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-Hant">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>本機怪物與 NPC 動畫測試</title>
+<h1>本機怪物與 NPC 動畫測試</h1>
+<label>選擇解壓後的批次資料夾 <input id="batch" type="file" webkitdirectory multiple></label>
+<p><label>角色 <select id="actor"></select></label>
+<label>動作 <select id="action"></select></label>
+<label>方向索引 <select id="direction"></select></label>
+<label>預覽每單位毫秒 <input id="unit" type="number" min="1" value="40"></label>
+<button id="replay" type="button">重播</button></p>
+<canvas id="view" width="480" height="300" style="background:#292b2b;max-width:100%;image-rendering:pixelated"></canvas>
+<pre id="status" role="status"></pre>
+<script src="./assets/local-actor-sprites.js"></script>
+<script>
+'use strict';
+const [batch, actor, action, direction, unit, replay, view, status] =
+ ['batch','actor','action','direction','unit','replay','view','status'].map(id => document.getElementById(id));
+const ctx = view.getContext('2d');
+let current, started = 0;
+function options(control, values) {
+ control.replaceChildren(...values.map((value, index) => new Option(value, index)));
+}
+options(direction, Array.from({length:8}, (_, index) => String(index)));
+const labels = {idle:'站立',walk:'移動',attack:'攻擊',hit:'受擊',death:'死亡'};
+function updateActions(){
+ const selected = current?.actors[actor.value];
+ options(action, Object.keys(selected?.clips || {}).map(key => labels[key]));
+ started = performance.now();
+}
+actor.onchange = updateActions;
+for (const control of [action,direction,unit]) control.onchange = () => { started = performance.now(); };
+replay.onclick = () => { started = performance.now(); };
+batch.onchange = async () => {
+ batch.disabled = true;
+ status.textContent = '讀取本機影格中…';
+ try {
+  const files = Array.from(batch.files);
+  const file = files.find(item => item.name === 'sprite-batch-plan.json');
+  if (!file) throw Error('資料夾缺少 sprite-batch-plan.json');
+  const loaded = await lineageLocalActors.load(JSON.parse(await file.text()), files);
+  current?.close();
+  current = loaded;
+  options(actor, current.actors.map(item => item.name + ' #' + item.spriteId));
+  updateActions();
+  status.textContent = '可預覽 ' + current.actors.length + ' 個條目\n' +
+   current.rejected.map(item => item.name + ': ' + item.error).join('\n');
+ } catch (error) {
+  status.textContent = error.message;
+ } finally {
+  batch.disabled = false;
+ }
+};
+function render(now) {
+ const selected = current?.actors[actor.value];
+ const key = Object.keys(selected?.clips || {})[action.value];
+ const frame = selected && lineageLocalActors.select(selected, key, Number(direction.value),
+  (now - started) / Math.max(1, unit.valueAsNumber || 1));
+ ctx.clearRect(0,0,view.width,view.height);
+ if (frame) ctx.drawImage(frame.image, 240 + frame.x, 205 + frame.y);
+ requestAnimationFrame(render);
+}
+requestAnimationFrame(render);
+</script>
+</html>
