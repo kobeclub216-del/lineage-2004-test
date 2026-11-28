@@ -35,6 +35,14 @@ python tools/index-lineage-assets.py path/to/assets.zip path/to/loose-assets --e
 
 ## 跨版本素材與格式
 
+### 歷史怪物數值與本機地圖收集
+
+`assets/historical-monsters.json` 為七種測試怪物記錄候選來源。地區、發表日期及明確版本各自記錄，資料頁沒有給版本時保留空值。依據兩份史料，Orc／妖魔的 HP 6、EXP 5 互相吻合，仍缺可用的台版戰鬥資料編號、攻擊與掉落機率。候選數據不進入正式戰鬥。
+
+Windows 雙擊 `tools/windows-map-bundle.bat`，選客戶端資料夾和本機 ZIP 儲存位置。需要 Python 3 的 `py.exe`。工具一次收集鬆散的 MAP、S32、SEG 與同目錄的 Tile.idx／Tile.pak 配對，保留地圖相對路徑。也可運行 `py -3 tools/bundle-local-maps.py CLIENT OUTPUT.zip 4 7` 只選特定數字資料夾。輸出可交給現有索引器讀取 S32 前段。ZIP 須留在本機。
+
+PakViewer 可檢視與提取 PAK 成員。本批使用鬆散地圖檔做收集，地圖渲染另有 L1MapViewer 的 S32 檢查、相鄰區塊渲染及圖磚讀取功能。碰撞位元、SEG 變體與地圖進出座標還需對應版本的樣本確認。
+
 ### 狩獵測試場怪物名稱
 
 本機批次索引 `Lineage-sprite-batch-E6A55789178E0FEC` 提供以下英文名稱、動畫條目與 SPR 的對照。戰鬥資料編號須另有歷史資料支持，目前均待核實。遊戲內對照表位於 `assets/hunt-monster-catalog.js`。

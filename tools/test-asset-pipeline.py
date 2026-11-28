@@ -16,8 +16,26 @@ def load(name):
 index = load('index-lineage-assets')
 extractor = load('extract-lineage-entries')
 batch = load('plan-sprite-batch')
+maps = load('bundle-local-maps')
 
 class AssetTests(unittest.TestCase):
+    def test_collects_selected_map_ids_and_same_directory_tile_pairs(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / 'client'
+            for name in ('map/4/a.s32', 'map/7/b.seg', 'Tile.idx', 'Tile.pak', 'extra/tile.idx'):
+                path = source / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(b'fixture')
+            output = root / 'maps.zip'
+            result = maps.bundle(source, output, ('4',))
+            self.assertEqual(result['maps'], [{'path': 'map/4/a.s32', 'mapId': '4'}])
+            self.assertEqual(result['unpairedTiles'], ['extra/tile.idx'])
+            with zipfile.ZipFile(output) as archive:
+                self.assertEqual(set(archive.namelist()), {
+                    'map/4/a.s32', 'Tile.idx', 'Tile.pak', 'local-map-bundle.json',
+                })
+
     def test_sprite_batch_uses_index_ids_and_reports_incomplete_actions(self):
         text = (
             '#310 7=999 goblin\n'

@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "targetVersion": "TW 1.82",
+  "sources": {
+    "compendium-orc": {
+      "url": "https://www.lineagecompendium.com/www.lineagecompendium.com/23~monsters.html",
+      "region": "North American community archive with some Taiwan attributes",
+      "version": null
+    },
+    "cn-2005-08": {
+      "url": "https://lineage.17173.com/content/2005-8-27/n461_377495.html",
+      "region": "Chinese-language community",
+      "published": "2005-08-27",
+      "version": null
+    },
+    "cn-archer": {
+      "url": "https://lineage.17173.com/mob/2.htm",
+      "region": "Chinese-language community",
+      "version": null
+    }
+  },
+  "records": [
+    {
+      "key": "orc", "spriteId": 56, "monsterDataId": null, "status": "candidate",
+      "evidence": [
+        {"source": "compendium-orc", "name": "Orc", "hp": 6, "xp": 5,
+         "dropExamples": ["Orcish Dagger", "Orcish Spear", "Orcish Helm"]},
+        {"source": "cn-2005-08", "name": "妖魔", "hp": 6, "xp": 5}
+      ]
+    },
+    {
+      "key": "skeleton-archer", "spriteId": 1096, "monsterDataId": null, "status": "candidate",
+      "evidence": [
+        {"source": "cn-archer", "name": "骷髅弓箭手", "dropExamples": ["弓", "绿色药水", "骨头碎片"]}
+      ]
+    },
+    {"key": "zombie", "spriteId": 52, "monsterDataId": null, "status": "pending", "evidence": []},
+    {"key": "ogre", "spriteId": 1020, "monsterDataId": null, "status": "pending", "evidence": []},
+    {"key": "gnoll", "spriteId": 1477, "monsterDataId": null, "status": "pending", "evidence": []},
+    {"key": "imp", "spriteId": 1152, "monsterDataId": null, "status": "pending", "evidence": []},
+    {
+      "key": "dwarf", "spriteId": 54, "monsterDataId": null, "status": "candidate",
+      "evidence": [{"source": "cn-2005-08", "name": "侏儒", "hp": 30, "xp": 26}]
+    }
+  ]
+}
