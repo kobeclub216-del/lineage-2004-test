@@ -35,6 +35,24 @@ python tools/index-lineage-assets.py path/to/assets.zip path/to/loose-assets --e
 
 ## 跨版本素材與格式
 
+### 狩獵測試場怪物名稱
+
+本機批次索引 `Lineage-sprite-batch-E6A55789178E0FEC` 提供以下英文名稱、動畫條目與 SPR 的對照。戰鬥資料編號須另有歷史資料支持，目前均待核實。遊戲內對照表位於 `assets/hunt-monster-catalog.js`。
+
+| 英文索引名稱 | 動畫條目 | SPR | 台版名稱結論 |
+| --- | ---: | ---: | --- |
+| orc | 56 | 56 | 待核實。早期社群記載妖魔，缺該編號的歷史台版對照。 |
+| skeleton archer | 1096 | 1096 | 待核實。2003 年攻略有骷髏弓箭手的名稱，缺該編號的歷史台版對照。 |
+| zombie | 52 | 52 | 待核實。2004 年台版社群使用人形殭屍，缺該編號的直接對照。 |
+| ogre | 1020 | 1020 | 毆吉。採用 Windows 實機辨識，早期台版音效清單也有同名記錄。 |
+| gnoll | 1477 | 1477 | 待核實。 |
+| imp | 1152 | 1152 | 待核實。2004 年台版社群有小惡魔之名，缺該編號的直接對照。 |
+| dwarf | 54 | 54 | 待核實。2004 年台版社群記載侏儒，缺該編號的直接對照。 |
+
+索引中的 ghoul 條目 144 也指向 SPR 52。測試場按動畫條目、SPR 及索引名稱辨識個體，未設定正式戰鬥數值。
+
+歷史參考：[早期怪物音效清單](https://www.gamez.com.tw/t/topic/5661)、[2003 年法書掉落攻略](https://lineage.17173.com/content/2003-5-16/n895_811196.html)、[2004 年台版版本回顧](https://www.gamez.com.tw/t/topic/38958)、[2004 年怪物屬性討論](https://www.gamez.com.tw/t/topic/26543)。
+
 ### 本機素材批次提取清單
 
 在 Windows 雙擊 `tools/windows-sprite-batch.bat`，依序選擇原有 PakViewer CLI、客戶端資料夾及同版本匯出的 `list.spr`。工具需要 Python 3 的 `py.exe`，結果存於桌面的 `Lineage-sprite-batch-*`。若尚未匯出 `list.spr`，可用現有 `windows-list-spr-test.bat` 先擷取一次。

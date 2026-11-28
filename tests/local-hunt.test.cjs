@@ -4,6 +4,7 @@ const fs=require('node:fs');
 const path=require('node:path');
 const vm=require('node:vm');
 require('../v182-p05-windows/assets/script-2.js');
+require('../v182-p05-windows/assets/hunt-monster-catalog.js');
 require('../v182-p05-windows/assets/local-hunt.js');
 
 test('seven hunt spawns are reachable and fit their idle frames in the initial camera',()=>{
@@ -44,7 +45,8 @@ test('archer attacks from range while melee pursues, and defeats respawn indepen
  };
  const shots=[];
  const hunt=lineageLocalHunt.create(renderer,[
-  {kind:'monster',spriteId:56},{kind:'monster',spriteId:1096},
+  {kind:'monster',entryId:56,spriteId:56,sourceName:'orc'},
+  {kind:'monster',entryId:1096,spriteId:1096,sourceName:'skeleton archer'},
  ],[{x:1,y:1},{x:5,y:4}],actor=>shots.push(actor.sprite.spriteId));
  const [melee,archer]=hunt.actors;
  hunt.step({x:5,y:1},0);
@@ -64,4 +66,13 @@ test('archer attacks from range while melee pursues, and defeats respawn indepen
  assert.equal(melee.hits,0);
  assert.deepEqual(melee.movement.position,{x:1,y:1});
  assert.notEqual(archer.action,'death');
+});
+
+test('shared appearance cannot substitute a different monster identity',()=>{
+ const zombie={kind:'monster',entryId:52,spriteId:52,sourceName:'zombie'};
+ const ghoul={kind:'monster',entryId:144,spriteId:52,sourceName:'ghoul'};
+ assert.deepEqual(lineageLocalHunt.rosterSprites([ghoul,zombie]),[zombie]);
+ const record=lineageHuntMonsterCatalog.find(row=>row.spriteId===1020);
+ assert.equal(record.twName,'毆吉');
+ assert.ok(lineageHuntMonsterCatalog.every(row=>row.monsterDataId===null));
 });

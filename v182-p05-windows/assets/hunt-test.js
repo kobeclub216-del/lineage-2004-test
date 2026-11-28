@@ -44,7 +44,8 @@ function spawnCells(data, sprites, initialPlayer){
   const frames=sprite.clips.idle[6]; // The movement controller spawns facing screen SW.
   const cell=candidates.find(({x,y,p})=>frames.every(frame=>{
    const box=rect(frame,p.x+frame.x,p.y+frame.y);
-   const label={left:p.x-56,right:p.x+56,top:box.top-22,bottom:box.top};
+   const center=(box.left+box.right)/2;
+   const label={left:center-56,right:center+56,top:box.top-22,bottom:box.top};
    return box.left>=0&&box.right<=field.width&&label.top>=0&&box.bottom<=field.height&&
     !obstacles.some(object=>object.depth>x+y&&overlaps(box,object))&&
     !occupied.some(other=>overlaps(other,box)||overlaps(other,label));
@@ -53,7 +54,8 @@ function spawnCells(data, sprites, initialPlayer){
   cells.push({x:cell.x,y:cell.y});
   for(const frame of frames){
    const box=rect(frame,cell.p.x+frame.x,cell.p.y+frame.y);
-   occupied.push(box,{left:cell.p.x-56,right:cell.p.x+56,top:box.top-22,bottom:box.top});
+   const center=(box.left+box.right)/2;
+   occupied.push(box,{left:center-56,right:center+56,top:box.top-22,bottom:box.top});
   }
  }
  return cells;
@@ -133,10 +135,10 @@ function draw(now){
   ctx.lineWidth=3;
   ctx.strokeStyle='#151515';
   ctx.fillStyle='#ffe6a4';
-  for(const {item,top} of painted){
-   const p=renderer.project(item.x,item.y,camera.cameraX,camera.cameraY);
-   ctx.strokeText(item.actor.name,p.x,top-5);
-   ctx.fillText(item.actor.name,p.x,top-5);
+  for(const {item,left,top} of painted){
+   const center=left+item.width/2;
+   ctx.strokeText(item.actor.name,center,top-5,112);
+   ctx.fillText(item.actor.name,center,top-5,112);
   }
   ctx.fillStyle='#7ad7ff';
   ctx.beginPath();ctx.arc(field.width/2,field.height/2,4,0,Math.PI*2);ctx.fill();

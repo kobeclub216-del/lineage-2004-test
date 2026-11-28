@@ -3,19 +3,23 @@
  const directions=['NW','N','NE','E','SE','S','SW','W'];
  const interval=220;
  const range=(a,b)=>Math.max(Math.abs(a.x-b.x),Math.abs(a.y-b.y));
- const roster=new Map([
-  [56,'妖魔'],[1096,'骷髏弓箭手'],[52,'殭屍'],[1020,'食人妖精'],
-  [1477,'豺狼人'],[1152,'小惡魔'],[54,'矮人'],
- ]);
+ const roster=new Map(root.lineageHuntMonsterCatalog.map(record=>[record.listEntryId,record]));
+ function identify(sprite){
+  const record=roster.get(sprite.entryId);
+  return sprite.kind==='monster'&&record?.spriteId===sprite.spriteId&&
+   record.english===sprite.sourceName?.trim().toLowerCase()?record:null;
+ }
  function rosterSprites(sprites){
-  return sprites.filter(sprite=>sprite.kind==='monster'&&roster.has(sprite.spriteId)&&sprite.name!=='ghoul');
+  return sprites.filter(identify);
  }
  function create(renderer, sprites, cells, onAttack){
   const actors=rosterSprites(sprites)
    .slice(0,cells.length).map((sprite,index)=>{
     const movement=new root.TalkingIslandMovementController(renderer), home=cells[index];
     movement.spawn(home.x,home.y);
-    return {sprite,home,movement,name:roster.get(sprite.spriteId),reach:sprite.spriteId===1096?4:1,
+    const identity=identify(sprite);
+    return {sprite,home,movement,identity,name:identity.twName??identity.english+'（待核實）',
+     reach:identity.key==='skeleton-archer'?4:1,
      action:'idle',started:0,until:0,hits:0,hostile:false,respawnAt:0};
    });
   function animate(actor,action,now,until=0){

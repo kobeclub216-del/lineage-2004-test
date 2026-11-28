@@ -49,7 +49,8 @@
       clips[action].push(frames);
      }
     }
-    actors.push({name: candidate.candidate, kind: candidate.kind, spriteId: candidate.spriteId, clips});
+    actors.push({name: candidate.candidate, kind: candidate.kind, spriteId: candidate.spriteId,
+     entryId:candidate.entryId, sourceName:candidate.sourceName, clips});
    } catch (error) {
     rejected.push({name: candidate.candidate, error: error.message});
    }
