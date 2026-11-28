@@ -30,3 +30,26 @@ test('local actor batch checks all directions and offsets and shares decoded fra
  assert.match(incomplete.rejected[0].error,/Missing frame/);
  incomplete.close();
 });
+
+test('local village NPC replacement preserves coordinates, offsets and static fallback',async()=>{
+ const files=[];
+ const names=Array.from({length:8},(_,direction)=>{
+  const stem='98-'+direction;
+  files.push({name:'frames/'+stem+'/info.txt',text:async()=> 'Frame 0: 12x24, offset=(-3,-5)'});
+  files.push({name:'frames/'+stem+'/'+stem+'_frame0.png'});
+  return stem+'.spr';
+ });
+ const plan={schemaVersion:1,candidates:[{
+  candidate:'pandora',kind:'npc',status:'matched',entryId:98,spriteId:98,sourceName:'pandora',
+  actions:[{kind:'idle',directions:8,countMatches:true,declaredFrames:1,
+   frames:[{frameIndex:0,durationRaw:3,files:names}]}],
+ }]};
+ const actor={x:2,y:4,width:30,height:50};
+ assert.equal(await lineageLocalActors.loadVillageNpcs(plan,files,async()=>({width:12,height:24})),1);
+ const frame=lineageLocalActors.villageNpc(actor,98,0);
+ assert.equal(frame.interactionActor,actor);
+ assert.deepEqual([frame.x,frame.y,frame.offsetX,frame.offsetY],[2,4,3,19]);
+ assert.equal(lineageLocalActors.villageNpc(actor,237,0),actor);
+ lineageLocalActors.clearVillageNpcs();
+ assert.equal(lineageLocalActors.villageNpc(actor,98,0),actor);
+});

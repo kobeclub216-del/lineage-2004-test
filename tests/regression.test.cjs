@@ -313,6 +313,18 @@ test('empty ground uses the painted camera and does not widen the sprite to its 
  assert.equal(calls.length,2);
 });
 
+test('local NPC animation frames retain the shop and magic teacher click targets',()=>{
+ const {c,draws,calls}=pointerScene();
+ const {merchant,teacher}=c.verifiedTalkingIslandScene;
+ for(const draw of draws){
+  if(draw.item===merchant||draw.item===teacher)draw.item={...draw.item,interactionActor:draw.item};
+ }
+ c.clickAt(65,33);
+ c.clickAt(95,24);
+ assert.deepEqual(calls,[['merchant'],['teacher']]);
+ assert.equal(c.pickVillageActor(65,33,true),null);
+});
+
 test('overlapping targets follow the top visible pixel before using tolerance',()=>{
  const {c,draws}=pointerScene();
  draws[1].left=draws[0].left;

@@ -71,5 +71,29 @@
   return frames.at(-1);
  }
 
- root.lineageLocalActors = {load, select};
+ let villageNpcs=new Map();
+ const villageNpcIds=new Map([[98,'pandora'],[237,'gereng']]);
+ async function loadVillageNpcs(plan,files,decode){
+  const candidates=plan.candidates.filter(row=>row.kind==='npc'&&row.entryId===row.spriteId&&
+   villageNpcIds.get(row.entryId)===row.sourceName?.trim().toLowerCase()&&villageNpcIds.has(row.entryId));
+  const loaded=await load({...plan,candidates},files,decode);
+  if(!loaded.actors.length){loaded.close();throw Error('找不到可用的潘朵拉或吉倫影格');}
+  villageNpcs.close?.();
+  villageNpcs=new Map(loaded.actors.map(actor=>[actor.entryId,actor]));
+  villageNpcs.close=loaded.close;
+  return villageNpcs.size;
+ }
+
+ function villageNpc(base,id,now){
+  const actor=villageNpcs.get(id);
+  const frame=actor&&select(actor,'idle',6,now/40);
+  if(!frame)return base;
+  return {...base,image:frame.image,width:frame.width,height:frame.height,
+   offsetX:frame.x+frame.width/2,offsetY:frame.y+frame.height,interactionActor:base};
+ }
+
+ root.lineageLocalActors = {load, select, loadVillageNpcs, villageNpc, clearVillageNpcs(){
+  villageNpcs.close?.();
+  villageNpcs=new Map();
+ }};
 })(globalThis);

@@ -1164,7 +1164,7 @@ function pickVillageActor(sx,sy,spell=false){
   sx>=left-radius&&sx<left+item.width+radius&&sy>=top-radius&&sy<top+item.height+radius);
  const topPixel=(x,y)=>{
   for(let i=nearby.length-1;i>=0;i--){
-   if(isOpaqueIslandPixel(nearby[i],x,y))return nearby[i].item;
+   if(isOpaqueIslandPixel(nearby[i],x,y))return nearby[i].item.interactionActor??nearby[i].item;
   }
   return null;
  };
@@ -1205,8 +1205,8 @@ function isOpaqueIslandPixel({item,left,top},sx,sy){
  let pixels=scene.imagePixels.get(item.image);
  if(!pixels){
   const sheet=document.createElement('canvas');
-  sheet.width=item.image.naturalWidth;
-  sheet.height=item.image.naturalHeight;
+  sheet.width=item.image.naturalWidth||item.image.width;
+  sheet.height=item.image.naturalHeight||item.image.height;
   const sheetContext=sheet.getContext('2d');
   sheetContext.drawImage(item.image,0,0);
   pixels=sheetContext.getImageData(0,0,sheet.width,sheet.height);
@@ -1666,10 +1666,10 @@ function drawFrame(){ctx.clearRect(0,0,canvas.width,canvas.height);
   const offsetY=height*(1-(spriteConfig?.footAnchorY??1));
   const actors=villageTrialActors(now,goblin),enemy=actors[0];
   if(verifiedTalkingIslandScene.dummy)actors.push(verifiedTalkingIslandScene.dummy);
-  if(verifiedTalkingIslandScene.merchant)actors.push(verifiedTalkingIslandScene.merchant);
-  const {teacher,roof,roofCells}=verifiedTalkingIslandScene;
+  const {merchant,teacher,roof,roofCells}=verifiedTalkingIslandScene;
+  if(merchant)actors.push(window.lineageLocalActors?.villageNpc(merchant,98,now)??merchant);
   const underRoof=teacher&&roofCells.has(movement.position.x+','+movement.position.y);
-  if(teacher)actors.push(underRoof?teacher:roof);
+  if(teacher)actors.push(underRoof?(window.lineageLocalActors?.villageNpc(teacher,237,now)??teacher):roof);
   if(bolt)actors.push(bolt);
   const draws=[],labels=[];
   const ground=new Set(renderer.scene.layers.filter(layer=>layer.depth===0).flatMap(layer=>layer.images));

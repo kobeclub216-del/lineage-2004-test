@@ -53,6 +53,10 @@ python tools/index-lineage-assets.py path/to/assets.zip path/to/loose-assets --e
 
 歷史參考：[早期怪物音效清單](https://www.gamez.com.tw/t/topic/5661)、[2003 年法書掉落攻略](https://lineage.17173.com/content/2003-5-16/n895_811196.html)、[2004 年台版版本回顧](https://www.gamez.com.tw/t/topic/38958)、[2004 年怪物屬性討論](https://www.gamez.com.tw/t/topic/26543)。
 
+2003 年的怪物掉落表與 2005 年的新手村攻略可作為歷史旁證。後者列妖魔經驗 5、侏儒體力 30 與經驗 26。骷髏弓箭手的怪物頁列弓、綠色藥水及骨頭碎片等掉落。這些頁面未提供與目前 SPR 條目相連的台版資料編號、完整攻擊與掉落機率，先保留為旁證，測試場數值不轉入正式遊戲。
+
+來源：[2003 年怪物掉落物品表](https://lineage.17173.com/content/2003-1-13/n784_700874.html)、[2005 年新手村攻略](https://lineage.17173.com/content/2005-8-27/n461_377495.html)、[骷髏弓箭手怪物頁](https://lineage.17173.com/mob/2.htm)。
+
 ### 本機素材批次提取清單
 
 在 Windows 雙擊 `tools/windows-sprite-batch.bat`，依序選擇原有 PakViewer CLI、客戶端資料夾及同版本匯出的 `list.spr`。工具需要 Python 3 的 `py.exe`，結果存於桌面的 `Lineage-sprite-batch-*`。若尚未匯出 `list.spr`，可用現有 `windows-list-spr-test.bat` 先擷取一次。
