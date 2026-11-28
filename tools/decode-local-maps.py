@@ -7,7 +7,6 @@ from pathlib import Path, PurePosixPath
 import re
 import shutil
 import subprocess
-import tempfile
 import zipfile
 
 MANIFEST = 'local-map-bundle.json'
@@ -50,7 +49,9 @@ def catalog(manifest):
             'unassigned': unassigned, 'tilePairs': manifest['tilePairs']}
 
 
-def decode(source, output, viewer, ids):
+def decode(source, output, viewer, ids, block_box=None):
+    if output.exists() and (output / 'viewer-input').exists():
+        raise ValueError('Choose a new output directory for this run')
     output.mkdir(parents=True, exist_ok=True)
     if source.suffix.lower() == '.json' and viewer is None:
         inventory = catalog(json.loads(source.read_text(encoding='utf-8-sig')))
@@ -74,8 +75,9 @@ def decode(source, output, viewer, ids):
         if len(inventory['tilePairs']) != 1:
             raise ValueError('Exactly one Tile.idx/Tile.pak pair is required for decoding')
         results = []
-        with tempfile.TemporaryDirectory(prefix='lineage-map-') as temp:
-            root = Path(temp)
+        root = output / 'viewer-input'
+        root.mkdir()
+        try:
 
             def copy(name, dest):
                 with read(name) as stream, dest.open('xb') as target:
@@ -95,29 +97,57 @@ def decode(source, output, viewer, ids):
                 folder.mkdir(parents=True)
                 target = output / map_id
                 target.mkdir(exist_ok=True)
-                row['excludedSeg'] = len(entry['files']['seg'])
+                row.update(excludedSeg=len(entry['files']['seg']), ignoredBlocks=[],
+                           selectedBlocks=[], outsideRegion=0)
                 try:
                     for name in entry['files']['s32']:
                         filename = safe_path(name).name.lower()
                         if not re.fullmatch(r'[0-9a-f]{8}\.s32', filename):
-                            raise ValueError(f'Unsupported block name: {filename}')
+                            row['ignoredBlocks'].append(name)
+                            continue
+                        x, y = int(filename[:4], 16), int(filename[4:8], 16)
+                        if block_box and not (block_box[0] <= x <= block_box[2] and block_box[1] <= y <= block_box[3]):
+                            row['outsideRegion'] += 1
+                            continue
+                        if (folder / filename).exists():
+                            raise ValueError(f'Duplicate block: {filename}')
                         copy(name, folder / filename)
+                        row['selectedBlocks'].append(filename)
+                    if not row['selectedBlocks']:
+                        row['reason'] = 'No standard S32 blocks in selected region'
+                        continue
+                    row['viewerFolder'] = folder.relative_to(output).as_posix()
+                    errors = {}
                     for command, filename, flags in (
-                        ('export-fullmap', 'map.png', ['--max-size', '4096']),
                         ('export-passability', 'passability.txt', ['--dir']),
+                        ('export-fullmap', 'map.png', ['--max-size', '4096']),
                     ):
                         artifact = target / filename
                         artifact.unlink(missing_ok=True)
-                        with (target / (command + '.log')).open('wb') as log:
-                            result = subprocess.run(
-                                [str(viewer), '-cli', command, str(folder), str(artifact), *flags],
-                                stdout=log, stderr=subprocess.STDOUT, timeout=900, check=False)
-                        if result.returncode or not artifact.is_file() or artifact.stat().st_size == 0:
-                            raise ValueError(f'{command} failed, see log')
-                    row['status'] = 'exported'
-                except (OSError, ValueError, KeyError, subprocess.TimeoutExpired) as error:
+                        log_path = target / (command + '.log')
+                        try:
+                            with log_path.open('wb') as log:
+                                result = subprocess.run(
+                                    [str(viewer), '-cli', command, str(folder), str(artifact), *flags],
+                                    stdout=log, stderr=subprocess.STDOUT, timeout=900, check=False)
+                            if result.returncode or not artifact.is_file() or artifact.stat().st_size == 0:
+                                errors[command] = log_path.relative_to(output).as_posix()
+                        except (OSError, subprocess.TimeoutExpired) as error:
+                            errors[command] = str(error)
+                        if command in errors:
+                            artifact.unlink(missing_ok=True)
+                    row['status'] = 'failed' if errors else 'exported'
+                    if errors:
+                        row['errors'] = errors
+                    if 'export-fullmap' in errors and (target / 'export-fullmap.log').is_file():
+                        log_bytes = (target / 'export-fullmap.log').read_bytes()
+                        if b'Platform instance is null' in log_bytes.replace(b'\x00', b''):
+                            row['status'] = 'gui-required'
+                            row['reason'] = 'Viewer CLI has no Eto platform; open viewer-input in the GUI'
+                except (OSError, ValueError, KeyError) as error:
                     row.update(status='failed', reason=str(error))
-        (output / 'decode-report.json').write_text(json.dumps(results, indent=2), encoding='utf-8')
+        finally:
+            (output / 'decode-report.json').write_text(json.dumps(results, indent=2), encoding='utf-8')
     return results
 
 
@@ -127,10 +157,15 @@ def main():
     parser.add_argument('output', type=Path)
     parser.add_argument('--viewer', type=Path)
     parser.add_argument('--ids', nargs='+', default=['0', '4'])
+    parser.add_argument('--block-box', nargs=4, metavar=('X_MIN', 'Y_MIN', 'X_MAX', 'Y_MAX'),
+                        type=lambda value: int(value, 16), help='Inclusive hexadecimal chunk coordinates')
     args = parser.parse_args()
+    box = args.block_box
+    if box and not (0 <= box[0] <= box[2] <= 0xffff and 0 <= box[1] <= box[3] <= 0xffff):
+        parser.error('Invalid block box')
     try:
         results = decode(args.source.resolve(), args.output.resolve(),
-                         args.viewer.resolve() if args.viewer else None, args.ids)
+                         args.viewer.resolve() if args.viewer else None, args.ids, box)
     except (OSError, ValueError, KeyError, zipfile.BadZipFile) as error:
         parser.exit(2, str(error) + '\n')
     return int(any(row['status'] != 'exported' for row in results))

@@ -39,7 +39,9 @@ python tools/index-lineage-assets.py path/to/assets.zip path/to/loose-assets --e
 
 新版 `tools/windows-decode-maps.bat` 使用 Python 3 與已安裝的 L1MapViewer。雙擊後選原本的 ZIP，或取消 ZIP 選擇後選解壓資料夾，再選 L1MapViewer 執行檔。桌面輸出包含完整格式分類、ID 0 和 4 的 PNG、方向通行表及個別記錄。Python 命令可用 `--ids` 指定其他地圖。
 
-L1MapViewer `364fcff` 的 `export-fullmap` 會渲染地板與物件，但只載入 S32。雖然 `export-passability` 另可解 SEG，本工具以同一組 S32 為兩者輸入，避免把未繪製的區塊當成可行走區。PNG 為合成預覽，還需驗證像素原點、縮放、方向通行表及物件深度才能接入遊戲。索引的副檔名可辨識格式，客戶端版本仍待核實。
+L1MapViewer `364fcff` 的 CLI 在建立 Eto Application 前就呼叫匯出程式，而 PNG 匯出會建立 Eto Bitmap。遇到 `Platform instance is null` 時，批次工具保留方向通行表，並開啟同一個 L1MapViewer 的 GUI。選取地圖後使用「檔案 → 輸出地圖圖片」。輸出目錄的 `viewer-input` 已包含同一批 S32 及配對圖磚，可供 GUI 重新開啟。
+
+可輸入四個十六進位區塊座標限制範圍，依序是最小 X、最小 Y、最大 X、最大 Y，例 `8000 8001 8001 8002`。CLI 對應 `--block-box`。非標準區塊名會列入 `ignoredBlocks`。L1MapViewer 的通行表支援 SEG，但其 CLI 全圖渲染只載入 S32，所以本工具用相同 S32 集合產出兩種結果。SEG 原檔留在來源 ZIP，未把其碰撞資料混進 S32 影像。PNG 是合成預覽，遊戲內逐物件遮擋仍待驗證。
 
 `assets/historical-monsters.json` 為七種測試怪物記錄候選來源。地區、發表日期及明確版本各自記錄，資料頁沒有給版本時保留空值。依據兩份史料，Orc／妖魔的 HP 6、EXP 5 互相吻合，仍缺可用的台版戰鬥資料編號、攻擊與掉落機率。候選數據不進入正式戰鬥。
 

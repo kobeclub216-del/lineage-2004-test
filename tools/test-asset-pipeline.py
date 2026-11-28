@@ -25,6 +25,8 @@ class AssetTests(unittest.TestCase):
         manifest = {
             'schemaVersion': 1,
             'maps': [{'path': 'map/4/80008001.S32', 'mapId': '4'},
+                     {'path': 'map/4/tempseg.s32', 'mapId': '4'},
+                     {'path': 'map/4/80008003.s32', 'mapId': '4'},
                      {'path': 'map/4/80008002.seg', 'mapId': '4'},
                      {'path': 'map/4.map', 'mapId': None}],
             'tilePairs': [{'idx': 'Tile.idx', 'pak': 'Tile.pak'}],
@@ -45,11 +47,25 @@ class AssetTests(unittest.TestCase):
                 Path(args[4]).write_bytes(b'fixture')
                 return map_decoder.subprocess.CompletedProcess(args, 0)
             with patch.object(map_decoder.subprocess, 'run', side_effect=viewer):
-                result = map_decoder.decode(bundle, root / 'out', root / 'viewer.exe', ['0', '4'])
+                result = map_decoder.decode(bundle, root / 'out', root / 'viewer.exe', ['0', '4'],
+                                            (0x8000, 0x8001, 0x8000, 0x8001))
             self.assertEqual([entry['status'] for entry in result], ['skipped', 'exported'])
-            self.assertEqual(calls, ['export-fullmap', 'export-passability'])
+            self.assertEqual(calls, ['export-passability', 'export-fullmap'])
+            self.assertEqual(result[1]['ignoredBlocks'], ['map/4/tempseg.s32'])
+            self.assertEqual(result[1]['outsideRegion'], 1)
             self.assertEqual(result[1]['excludedSeg'], 1)
             self.assertEqual(map_decoder.catalog(manifest)['maps']['4']['formats'], ['s32', 'seg', 'map'])
+            def broken_platform(args, **kwargs):
+                if args[2] == 'export-fullmap':
+                    kwargs['stdout'].write(b'Platform instance is null. Have you created your application?')
+                    return map_decoder.subprocess.CompletedProcess(args, 1)
+                return viewer(args, **kwargs)
+            with patch.object(map_decoder.subprocess, 'run', side_effect=broken_platform):
+                fallback = map_decoder.decode(bundle, root / 'fallback', root / 'viewer.exe', ['4'],
+                                              (0x8000, 0x8001, 0x8000, 0x8001))
+            self.assertEqual(fallback[0]['status'], 'gui-required')
+            self.assertTrue((root / 'fallback/4/passability.txt').is_file())
+            self.assertTrue((root / 'fallback/viewer-input/map/4/80008001.s32').is_file())
 
     def test_collects_selected_map_ids_and_same_directory_tile_pairs(self):
         with tempfile.TemporaryDirectory() as tmp:
