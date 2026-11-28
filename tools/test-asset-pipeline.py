@@ -36,7 +36,7 @@ class AssetTests(unittest.TestCase):
             bundle = root / 'input.zip'
             with zipfile.ZipFile(bundle, 'w') as archive:
                 archive.writestr('local-map-bundle.json', map_decoder.json.dumps(manifest))
-                for name in ('map/4/80008001.S32', 'Tile.idx', 'Tile.pak'):
+                for name in ('map/4/80008001.S32', 'map/4/80008002.seg', 'Tile.idx', 'Tile.pak'):
                     archive.writestr(name, 'fixture')
             calls = []
             def viewer(args, **kwargs):
@@ -52,7 +52,7 @@ class AssetTests(unittest.TestCase):
             self.assertEqual([entry['status'] for entry in result], ['skipped', 'exported'])
             self.assertEqual(calls, ['export-passability', 'export-fullmap'])
             self.assertEqual(result[1]['ignoredBlocks'], ['map/4/tempseg.s32'])
-            self.assertEqual(result[1]['outsideRegion'], 1)
+            self.assertEqual(result[1]['outsideRegion'], 2)
             self.assertEqual(result[1]['excludedSeg'], 1)
             self.assertEqual(map_decoder.catalog(manifest)['maps']['4']['formats'], ['s32', 'seg', 'map'])
             def broken_platform(args, **kwargs):
@@ -66,6 +66,21 @@ class AssetTests(unittest.TestCase):
             self.assertEqual(fallback[0]['status'], 'gui-required')
             self.assertTrue((root / 'fallback/4/passability.txt').is_file())
             self.assertTrue((root / 'fallback/viewer-input/map/4/80008001.s32').is_file())
+
+            def gui_viewer(args, **kwargs):
+                self.assertEqual(args[2], 'export-passability')
+                folder, output = Path(args[3]), Path(args[4])
+                names = [p.name for p in folder.iterdir()]
+                self.assertEqual(names, ['80008002.seg'] if output.name.startswith('seg-') else ['80008001.s32'])
+                output.write_bytes(b'fixture')
+                return map_decoder.subprocess.CompletedProcess(args, 0)
+            with patch.object(map_decoder.subprocess, 'run', side_effect=gui_viewer):
+                gui = map_decoder.decode(bundle, root / 'gui', root / 'viewer.exe', ['4'],
+                                         (0x8000, 0x8001, 0x8000, 0x8002), gui=True)
+            self.assertEqual(gui[0]['status'], 'gui-required')
+            self.assertEqual(gui[0]['selectedSeg'], ['80008002.seg'])
+            self.assertTrue((root / 'gui/4/seg-passability.txt').is_file())
+            self.assertFalse((root / 'gui/4/export-fullmap.log').exists())
 
     def test_collects_selected_map_ids_and_same_directory_tile_pairs(self):
         with tempfile.TemporaryDirectory() as tmp:

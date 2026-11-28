@@ -49,7 +49,7 @@ def catalog(manifest):
             'unassigned': unassigned, 'tilePairs': manifest['tilePairs']}
 
 
-def decode(source, output, viewer, ids, block_box=None):
+def decode(source, output, viewer, ids, block_box=None, gui=False):
     if output.exists() and (output / 'viewer-input').exists():
         raise ValueError('Choose a new output directory for this run')
     output.mkdir(parents=True, exist_ok=True)
@@ -90,56 +90,67 @@ def decode(source, output, viewer, ids, block_box=None):
                 entry = inventory['maps'].get(map_id)
                 row = {'mapId': map_id, 'status': 'skipped'}
                 results.append(row)
-                if not entry or not entry['files']['s32']:
-                    row['reason'] = 'No S32 blocks supported by full-map renderer'
+                if not entry or not (entry['files']['s32'] or entry['files']['seg']):
+                    row['reason'] = 'No S32 or SEG blocks found'
                     continue
                 folder = root / 'map' / map_id
                 folder.mkdir(parents=True)
                 target = output / map_id
                 target.mkdir(exist_ok=True)
                 row.update(excludedSeg=len(entry['files']['seg']), ignoredBlocks=[],
-                           selectedBlocks=[], outsideRegion=0)
+                           selectedBlocks=[], selectedSeg=[], outsideRegion=0)
                 try:
-                    for name in entry['files']['s32']:
+                    seg_folder = root / 'seg-collision' / map_id
+                    seg_folder.mkdir(parents=True)
+                    for name in entry['files']['s32'] + entry['files']['seg']:
                         filename = safe_path(name).name.lower()
-                        if not re.fullmatch(r'[0-9a-f]{8}\.s32', filename):
+                        if not re.fullmatch(r'[0-9a-f]{8}\.(s32|seg)', filename):
                             row['ignoredBlocks'].append(name)
                             continue
                         x, y = int(filename[:4], 16), int(filename[4:8], 16)
                         if block_box and not (block_box[0] <= x <= block_box[2] and block_box[1] <= y <= block_box[3]):
                             row['outsideRegion'] += 1
                             continue
-                        if (folder / filename).exists():
+                        is_seg = filename.endswith('.seg')
+                        dest = (seg_folder if is_seg else folder) / filename
+                        if dest.exists():
                             raise ValueError(f'Duplicate block: {filename}')
-                        copy(name, folder / filename)
-                        row['selectedBlocks'].append(filename)
-                    if not row['selectedBlocks']:
-                        row['reason'] = 'No standard S32 blocks in selected region'
+                        copy(name, dest)
+                        row['selectedSeg' if is_seg else 'selectedBlocks'].append(filename)
+                    if not (row['selectedBlocks'] or row['selectedSeg']):
+                        row['reason'] = 'No standard blocks in selected region'
                         continue
-                    row['viewerFolder'] = folder.relative_to(output).as_posix()
                     errors = {}
-                    for command, filename, flags in (
-                        ('export-passability', 'passability.txt', ['--dir']),
-                        ('export-fullmap', 'map.png', ['--max-size', '4096']),
-                    ):
+                    jobs = []
+                    if row['selectedBlocks']:
+                        row['viewerFolder'] = folder.relative_to(output).as_posix()
+                        jobs.append((folder, 'export-passability', 'passability.txt', ['--dir']))
+                        if not gui:
+                            jobs.append((folder, 'export-fullmap', 'map.png', ['--max-size', '4096']))
+                    if row['selectedSeg']:
+                        jobs.append((seg_folder, 'export-passability', 'seg-passability.txt', ['--dir']))
+                    for job_folder, command, filename, flags in jobs:
                         artifact = target / filename
                         artifact.unlink(missing_ok=True)
-                        log_path = target / (command + '.log')
+                        log_path = target / (('seg-' if job_folder == seg_folder else '') + command + '.log')
                         try:
                             with log_path.open('wb') as log:
                                 result = subprocess.run(
-                                    [str(viewer), '-cli', command, str(folder), str(artifact), *flags],
+                                    [str(viewer), '-cli', command, str(job_folder), str(artifact), *flags],
                                     stdout=log, stderr=subprocess.STDOUT, timeout=900, check=False)
                             if result.returncode or not artifact.is_file() or artifact.stat().st_size == 0:
-                                errors[command] = log_path.relative_to(output).as_posix()
+                                    errors[filename] = log_path.relative_to(output).as_posix()
                         except (OSError, subprocess.TimeoutExpired) as error:
-                            errors[command] = str(error)
-                        if command in errors:
+                            errors[filename] = str(error)
+                        if filename in errors:
                             artifact.unlink(missing_ok=True)
                     row['status'] = 'failed' if errors else 'exported'
                     if errors:
                         row['errors'] = errors
-                    if 'export-fullmap' in errors and (target / 'export-fullmap.log').is_file():
+                    if gui and row['selectedBlocks']:
+                        row['status'] = 'gui-required'
+                        row['reason'] = 'PNG export uses the existing viewer GUI'
+                    if 'map.png' in errors and (target / 'export-fullmap.log').is_file():
                         log_bytes = (target / 'export-fullmap.log').read_bytes()
                         if b'Platform instance is null' in log_bytes.replace(b'\x00', b''):
                             row['status'] = 'gui-required'
@@ -157,6 +168,7 @@ def main():
     parser.add_argument('output', type=Path)
     parser.add_argument('--viewer', type=Path)
     parser.add_argument('--ids', nargs='+', default=['0', '4'])
+    parser.add_argument('--gui', action='store_true', help='Use the viewer GUI for PNG exports')
     parser.add_argument('--block-box', nargs=4, metavar=('X_MIN', 'Y_MIN', 'X_MAX', 'Y_MAX'),
                         type=lambda value: int(value, 16), help='Inclusive hexadecimal chunk coordinates')
     args = parser.parse_args()
@@ -165,7 +177,7 @@ def main():
         parser.error('Invalid block box')
     try:
         results = decode(args.source.resolve(), args.output.resolve(),
-                         args.viewer.resolve() if args.viewer else None, args.ids, box)
+                         args.viewer.resolve() if args.viewer else None, args.ids, box, args.gui)
     except (OSError, ValueError, KeyError, zipfile.BadZipFile) as error:
         parser.exit(2, str(error) + '\n')
     return int(any(row['status'] != 'exported' for row in results))
